@@ -1,0 +1,378 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
+
+  --color-cream-50: #fdfaf3;
+  --color-cream-100: #f8f0df;
+  --color-cream-200: #f0e3c5;
+  --color-cream-300: #e6d2a4;
+
+  --color-amber-50: #fff8eb;
+  --color-amber-100: #ffe8c2;
+  --color-amber-200: #ffd285;
+  --color-amber-300: #ffb74a;
+  --color-amber-400: #f59e0b;
+  --color-amber-500: #db7706;
+  --color-amber-600: #b3590a;
+  --color-amber-700: #8a3f0c;
+
+  --color-bark-50: #f7f4ee;
+  --color-bark-100: #ebe4d3;
+  --color-bark-200: #ccbe9f;
+  --color-bark-300: #998967;
+  --color-bark-400: #6e6047;
+  --color-bark-500: #4f4434;
+  --color-bark-600: #3a3126;
+  --color-bark-700: #2a231b;
+  --color-bark-800: #1a1510;
+  --color-bark-900: #100c08;
+
+  --color-tomato-400: #ef4444;
+  --color-tomato-500: #dc2626;
+  --color-tomato-600: #b91c1c;
+
+  --color-leaf-400: #6b9a4f;
+  --color-leaf-500: #4f7d3a;
+  --color-leaf-600: #3d6429;
+
+  --color-gold-400: #d4a857;
+  --color-gold-500: #b8862f;
+
+  --radius-card: 1.25rem;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-pill: 9999px;
+
+  /* Custom easing curves — stronger than CSS built-ins */
+  --ease-out-quart: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-quart: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+:root {
+  color-scheme: only light;
+  --bg: var(--color-cream-50);
+  --bg-elevated: #ffffff;
+  --fg: var(--color-bark-900);
+  --fg-soft: var(--color-bark-700);
+  --muted: var(--color-bark-400);
+  --muted-soft: var(--color-bark-300);
+  --line: rgba(26, 21, 16, 0.08);
+  --line-strong: rgba(26, 21, 16, 0.14);
+  --card: #ffffff;
+  --card-soft: #fbf6ec;
+  --brand: var(--color-amber-500);
+  --brand-strong: var(--color-amber-600);
+  --brand-fg: #ffffff;
+  --ink: var(--color-bark-800);
+  --accent: var(--color-tomato-500);
+}
+
+html, body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background-image:
+    radial-gradient(1200px 600px at 8% -10%, rgba(245, 158, 11, 0.10), transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, rgba(220, 38, 38, 0.05), transparent 55%),
+    radial-gradient(700px 400px at 50% 110%, rgba(79, 125, 58, 0.04), transparent 55%);
+  background-attachment: fixed;
+}
+
+::selection { background: var(--color-amber-200); color: var(--color-bark-900); }
+
+:focus-visible {
+  outline: 2px solid var(--color-amber-400);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "ss02";
+    letter-spacing: -0.025em;
+    font-variation-settings: "SOFT" 30, "WONK" 0, "opsz" 144;
+  }
+
+  .font-display-wonk {
+    font-family: var(--font-display);
+    font-feature-settings: "ss01", "ss02";
+    letter-spacing: -0.03em;
+    font-variation-settings: "SOFT" 50, "WONK" 1, "opsz" 144;
+  }
+
+  .num-tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .grain {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.4 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  .grain-soft::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.18 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  /* Highlighter editorial — solo para fondos claros con texto oscuro.
+     Forza color de texto oscuro para que el contraste sobre la banda amber
+     sea siempre legible (≥ 7:1 con bark-900 sobre amber-300). */
+  .underline-amber {
+    background-image: linear-gradient(120deg, var(--color-amber-200) 0%, var(--color-amber-300) 100%);
+    background-repeat: no-repeat;
+    background-size: 100% 38%;
+    background-position: 0 88%;
+    padding: 0 0.05em;
+    color: var(--color-bark-900);
+  }
+
+  /* Variante para fondos oscuros: underline tipo barra gruesa al pie del texto.
+     Mantiene el color del texto heredado y agrega una barra amber abajo. */
+  .underline-amber-dark {
+    background-image: linear-gradient(
+      to top,
+      var(--color-amber-400) 0%,
+      var(--color-amber-400) 18%,
+      transparent 18%,
+      transparent 100%
+    );
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    background-position: 0 100%;
+    padding-bottom: 0.06em;
+  }
+
+  .kicker {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.28em;
+    color: var(--color-amber-600);
+    font-weight: 500;
+  }
+
+  .drop-cap::first-letter {
+    font-family: var(--font-display);
+    font-size: 4.5em;
+    line-height: 0.82;
+    font-weight: 600;
+    color: var(--color-amber-500);
+    float: left;
+    margin: 0.05em 0.12em -0.1em 0;
+    font-variation-settings: "SOFT" 50, "WONK" 1, "opsz" 144;
+  }
+
+  .stamp {
+    display: inline-block;
+    transform: rotate(-7deg);
+    border: 2px solid var(--color-tomato-500);
+    color: var(--color-tomato-500);
+    padding: 0.4em 0.7em;
+    border-radius: 0.35rem;
+    font-family: var(--font-mono);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.68rem;
+    font-weight: 700;
+    line-height: 1;
+    background: color-mix(in oklab, var(--color-tomato-500) 4%, transparent);
+  }
+
+  .editorial-rule {
+    position: relative;
+    height: 1px;
+    background: var(--line-strong);
+  }
+  .editorial-rule::after {
+    content: "❦";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg);
+    padding: 0 0.6em;
+    color: var(--color-amber-500);
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .ring-line {
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .ring-line-strong {
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  .shadow-soft {
+    box-shadow:
+      0 1px 0 rgba(24, 20, 13, 0.04),
+      0 8px 24px -12px rgba(24, 20, 13, 0.16),
+      0 24px 48px -32px rgba(24, 20, 13, 0.18);
+  }
+
+  .shadow-float {
+    box-shadow:
+      0 1px 0 rgba(24, 20, 13, 0.04),
+      0 18px 40px -16px rgba(24, 20, 13, 0.22),
+      0 40px 80px -40px rgba(24, 20, 13, 0.32);
+  }
+
+  .shadow-card {
+    box-shadow:
+      0 1px 2px rgba(24, 20, 13, 0.04),
+      0 4px 14px -8px rgba(24, 20, 13, 0.18);
+  }
+
+  .shadow-card-hover {
+    box-shadow:
+      0 1px 2px rgba(24, 20, 13, 0.04),
+      0 18px 40px -16px rgba(24, 20, 13, 0.28),
+      0 24px 56px -32px rgba(219, 119, 6, 0.18);
+  }
+
+  .shadow-pill {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.6) inset,
+      0 1px 2px rgba(24, 20, 13, 0.06),
+      0 8px 24px -10px rgba(24, 20, 13, 0.18);
+  }
+
+  .bg-stripe {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(245, 158, 11, 0.08) 0,
+      rgba(245, 158, 11, 0.08) 8px,
+      transparent 8px,
+      transparent 16px
+    );
+  }
+
+  .glass {
+    background: color-mix(in oklab, var(--bg) 78%, transparent);
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+  }
+
+  @keyframes marquee {
+    from { transform: translate3d(0, 0, 0); }
+    to   { transform: translate3d(-50%, 0, 0); }
+  }
+  .animate-marquee { animation: marquee 38s linear infinite; }
+  /* Pause when user hovers — lets them read */
+  .animate-marquee:hover { animation-play-state: paused; }
+
+  @keyframes pulseDot {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%      { transform: scale(1.4); opacity: 0.55; }
+  }
+  .animate-pulse-dot { animation: pulseDot 1.6s ease-in-out infinite; }
+
+  @keyframes floatY {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50%      { transform: translate3d(0, -6px, 0); }
+  }
+  .animate-float { animation: floatY 6s ease-in-out infinite; }
+
+  @keyframes slideUpIn {
+    from { opacity: 0; transform: translate3d(0, 12px, 0); }
+    to   { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+  .animate-slide-up { animation: slideUpIn 0.45s var(--ease-out-quart) both; }
+
+  @keyframes scaleInPop {
+    /* Never scale from 0 — start from 0.95 so it has visible shape */
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+  }
+  .animate-pop { animation: scaleInPop 0.3s var(--ease-out-quart) both; }
+
+  /* FAQ answer reveal — short, ease-out for instant feel on open */
+  @keyframes faqReveal {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .animate-faq-reveal { animation: faqReveal 0.22s var(--ease-out-quart) both; }
+
+  @keyframes shineSlide {
+    from { transform: translateX(-120%) skewX(-12deg); }
+    to   { transform: translateX(220%) skewX(-12deg); }
+  }
+  .animate-shine { animation: shineSlide 1.4s ease-in-out infinite; }
+
+  /* Stagger entrance — short, snappy, ease-out-quart for punch.
+     Delays follow Emil's 30-50ms guideline (was 60-70ms, felt heavy). */
+  .reveal-stagger > * { animation: slideUpIn 0.4s var(--ease-out-quart) both; }
+  .reveal-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .reveal-stagger > *:nth-child(2) { animation-delay: 40ms; }
+  .reveal-stagger > *:nth-child(3) { animation-delay: 80ms; }
+  .reveal-stagger > *:nth-child(4) { animation-delay: 120ms; }
+  .reveal-stagger > *:nth-child(5) { animation-delay: 160ms; }
+  .reveal-stagger > *:nth-child(6) { animation-delay: 200ms; }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* Press feedback: instant scale-down + custom curve.
+     Use on every clickable button/card to confirm input within ~100ms. */
+  .press {
+    transition:
+      transform 160ms var(--ease-out-quart),
+      background-color 200ms var(--ease-out-quart),
+      border-color 200ms var(--ease-out-quart),
+      box-shadow 200ms var(--ease-out-quart),
+      color 200ms var(--ease-out-quart);
+  }
+  .press:active { transform: scale(0.97); }
+
+  /* Lift feedback for cards — only enable when device truly supports hover */
+  @media (hover: hover) and (pointer: fine) {
+    .lift {
+      transition:
+        transform 220ms var(--ease-out-quart),
+        box-shadow 220ms var(--ease-out-quart),
+        border-color 220ms var(--ease-out-quart);
+    }
+    .lift:hover { transform: translateY(-2px); }
+  }
+
+  /* Disable transform-based hovers on touch devices to avoid stuck states after tap */
+  @media (hover: none) {
+    .lift, .press { transition-duration: 0ms; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-marquee, .animate-pulse-dot, .animate-float,
+    .animate-slide-up, .animate-pop, .animate-shine,
+    .animate-faq-reveal,
+    .reveal-stagger > * {
+      animation: none !important;
+    }
+    /* Drop transform-based hover effects entirely */
+    .lift, .press {
+      transition: none !important;
+    }
+    .lift:hover, .press:active {
+      transform: none !important;
+    }
+  }
+}
