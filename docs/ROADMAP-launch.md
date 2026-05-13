@@ -1,243 +1,173 @@
-# 🚀 Roadmap a producción — `madriguerashop`
+# 🚀 Roadmap a producción — Madriguera Shop
 
-> **Estado**: prototipo navegable con maquetas reales conectadas a mocks. Schema de Prisma completo y server actions del **carrito** ya tocan DB. Falta cerrar el bucle: catálogo editable, pedidos reales, pagos verificables, billing, infra y observabilidad.
+> **Estado**: aplicación funcionalmente completa para Fase 1. Schema, auth, onboarding, catálogo, pedidos, billing, emails, recordatorios, AuditLog, rate limit y observabilidad: todo implementado y conectado a DB. Sólo bloquean trámites externos (S.R.L., dominio, SMTP, QR del SaaS).
 >
-> **Objetivo**: que un cliente pueda **registrarse, configurar su tienda, recibir pedidos por WhatsApp, cobrar el QR estático y que tú emitas su factura mensual** sin tocar código.
+> **Objetivo**: que un cliente pueda **registrarse, configurar su tienda, recibir pedidos por WhatsApp, cobrar por QR estático y que vos emitas su factura mensual** sin tocar código.
 >
-> **Última actualización**: 2026-05-04
-> **Repo**: https://github.com/AndreeAng/madriguerashop
+> **Última actualización**: 2026-05-06
+> **Producto**: Madriguera Shop · operado por Nibble S.R.L.
+> **Dominio**: `madrigueras.shop`
 
 ---
 
-## 📊 Estado actual (auditoría rápida)
+## 📊 Estado actual
 
-### ✅ Lo que ya está hecho
+### ✅ Implementado (Fase 1 cerrada)
 
-| Área | Estado | Notas |
+#### Core / multi-tenant
+- Schema Prisma de 22 modelos + migración inicial versionada (`prisma/migrations/20260506000000_init/`)
+- Auth con NextAuth v5 (email o teléfono, JWT, 4 roles, middleware con `authorized`)
+- 5 tiendas demo seeded (RESTAURANT, FOOD_TRUCK, RETAIL, HARDWARE, SERVICES) — todas navegables públicamente
+
+#### Onboarding y settings
+- Registro público `/registro` con auto-login
+- **Sin período de prueba**: la primera factura se emite al registrar
+- Settings de tienda con 5 secciones (branding, pagos, delivery, horarios, SEO)
+- Subida real de imágenes con magic-byte validation + sharp + WebP
+
+#### Catálogo
+- CRUD de categorías con jerarquía 2 niveles
+- CRUD de productos con variantes, imágenes múltiples, stock, badges
+- **Disponibilidad por horario** (combos del almuerzo, especiales del finde)
+- Mapeo Product ↔ código SIN preparado para SIAT
+
+#### Storefront público
+- SSR con Prisma + adapter pattern
+- SEO completo (meta, Open Graph, sitemap dinámico, robots.txt)
+- PWA manifest para install en mobile
+- Tracking de PageView server-side con cookies guest+session
+- 404 específico para tiendas inexistentes
+
+#### Pedidos end-to-end
+- Carrito con guest token (7d TTL)
+- Checkout: delivery/pickup, zonas, QR/efectivo, comprobante upload, cupones, notas
+- Server action `createOrder` con recálculo total server-side, transacción atómica, generación de trackingToken
+- Tracking público con timeline de eventos + revalidate 30s
+- Gestión de pedidos del owner (state machine validada, verify/reject pago)
+- Mensaje de WhatsApp pre-armado al confirmar
+
+#### Billing manual del SaaS
+- Cron `/api/cron/billing` con auth bearer
+- Emisión automática + sync de estados (PENDING → OVERDUE → PAST_DUE → SUSPENDED)
+- Reactivación automática al pagar
+- Recordatorios por email: 3d antes / 1d antes / día / cada 3d post-vencimiento (con cap de 5 e idempotencia)
+- Owner uploads comprobante; admin verifica → owner recibe confirmación
+- Email de tienda suspendida cuando aplica
+
+#### Email transaccional (Brevo recomendado)
+- Welcome (al registrarse)
+- Recovery con token 1h
+- Invoice issued / paid / reminder / suspended
+- Order created (al owner)
+- Payment verified / rejected (al cliente)
+
+#### Admin del SaaS
+- Dashboard con KPIs reales (tiendas activas, MRR cobrado, GMV, top tiendas)
+- `/admin/tiendas` con filtros + búsqueda
+- `/admin/cobranzas` con verificación de comprobantes
+- `/admin/auditoria` con viewer del AuditLog filtrado por categoría
+
+#### Hardening (Fase 1.7 cerrada)
+- Validación Zod en todos los server actions
+- Rate limit (login, registro, recovery, checkout, uploads)
+- AuditLog en acciones sensibles
+- Sentry SDK con shim activable por `SENTRY_DSN`
+- Health check `/api/health` con DB ping
+- Honeypot anti-bot en registro
+- Validación Origin en endpoints públicos
+- CSP headers básicos en `vercel.json`
+
+#### Tests + CI
+- Vitest configurado con tests unit (slug, cuf)
+- Playwright con E2E del happy path
+- GitHub Actions: lint + typecheck + tests + build en cada PR
+
+#### Páginas legales
+- `/terminos` y `/privacidad` redactados (placeholders para datos legales reales)
+
+#### Skill SIAT Bolivia
+- `.claude/skills/siat-bolivia/SKILL.md` — guía completa para implementar facturación electrónica
+- Scaffolds en `lib/billing/siat/` (config, types, client, codes, cuf, builder, errors)
+
+---
+
+## 🟡 Bloqueadores externos (no son código)
+
+| # | Bloqueador | Tiempo estimado |
 |---|---|---|
-| Schema Prisma completo | ✅ | 22 modelos: Users, Stores, Products, Orders, Carts, Coupons, Plans, Invoices, AuditLog, AI chat, etc. Source of truth: `nibble/prisma/schema.prisma` |
-| Auth (NextAuth v5 + Credentials) | ✅ | Login con email **o** teléfono, JWT, roles `SUPER_ADMIN / STORE_OWNER / CASHIER / CUSTOMER`, middleware con `authorized` callback |
-| Server actions del carrito | ✅ | `addItemToCart`, `updateCartItemQuantity`, `removeCartItem`, `getCartSnapshot`, `clearCart` con guest-token + cookies |
-| Storefront público (`/[slug]`) | ✅ UI | Hero, menú por categorías, quick view, footer — pero lee de **mocks** (`lib/mock/products.ts`) |
-| Páginas marketing (`/`, `/tiendas`) | ✅ | Landing del SaaS y directorio público |
-| Login + recovery (UI) | ✅ | `app/(auth)/login`, `app/(auth)/recovery` — recovery sin server action |
-| Dashboard del owner (UI) | 🟡 | `/dashboard` — totalmente mockeado, sin queries reales |
-| Admin del SaaS (UI) | 🟡 | `/admin` — mockeado |
-| Checkout (UI) | 🟡 | `/[slug]/checkout` — UI completa, sin server action que cree el pedido |
-| Página de orden (UI) | 🟡 | `/[slug]/orden/[token]` — sin lectura real |
-| Seed inicial | 🟡 | Templates + Plans + super admin + tienda demo (parcial — verificar contra el archivo) |
-
-### ❌ Lo que falta (lo importante)
-
-Carpetas creadas pero **vacías**: `lib/billing/`, `lib/email/`, `lib/notifications/`, `lib/storage/`, `lib/analytics/`, `lib/i18n/`, `tests/unit/`, `tests/e2e/`. Hay un `app/api/cron/` y `app/api/health/` también vacíos.
+| 1 | Constituir **Nibble S.R.L.** + obtener NIT | 2-3 semanas (abogado/contador) |
+| 2 | Comprar dominio `madrigueras.shop` | 5 min |
+| 3 | Contratar VPS (DigitalOcean/Hetzner/Contabo) | 1 hora |
+| 4 | Subir QR del SaaS + setear `SAAS_PAYMENT_QR_URL` | 5 min post-NIT |
+| 5 | Crear cuenta Brevo + verificar dominio | 30 min |
+| 6 | Setear `NEXTAUTH_SECRET`, `CRON_SECRET` reales | 2 min |
+| 7 | Confirmar pricing definitivo (ahora Bs 500/mes y Bs 1.200/mes) | Decisión |
+| 8 | Llenar datos legales en `/terminos` y `/privacidad` | 30 min post-S.R.L. |
+| 9 | Tramitar SFVL ante el SIN (para facturación electrónica) | 2-3 meses |
 
 ---
 
-## 🎯 Plan por fases
+## 🟢 Phase 2 (post-launch, según haya tracción)
 
-> **Filosofía**: cada fase termina en algo *demostrable a un cliente*. No avances a la siguiente sin cerrar la actual.
-
----
-
-### 🟥 Fase 1 — MVP cobrable (4–6 semanas)
-
-**Meta**: un cliente paga el plan, abre su tienda, sube productos, recibe pedidos por WhatsApp y verifica pagos QR.
-
-#### 1.1 — Onboarding y gestión de la tienda *(la cara que ve el cliente)*
-
-- [ ] **Registro público de tienda** — `/registro` o flujo desde landing
-  - Form: nombre tienda, slug (validar único), vertical, WhatsApp, ciudad, email/teléfono del owner, contraseña
-  - Crea `Store` (status=`TRIAL`, `trialEndsAt = now() + 14d`) + `User` (role=`STORE_OWNER`) + asigna `Plan` por defecto + asigna `Template` por vertical
-  - Server action: `server/actions/onboarding.ts` → `registerStore()`
-- [ ] **Settings de la tienda** — `/dashboard/settings`
-  - Branding: logo, banner, favicon, colores (`primaryColor/secondaryColor/accentColor`), fuente, dark mode
-  - Contacto: WhatsApp, email, dirección, ciudad, lat/lng, redes
-  - Pagos: subir `qrImageUrl`, `qrInstructions`, toggles `acceptsCashOnDelivery / acceptsQR`
-  - Delivery: `deliveryEnabled`, `pickupEnabled`, `defaultDeliveryFee`, `freeDeliveryAbove`
-  - Horarios: 7 filas de `StoreHours`
-  - SEO: `metaTitle`, `metaDescription`, `ogImageUrl`
-- [ ] **Storefront público real** — refactor `app/[slug]/page.tsx`
-  - Reemplazar `getStore()` y `getProductsByStore()` mock por queries reales (`lib/tenant/resolve.ts` ya tiene base)
-  - SSR + revalidación por tag (`revalidateTag(`store:${slug}`)`)
-  - 404 si `store.status` ∈ `{SUSPENDED, CANCELLED}`; banner si `PAST_DUE`
-
-#### 1.2 — Catálogo editable
-
-- [ ] **CRUD de Categorías** — `/dashboard/categorias`
-  - List + create + edit + delete + reordenar (drag) + jerarquía padre/hijo
-  - Server actions en `server/actions/categories.ts`
-- [ ] **CRUD de Productos** — `/dashboard/productos`
-  - List con filtros (categoría, activo, stock bajo, destacado)
-  - Form: nombre, slug auto, descripción, precios (`basePrice` / `comparePrice`), stock, badges (`isNew`, `isBestSeller`, `customLabel`), horarios de disponibilidad, categoría
-  - Subida de imágenes múltiples (mín. 1, máx. plan-dependiente)
-  - **Variantes**: tabla de `ProductVariant` con atributos JSON (talla, sabor, etc.)
-  - Server actions en `server/actions/products.ts`
-- [ ] **Subida de imágenes** — `lib/storage/upload.ts`
-  - **Decisión clave**: local (`/var/www/uploads`, ya está en `.env`) **vs** S3/R2/UploadThing
-  - Validación: MIME (`image/jpeg|png|webp`), tamaño (`MAX_UPLOAD_SIZE_MB`), magic bytes
-  - Optimización con `sharp`: resize a 1600px max, convertir a WebP, generar thumbnail
-  - Devolver URL pública (`PUBLIC_UPLOADS_URL/<storeId>/<uuid>.webp`)
-
-#### 1.3 — Pedidos end-to-end
-
-- [ ] **Crear pedido en checkout** — `server/actions/orders.ts` → `createOrder()`
-  - Input: `cartId`, datos del cliente, dirección, método de pago, cupón, comprobante (si QR)
-  - Validar stock (si `manageStock`), recalcular totales server-side (no confiar en el cliente), aplicar cupón (`Coupon` con validación de fechas/límites), calcular delivery según `DeliveryZone` o `defaultDeliveryFee`
-  - Transacción: crea `Order` + `OrderItem[]` + `OrderEvent` (`type=ORDER_CREATED`) + decrementa stock + actualiza `Customer` (upsert por `[storeId, phone]`)
-  - Devuelve `trackingToken` para redirigir a `/[slug]/orden/[token]`
-- [ ] **Página de seguimiento del cliente** — `app/[slug]/orden/[token]/page.tsx` real
-  - Estado actual del pedido, timeline de `OrderEvent`, link de WhatsApp pre-armado
-  - Polling con `revalidate: 30` o Server-Sent Events para estados en vivo
-- [ ] **Mensaje de WhatsApp** — `lib/whatsapp/buildOrderMessage.ts` ya existe (revisar)
-  - Botón en checkout: `wa.me/<phone>?text=<encoded>` con resumen + link de tracking
-  - Guardar `whatsappOpenedAt`, `whatsappMessage` en `Order`
-- [ ] **Gestión de pedidos del owner** — `/dashboard/pedidos`
-  - List con filtros por estado, badges de notificación
-  - Detalle: cambiar estado (`NEW → CONFIRMED → PREPARING → IN_DELIVERY → DELIVERED`), ver comprobante, **verificar pago** (`paymentStatus: AWAITING_VERIFICATION → VERIFIED|REJECTED`)
-  - Cada cambio crea un `OrderEvent` con `byUserId`
-  - Sonido + notificación browser para pedidos nuevos (Web Push opcional)
-
-#### 1.4 — Cupones y zonas de delivery (lite)
-
-- [ ] **CRUD Cupones** — `/dashboard/cupones`
-- [ ] **CRUD Zonas de delivery** — `/dashboard/zonas`
-  - MVP: lista de zonas con nombre + tarifa + estimación. Polígono real puede ser Fase 2.
-
-#### 1.5 — Billing manual *(crítico para cobrarle al cliente)*
-
-- [ ] **Generación de Invoice mensual** — `lib/billing/generateInvoice.ts`
-  - Cron diario (`app/api/cron/billing/route.ts` ya tiene la carpeta)
-  - Para cada `Store` con `nextInvoiceAt <= today`: crear `Invoice` con `amount = plan.monthlyPriceBob` o `yearlyPriceBob`, `dueDate = today + BILLING_DUE_DAYS`
-  - Cron de recordatorios: día 3, día 1 antes, día de vencimiento
-  - Cron de cambio de status: vencida + grace → `Store.status = PAST_DUE`; pasados N días → `SUSPENDED`
-- [ ] **Vista de facturación del owner** — `/dashboard/facturacion`
-  - Lista de invoices, link al QR de pago tuyo, botón "subir comprobante"
-- [ ] **Verificación de pagos del SaaS** — `/admin/cobranzas`
-  - Tu cara: facturas pendientes, comprobantes subidos, botón "marcar pagada" (asigna `verifiedById`, `paidAt`, mueve `Store.status` a `ACTIVE`, recalcula `nextInvoiceAt`)
-
-#### 1.6 — Email transaccional mínimo
-
-- [ ] **Setup SMTP** — `lib/email/sendEmail.ts` con `nodemailer` o Resend
-  - Plantillas en `nibble/templates/` (ya existe la carpeta)
-  - Eventos: bienvenida (registro), reset password, factura emitida, factura por vencer, factura vencida, pedido creado (al owner), pago verificado (al cliente)
-
-#### 1.7 — Hardening pre-launch
-
-- [ ] **Validación server-side everywhere** — todos los server actions con Zod
-- [ ] **Rate limiting** en login, registro, checkout, recovery — `@upstash/ratelimit` o middleware custom
-- [ ] **CSRF**: NextAuth ya cubre; Server Actions también, pero verificar checkout flow
-- [ ] **Recovery de contraseña** — completar `app/(auth)/recovery` con server action que cree `PasswordReset` y mande email
-- [ ] **AuditLog** — instrumentar acciones sensibles (login, cambio de plan, suspensión, verificación de pago)
-- [ ] **Error tracking** — `SENTRY_DSN` ya en `.env`, falta integrarlo
-- [ ] **Health check** — `app/api/health/route.ts` con check de DB + storage
-
----
-
-### 🟧 Fase 2 — Profesionalización (3–4 semanas)
-
-**Meta**: que la operación escale sin que tengas que estar manual con cada cliente.
-
-- [ ] **Banners y popups gestionables** — CRUD desde `/dashboard/marketing`
-- [ ] **Multi-staff** (cashiers): owner invita usuarios `CASHIER` con permisos limitados
-- [ ] **Analytics owner** — `/dashboard/analytics`
-  - PageViews por día, productos más vistos, conversion rate (vistas → pedidos)
-  - Funnel: storefront → producto → carrito → checkout → pedido
-  - Implementar tracking en `lib/analytics/track.ts` + endpoint `app/api/analytics/route.ts`
-- [ ] **Analytics admin** — `/admin/analytics`
-  - MRR/ARR real, churn, GMV por tienda, top stores, distribución por vertical
-- [ ] **Plan limits** — middleware que valide `maxProducts`, `maxOrdersPerMonth`, `maxStaff` antes de cada acción
-- [ ] **QR dinámico** — integración con QR Simple (Banco Económico/BCP API si está disponible) detrás del feature flag `FEATURE_DYNAMIC_QR`
-- [ ] **Multi-branch** — `Store` con sub-locaciones (feature flag `FEATURE_MULTI_BRANCH`)
-- [ ] **Custom domains** — el owner conecta `tienda.com` además de `madrigueras.app/su-slug`
-  - Validación TXT, certificado vía Caddy on-demand TLS o Cloudflare for SaaS
-- [ ] **PWA** — el storefront instalable + offline read-only
-- [ ] **Tests E2E críticos** — Playwright: registro → crear producto → checkout → verificar pago
-
----
-
-### 🟨 Fase 3 — Crecimiento (cuando haya 50+ tiendas)
-
-- [ ] **AI chatbot** por tienda (modelo `AiChatSession` ya existe) — feature flag `FEATURE_AI_CHATBOT`
-- [ ] **Email marketing** — campañas a `Customer[]` desde `/dashboard/marketing/campañas`
-- [ ] **Programa de referidos**
-- [ ] **App móvil (Expo)** para el owner — recepción de pedidos con notif push nativa
-- [ ] **Integración con métodos de pago automatizados** — pasarela tipo PagaTodo, Tigo Money API
-- [ ] **Marketplace** — `madrigueras.app/explorar` con búsqueda cross-tienda
-- [ ] **Reportes contables** exportables (CSV/Excel)
-
----
-
-## 🛠️ Infraestructura mínima para producción
-
-- [ ] **VPS/Cloud** — DigitalOcean droplet 2GB ($12/mes) o Railway/Fly.io
-  - **Decisión**: ¿hospedar tú o serverless (Vercel)? Para Bolivia → VPS con CDN regional o Vercel + R2/S3 para uploads
-- [ ] **PostgreSQL gestionado** — Neon, Supabase, o RDS (no auto-hospedar al inicio)
-- [ ] **Storage** — Cloudflare R2 (gratis hasta 10GB) o S3
-- [ ] **DNS + SSL** — Cloudflare (gratis), apuntar `madrigueras.app` y `*.madrigueras.app` (wildcard)
-- [ ] **CDN para imágenes** — Cloudflare en frente del bucket
-- [ ] **CI/CD** — GitHub Actions: lint → typecheck → test → build → deploy
-- [ ] **Backups automáticos** de DB diarios, retención 30 días
-- [ ] **Logs centralizados** — Sentry para errores, Axiom/Logtail para HTTP
-- [ ] **Uptime monitoring** — BetterStack o UptimeRobot
+- **Multi-staff**: el rol `CASHIER` existe pero sin UI de invitación
+- **Banners y popups gestionables** desde `/dashboard/marketing`
+- **Plan limits enforcement** (`maxProducts`, `maxOrdersPerMonth`, `maxStaff`)
+- **Custom domains** del owner (`tienda.com` además de `madrigueras.shop/su-slug`)
+- **QR dinámico** (Banco Económico/BCP API si está disponible)
+- **Multi-branch**: una tienda con varias sucursales
+- **AI Chatbot por tienda** (modelo `AiChatSession` ya existe)
+- **App móvil Expo** para owners
+- **Marketplace** `madrigueras.shop/explorar` con búsqueda cross-tienda
+- **Reportes contables** exportables (CSV/Excel)
+- **Service worker** para PWA offline-read
 
 ---
 
 ## 📋 Setup en otra computadora
 
-Cuando llegues a la otra compu (Linux/Mac/otra Win):
-
 ```bash
-git clone https://github.com/AndreeAng/madriguerashop.git
-cd madriguerashop/nibble
+git clone <repo>
+cd madrigueras/nibble
 cp .env.example .env
 # Llenar: DATABASE_URL, NEXTAUTH_SECRET (openssl rand -base64 32),
-#         SMTP_*, SEED_SUPER_ADMIN_EMAIL, SEED_SUPER_ADMIN_PASSWORD
+#         APP_URL, NEXTAUTH_URL, SEED_SUPER_ADMIN_EMAIL/PASSWORD
 npm install
 npm run db:generate
-npm run db:push       # primera vez (crea tablas)
-npm run db:seed       # super admin + tienda demo
+npm run db:deploy        # primera vez en prod (no db:push)
+npm run db:seed          # opcional, para tener tiendas demo
 npm run dev
 ```
 
-App en `http://localhost:3000`. Login del super admin con las credenciales del `.env`.
-
 ---
 
-## 🎯 Decisiones pendientes que solo TÚ puedes tomar
+## 🎯 Hoja de ruta del lanzamiento
 
-> Estas no son tareas de código — son **decisiones de producto** que bloquean la Fase 1.
+**Día 1 (vos)** — decisiones rápidas:
+- Comprar dominio
+- Decidir hosting (VPS recomendado)
+- Confirmar pricing
 
-1. **Pricing real** — ¿cuánto cobrarás por mes/año por plan? Hoy `Plan` está vacío en seed. Sugerencia para Bolivia:
-   - Básico: Bs 99/mes (50 productos, 100 pedidos/mes)
-   - Pro: Bs 199/mes (sin límite, dynamic QR, analytics)
-   - Negocio: Bs 399/mes (multi-branch, AI chatbot, custom CSS)
-2. **QR estático tuyo** — necesitás *uno* (QR Simple desde tu banco) para que los clientes te paguen el SaaS. Subilo a `/admin/settings`.
-3. **Dominio comercial** — `madrigueras.app`, `madriguerashop.com`, otro? Esto define el `APP_URL` final.
-4. **Hosting** — ¿VPS propio (más barato, más trabajo) o Vercel + Neon (más caro, cero ops)?
-5. **Marca de email** — `no-reply@madrigueras.app`. Para SMTP: Brevo (gratis 300/día) o Resend ($20/mes 50k).
-6. **Política de cancelación / reembolso** — necesaria para Términos y Condiciones.
-7. **Términos y Privacidad** — bloquea el registro legalmente. Genera con Termly o un abogado local.
-8. **Período de prueba** — hoy `trialEndsAt = now() + 14d` por convención. ¿Confirmás 14 días gratis?
+**Día 2-3 (vos + abogado)** — entidad legal:
+- Iniciar trámite S.R.L.
+- Mientras tanto, crear cuenta Brevo
 
----
+**Semana 2-3** — infra:
+- Contratar VPS, setup nginx + systemd
+- Domain DNS apuntado
+- SMTP funcionando
+- Subir QR
+- Sentry configurado
 
-## ⚠️ Bloqueadores legales/operativos
+**Semana 3-4** — primer cliente real:
+- Demo a un dueño (ej. una pizzería conocida)
+- Onboarding manual asistido
+- Iterar feedback
 
-- [ ] **Facturación electrónica Bolivia** — si emitís facturas formales, integración con Impuestos Nacionales (SIAT). MVP puede operar con recibos simples mientras se factura por separado.
-- [ ] **Protección de datos** — Bolivia tiene Ley 164 (telecomunicaciones) y normas sectoriales; recolectás teléfono + dirección de clientes finales: necesitás política de privacidad clara.
-- [ ] **Contratos con clientes** — Términos del SaaS (tu acuerdo con el dueño de la tienda) ≠ Términos de cada storefront (acuerdo del owner con sus compradores).
+**Mes 2-3 (paralelo)** — facturación electrónica:
+- Tramitar SFVL ante SIN
+- Implementar siguiendo el SKILL.md
+- Pasar etapas de prueba
 
----
-
-## 🧭 Próximo paso recomendado
-
-**No empezás por todo a la vez.** Orden sugerido para Fase 1:
-
-1. **Onboarding + Settings tienda** (1.1) → ya hay un cliente real con su tienda en DB
-2. **CRUD productos + storage** (1.2) → el cliente puede llenar su catálogo
-3. **Storefront real** (1.1 último ítem) → el cliente comparte su link y la gente *ve* la tienda
-4. **Pedidos end-to-end** (1.3) → empieza a recibir pedidos
-5. **Billing manual** (1.5) → empezás a cobrar
-6. Hardening (1.7) en paralelo desde el día 1
-
-Cuando puedas demostrarle a un dueño de wings/pizza/etc. los pasos 1-4 funcionando, ya tenés un producto vendible.
+**Mes 4+** — escala:
+- Phase 2 features según demanda
+- Marketing + crecimiento

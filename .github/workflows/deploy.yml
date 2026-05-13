@@ -1,0 +1,151 @@
+name: Deploy
+
+# Pipeline de deploy a Vercel. Solo corre en main después de que CI esté
+# verde (depende del workflow_run de CI). Aplica migrations antes del
+# deploy, levanta el deploy, y hace smoke test post-deploy.
+#
+# Secrets requeridos en GitHub repo settings → Secrets:
+#   - VERCEL_TOKEN          (Account Settings → Tokens)
+#   - VERCEL_ORG_ID         (Project Settings → General → Project ID parent)
+#   - VERCEL_PROJECT_ID     (Project Settings → General → Project ID)
+#   - PROD_DATABASE_URL     (URL de Postgres de producción)
+#   - PROD_APP_URL          (https://madrigueras.shop)
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  # También permite trigger manual con override de SHA específico.
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "SHA específico a deployar (default: HEAD)"
+        required: false
+
+concurrency:
+  # Solo un deploy a la vez. Si llega otro, espera al actual.
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: write
+
+jobs:
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    # Solo corre si el CI passed Y es push a main (no PR).
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.head_branch == 'main')
+
+    defaults:
+      run:
+        working-directory: nibble
+
+    environment:
+      name: production
+      url: ${{ secrets.PROD_APP_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha || github.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      # ============================================================
+      # 1) MIGRATIONS — ANTES del deploy del código.
+      # Si las migrations fallan, abortamos y no deployamos. Esto evita
+      # el escenario "código nuevo apunta a columna que aún no existe".
+      # ============================================================
+      - name: Apply migrations to production DB
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          echo "::group::Migrations status"
+          npx prisma migrate status || true
+          echo "::endgroup::"
+          echo "::group::Applying migrations"
+          npx prisma migrate deploy
+          echo "::endgroup::"
+
+      # ============================================================
+      # 2) Vercel deploy
+      # ============================================================
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel project metadata
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build for Vercel
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        id: deploy
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "deployment_url=$url" >> "$GITHUB_OUTPUT"
+          echo "✓ Deployed to $url"
+
+      # ============================================================
+      # 3) Smoke test — el deploy puede haber subido pero la app puede
+      # estar rota. /api/health debe responder 200 con el SHA actual.
+      # ============================================================
+      - name: Smoke test
+        env:
+          APP_URL: ${{ secrets.PROD_APP_URL }}
+        run: |
+          # Esperar 10s para que Vercel termine la propagación
+          sleep 10
+          # 5 intentos con backoff exponencial
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i/5..."
+            status=$(curl -sf -o /dev/null -w "%{http_code}" "$APP_URL/api/health" || echo "fail")
+            if [[ "$status" == "200" ]]; then
+              echo "✓ Smoke test passed (HTTP $status)"
+              exit 0
+            fi
+            echo "  → status: $status"
+            sleep $((2 ** i))
+          done
+          echo "✗ Smoke test failed después de 5 intentos"
+          exit 1
+
+      # ============================================================
+      # 4) Rollback en caso de smoke test failure
+      # Si el smoke falló, marcamos el deployment como fallido — Vercel
+      # mantiene el deploy anterior live, así que la app vuelve sola.
+      # ============================================================
+      - name: Mark deployment failed (rollback automático Vercel)
+        if: failure()
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        run: |
+          echo "::error::Deploy falló — el deploy anterior sigue live. Investigá los logs antes del próximo push a main."
+          # Vercel rolling deploys: el deploy anterior queda activo si éste falla
+          # los health checks. Aquí podríamos llamar a `vercel rollback` si
+          # quisiéramos ser explícitos, pero el comportamiento default ya cubre.

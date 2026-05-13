@@ -1,8 +1,8 @@
 "use client";
 
-import { Plus, Star, Flame } from "lucide-react";
+import { CalendarClock, Plus, Star, Flame } from "lucide-react";
 import Image from "next/image";
-import type { MockProduct } from "@/lib/mock/products";
+import type { ProductView } from "@/lib/storefront/types";
 import { formatBob } from "@/lib/utils";
 
 const badgeStyles: Record<string, string> = {
@@ -23,8 +23,8 @@ export function ProductCard({
   onOpen,
   variant = "default",
 }: {
-  product: MockProduct;
-  onOpen?: (product: MockProduct) => void;
+  product: ProductView;
+  onOpen?: (product: ProductView) => void;
   variant?: Variant;
 }) {
   const discount =
@@ -93,7 +93,11 @@ export function ProductCard({
               aria-hidden
               className="grid size-9 place-items-center rounded-full bg-[color:var(--color-bark-900)] text-white transition-all duration-200 group-hover:scale-110 group-hover:bg-[color:var(--color-amber-500)] group-active:scale-95"
             >
-              <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
+              {product.isBookable ? (
+                <CalendarClock className="size-4 transition-transform duration-200 group-hover:scale-110" />
+              ) : (
+                <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
+              )}
             </span>
           </div>
         </div>
@@ -152,7 +156,9 @@ export function ProductCard({
           </div>
         )}
 
-        {isHero && (
+        {/* "#1 más vendido" solo cuando el producto está realmente marcado
+            como best seller; antes se mostraba en cualquier hero, mintiendo. */}
+        {isHero && product.badge === "best" && (
           <div className="absolute bottom-3 right-3 hidden rounded-full bg-white/95 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-bark-900)] shadow-pill backdrop-blur md:inline-flex">
             <Star className="mr-1 size-3 fill-[color:var(--color-amber-500)] text-[color:var(--color-amber-500)]" />
             #1 más vendido

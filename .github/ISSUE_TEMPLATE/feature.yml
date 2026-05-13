@@ -1,0 +1,56 @@
+name: ✨ Feature request
+description: Propuesta concreta de mejora o feature nueva.
+title: "[feature] "
+labels: [feature, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Para ideas más abiertas, abrí una Discusión en su lugar.
+        Las features acá se asumen como **propuestas concretas con problema, usuario y solución**.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problema a resolver
+      description: ¿Qué problema actual sufre el usuario? Sé específico — quién, cuándo, qué pierde.
+      placeholder: Ej. "Los dueños de tienda que tienen >50 pedidos por día pierden visibilidad sobre cuántos están sin entregar — hoy /dashboard/pedidos solo muestra los 100 más recientes."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Solución propuesta
+      description: Tu mejor idea actual. No necesita ser final — sirve para arrancar la discusión.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que consideraste
+      description: Si hay otras formas de resolver el mismo problema, listarlas.
+
+  - type: dropdown
+    id: who
+    attributes:
+      label: A quién beneficia
+      multiple: true
+      options:
+        - "Dueños de tienda (merchant)"
+        - "Cajeros / staff"
+        - "Clientes finales"
+        - "Super admin (SaaS ops)"
+        - "Devs / mantenimiento"
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Prioridad sugerida
+      options:
+        - "P0 — bloqueante para próximo release"
+        - "P1 — debería estar en el roadmap inmediato"
+        - "P2 — nice-to-have, lo agarramos cuando podamos"
+        - "P3 — backlog largo plazo"
+      default: 2

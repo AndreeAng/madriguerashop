@@ -5,13 +5,30 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { ensureGuestToken, readGuestToken } from "@/lib/cart/cookies";
 import { getStoreBySlug } from "@/lib/tenant/resolve";
-import type { Cart, CartItem, Product, ProductVariant } from "@prisma/client";
+import {
+  isProductAvailableNow,
+  isStoreOpenNow,
+} from "@/lib/storefront/availability";
+import type { Cart, CartItem, ProductVariant } from "@prisma/client";
 
 // ============== Types ==============
 
-export type CartLine = CartItem & {
-  product: Pick<Product, "id" | "name" | "slug" | "basePrice">;
-  variant: Pick<ProductVariant, "id" | "name" | "price"> | null;
+// El snapshot del cart cruza la frontera Server→Client (CheckoutForm,
+// StorefrontHeader). Prisma `Decimal` NO es serializable por RSC, así que
+// los precios viven como `number` ya convertidos en server. No extender
+// `CartItem` crudo de Prisma — eso reintroduce el Decimal por la puerta
+// de atrás.
+export type CartLine = {
+  id: string;
+  cartId: string;
+  productId: string;
+  variantId: string | null;
+  quantity: number;
+  notes: string | null;
+  unitPrice: number;
+  createdAt: Date;
+  product: { id: string; name: string; slug: string; basePrice: number };
+  variant: { id: string; name: string; price: number | null } | null;
   lineTotal: number;
 };
 
@@ -24,7 +41,11 @@ export type CartSnapshot = {
   itemCount: number;
 };
 
-const CART_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 días
+// Alineado con la TTL de `nibble_guest_token` (30 días) para que el cliente
+// que vuelve día 8-29 con la cookie intacta encuentre su carrito en DB.
+// Antes el carrito expiraba a 7d y la cookie a 30d → mismatch silencioso:
+// la UI mostraba carrito vacío sin mensaje.
+const CART_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 días
 
 // ============== Helpers internos ==============
 
@@ -70,39 +91,57 @@ async function buildSnapshot(
   cart: CartWithItems,
   storeSlug: string,
 ): Promise<CartSnapshot> {
-  // Fetch product info para todos los items en una sola query
+  // Fetch product info para todos los items en una sola query.
+  // Filtramos por storeId para aislamiento multi-tenant: si por cualquier
+  // inconsistencia un CartItem apunta a un productId de OTRA tienda, no
+  // queremos materializar ese producto en el snapshot ni cobrarlo.
   const productIds = Array.from(new Set(cart.items.map((i) => i.productId)));
   const products = productIds.length
     ? await db.product.findMany({
-        where: { id: { in: productIds } },
+        where: { id: { in: productIds }, storeId: cart.storeId },
         select: { id: true, name: true, slug: true, basePrice: true },
       })
     : [];
   const productMap = new Map(products.map((p) => [p.id, p]));
 
   let subtotal = 0;
-  const lines: CartLine[] = cart.items.map((item) => {
+  // Productos eliminados o de otra tienda → la línea se omite del snapshot.
+  // El CartItem queda huérfano en DB pero no se cobra ni se muestra al cliente.
+  const lines: CartLine[] = [];
+  for (const item of cart.items) {
     const product = productMap.get(item.productId);
-    if (!product) {
-      // Producto eliminado — devolvemos placeholder y subtotal=0 para esa línea
-      return {
-        ...item,
-        product: { id: item.productId, name: "(producto eliminado)", slug: "", basePrice: item.unitPrice },
-        variant: item.variant,
-        lineTotal: 0,
-      };
-    }
-    const lineTotal = Number(item.unitPrice) * item.quantity;
+    if (!product) continue;
+    const unitPrice = Number(item.unitPrice);
+    const variant = item.variant
+      ? {
+          id: item.variant.id,
+          name: item.variant.name,
+          price: item.variant.price !== null ? Number(item.variant.price) : null,
+        }
+      : null;
+    const lineTotal = unitPrice * item.quantity;
     subtotal += lineTotal;
-    return {
-      ...item,
-      product,
-      variant: item.variant,
+    lines.push({
+      id: item.id,
+      cartId: item.cartId,
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: item.quantity,
+      notes: item.notes,
+      unitPrice,
+      createdAt: item.createdAt,
+      product: {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        basePrice: Number(product.basePrice),
+      },
+      variant,
       lineTotal,
-    };
-  });
+    });
+  }
 
-  const itemCount = cart.items.reduce((sum, i) => sum + i.quantity, 0);
+  const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   return {
     cartId: cart.id,
@@ -130,12 +169,39 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   const store = await getStoreBySlug(data.storeSlug);
   if (!store) throw new Error("Tienda no encontrada");
 
-  // Validar producto y precio (no confiamos del cliente)
-  const product = await db.product.findFirst({
-    where: { id: data.productId, storeId: store.id, isActive: true },
-    include: { variants: data.variantId ? { where: { id: data.variantId } } : false },
-  });
+  // Validar producto y precio (no confiamos del cliente). Traemos también
+  // `storeHours` para validar que la tienda esté abierta — antes el client
+  // ocultaba el botón "Agregar" fuera de horario, pero un cliente con dev
+  // tools podía submitear igual y el carrito aceptaba el ítem.
+  const now = new Date();
+  const [product, storeHours] = await Promise.all([
+    db.product.findFirst({
+      where: { id: data.productId, storeId: store.id, isActive: true },
+      include: {
+        variants: data.variantId ? { where: { id: data.variantId } } : false,
+      },
+    }),
+    db.storeHours.findMany({ where: { storeId: store.id } }),
+  ]);
   if (!product) throw new Error("Producto no disponible");
+
+  // Schedule del producto (combos del almuerzo, especiales del finde).
+  // El SRS dice que un producto fuera de horario aparece atenuado en el
+  // storefront, pero el cliente NO debe poder agregarlo al carrito.
+  if (!isProductAvailableNow(product, now)) {
+    throw new Error(
+      "Este producto no está disponible en este horario. Volvé en su horario de venta.",
+    );
+  }
+
+  // Tienda cerrada: bloqueamos el "agregar al carrito" para evitar pedidos
+  // a las 4am que el local recibe a la mañana siguiente con productos
+  // perecederos ya descompuestos.
+  if (!isStoreOpenNow(storeHours, now)) {
+    throw new Error(
+      "La tienda está cerrada ahora. Probá agregar al carrito durante el horario de atención.",
+    );
+  }
 
   let unitPrice = Number(product.basePrice);
   let variantId: string | null = null;
@@ -151,28 +217,42 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
 
   const { cart } = await getOrCreateCart(store.id, store.slug);
 
-  // Si ya existe este productId+variantId en el carrito, incrementamos cantidad
-  await db.cartItem.upsert({
+  // Update-or-create manual: el `@@unique([cartId, productId, variantId])`
+  // del schema no actúa cuando `variantId` es NULL (Postgres trata cada
+  // NULL como distinto, salvo NULLS NOT DISTINCT que requiere Pg 15+ y
+  // reescribir la migración). El `upsert` de Prisma necesita un `where`
+  // exacto y pasaba `variantId: ""` que NUNCA matcheaba contra una fila
+  // con `variantId: NULL` — resultado: cada "agregar al carrito" creaba
+  // una fila nueva para productos sin variante. Bug silencioso: carrito
+  // duplicado, total inflado al checkout.
+  //
+  // updateMany atómico primero (idempotente). Solo crea si no había
+  // ninguna fila. Ventana de race teórica con dos requests del MISMO
+  // usuario al mismo instante creando duplicados — extremadamente raro
+  // porque el cliente espera respuesta antes del próximo click.
+  const updated = await db.cartItem.updateMany({
     where: {
-      cartId_productId_variantId: {
-        cartId: cart.id,
-        productId: product.id,
-        variantId: variantId ?? "",
-      },
-    },
-    create: {
       cartId: cart.id,
       productId: product.id,
-      variantId,
-      quantity: data.quantity,
-      notes: data.notes ?? null,
-      unitPrice,
+      variantId: variantId ?? null,
     },
-    update: {
+    data: {
       quantity: { increment: data.quantity },
       notes: data.notes ?? undefined,
     },
   });
+  if (updated.count === 0) {
+    await db.cartItem.create({
+      data: {
+        cartId: cart.id,
+        productId: product.id,
+        variantId,
+        quantity: data.quantity,
+        notes: data.notes ?? null,
+        unitPrice,
+      },
+    });
+  }
 
   // Refresh expiración
   await db.cart.update({
@@ -221,12 +301,7 @@ export async function updateCartItemQuantity(input: z.input<typeof updateQtySche
   return getCartSnapshot(store.slug);
 }
 
-const removeSchema = z.object({
-  storeSlug: z.string().min(1),
-  cartItemId: z.string().min(1),
-});
-
-export async function removeCartItem(input: z.input<typeof removeSchema>) {
+export async function removeCartItem(input: { storeSlug: string; cartItemId: string }) {
   return updateCartItemQuantity({
     storeSlug: input.storeSlug,
     cartItemId: input.cartItemId,

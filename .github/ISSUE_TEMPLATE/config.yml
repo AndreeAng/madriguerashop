@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Pregunta o discusión
+    url: https://github.com/AndreeAng/tienda/discussions
+    about: Para preguntas generales, ideas, o dudas que no son bugs ni features concretos.
+  - name: 🚨 Reportar vulnerabilidad de seguridad
+    url: https://github.com/AndreeAng/tienda/security/advisories/new
+    about: NO abras un issue público. Usá el advisory privado para que tengamos tiempo de patchear antes de que sea visible.

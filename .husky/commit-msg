@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+# Hook commit-msg: valida que el mensaje siga Conventional Commits.
+# Ejemplos válidos:
+#   feat(orders): allow CASHIER to mark IN_DELIVERY
+#   fix(auth): rotate JWT on suspension within 60s
+#   chore(deps): bump prisma to 5.22.0
+#   docs(siat): clarify CUIS refresh flow
+#
+# Si tu commit no matchea, ajustalo y reintentá. El `--no-verify` para emergencias.
+
+# $1 es el path al archivo de mensaje (típicamente .git/COMMIT_EDITMSG)
+# relativo a la raíz del repo. Resolvemos a absoluto ANTES de cambiar de
+# directorio, sino al hacer `cd nibble` la ruta relativa se rompe y
+# commitlint no encuentra el archivo.
+COMMIT_MSG_FILE="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
+
+cd nibble || exit 1
+npx commitlint --edit "$COMMIT_MSG_FILE"

@@ -16,7 +16,7 @@ export function HeroPhoneMock() {
           {/* status bar */}
           <div className="flex items-center justify-between px-5 pb-1 pt-5 text-[10px] font-medium text-[color:var(--color-bark-700)]">
             <span>09:41</span>
-            <span className="font-semibold tracking-wider">nibble.bo/big-bite-wings</span>
+            <span className="font-semibold tracking-wider">madrigueras.shop/big-bite-wings</span>
             <span>5G</span>
           </div>
 

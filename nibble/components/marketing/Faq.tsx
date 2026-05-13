@@ -7,7 +7,7 @@ const FAQ = [
   },
   {
     q: "¿Cobran comisión por cada venta?",
-    a: "Cero. Solo pagas los Bs 500/mes. La plata del cliente entra completa a tu QR — Nibble nunca toca tu dinero.",
+    a: "Cero. Solo pagas los Bs 500/mes. La plata del cliente entra completa a tu QR — Nunca tocamos tu dinero.",
   },
   {
     q: "¿Funciona con QR Simple del BCP, BNB, Ganadero…?",
@@ -27,7 +27,7 @@ const FAQ = [
   },
   {
     q: "¿Hay versión gratis o de prueba?",
-    a: "No. Nibble es de pago desde el primer día — eso nos permite acompañarte de cerca y mantener el servicio rápido para todos. Si quieres ver cómo se ve, mira la tienda de muestra. Para más info, escríbenos por WhatsApp al +591 7220 1700.",
+    a: "No. Madriguera Shop es de pago desde el primer día — eso nos permite acompañarte de cerca y mantener el servicio rápido para todos. Si quieres ver cómo se ve, mira la tienda de muestra. Para más info, escríbenos por WhatsApp al +591 7220 1700.",
   },
 ];
 

@@ -38,7 +38,7 @@ export function MarketingHeader() {
       ].join(" ")}
     >
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5">
-        <Link href="/" aria-label="Nibble inicio" className="-ml-1">
+        <Link href="/" aria-label="Madriguera Shop inicio" className="-ml-1">
           <NibbleLogo />
         </Link>
 
@@ -62,7 +62,7 @@ export function MarketingHeader() {
             Acceder
           </Link>
           <Link
-            href="#precio"
+            href="/registro"
             className="group hidden items-center gap-1.5 rounded-full bg-[color:var(--color-bark-900)] px-4 py-2 text-sm font-medium text-white transition hover:bg-[color:var(--color-bark-700)] md:inline-flex"
           >
             Empezar
@@ -112,7 +112,7 @@ export function MarketingHeader() {
               Acceder
             </Link>
             <Link
-              href="#precio"
+              href="/registro"
               onClick={() => setOpen(false)}
               className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[color:var(--color-bark-900)] px-4 py-3 text-sm font-medium text-white"
             >

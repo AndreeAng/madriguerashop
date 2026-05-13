@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Search, ShoppingBag, User, Menu, MapPin } from "lucide-react";
-import type { MockStore } from "@/lib/mock/stores";
+import Image from "next/image";
+import { ShoppingBag, User, Menu, MapPin } from "lucide-react";
+import type { StoreView } from "@/lib/storefront/types";
 
-export function StorefrontHeader({ store, cartCount = 2 }: { store: MockStore; cartCount?: number }) {
+export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; cartCount?: number }) {
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--line)] glass">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
@@ -16,10 +17,20 @@ export function StorefrontHeader({ store, cartCount = 2 }: { store: MockStore; c
         <Link href={`/${store.slug}`} className="flex items-center gap-2.5">
           <div className="relative">
             <div
-              className="grid size-10 place-items-center rounded-xl text-[13px] font-bold text-white shadow-pill ring-2 ring-white/40"
+              className="grid size-10 place-items-center overflow-hidden rounded-xl text-[13px] font-bold text-white shadow-pill ring-2 ring-white/40"
               style={{ background: store.primaryColor }}
             >
-              {store.logoEmoji}
+              {store.logoUrl ? (
+                <Image
+                  src={store.logoUrl}
+                  alt={`${store.name} logo`}
+                  width={40}
+                  height={40}
+                  className="size-full object-cover"
+                />
+              ) : (
+                store.logoEmoji
+              )}
             </div>
             <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-[color:var(--color-leaf-500)] ring-2 ring-[color:var(--bg)]" />
           </div>
@@ -33,26 +44,8 @@ export function StorefrontHeader({ store, cartCount = 2 }: { store: MockStore; c
           </div>
         </Link>
 
-        <div className="ml-3 hidden flex-1 md:block">
-          <div className="relative max-w-md">
-            <label htmlFor="storefront-search" className="sr-only">
-              Buscar productos
-            </label>
-            <Search
-              aria-hidden
-              className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-[color:var(--muted)]"
-            />
-            <input
-              id="storefront-search"
-              type="search"
-              placeholder="Buscar wings, combos, bebidas…"
-              className="w-full rounded-full border border-[color:var(--line)] bg-[color:var(--card)] py-2.5 pl-10 pr-4 text-sm outline-none transition focus:border-[color:var(--color-amber-400)] focus:bg-white focus:shadow-pill"
-            />
-            <kbd className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded border border-[color:var(--line)] bg-[color:var(--bg)] px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--muted)] lg:block">
-              ⌘K
-            </kbd>
-          </div>
-        </div>
+        {/* Búsqueda removida: el input antes era decorativo (sin onChange ni
+            submit). Volverá cuando exista una ruta /[slug]/search real. */}
 
         <div className="ml-auto flex items-center gap-1.5">
           <Link

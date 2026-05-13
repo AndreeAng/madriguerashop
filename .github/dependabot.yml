@@ -1,0 +1,88 @@
+# Dependabot — actualizaciones automáticas de dependencias.
+# Doc: https://docs.github.com/en/code-security/dependabot
+
+version: 2
+updates:
+  # ============================================================
+  # npm — nibble/
+  # ============================================================
+  - package-ecosystem: npm
+    directory: /nibble
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: America/La_Paz
+    # Máximo de PRs abiertos a la vez para no saturar el feed.
+    open-pull-requests-limit: 5
+    # Agrupar deps relacionadas en un solo PR.
+    groups:
+      next-stack:
+        patterns:
+          - "next"
+          - "next-auth"
+          - "@auth/*"
+          - "react"
+          - "react-dom"
+          - "@types/react*"
+      prisma:
+        patterns:
+          - "prisma"
+          - "@prisma/*"
+      sentry:
+        patterns:
+          - "@sentry/*"
+      lint-test:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+          - "vitest"
+          - "@vitest/*"
+          - "@playwright/test"
+      types:
+        patterns:
+          - "@types/*"
+      tailwind:
+        patterns:
+          - "tailwindcss"
+          - "@tailwindcss/*"
+          - "postcss"
+    # Permite que Dependabot agregue labels y reviewers automáticos.
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(deps)"
+      include: scope
+    # Ignora versiones major en deps críticas — requieren migración manual.
+    ignore:
+      - dependency-name: "next"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "prisma"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@prisma/client"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "next-auth"
+        # NextAuth está en beta — ignorar todo update automático hasta que
+        # haya release estable.
+        versions: ["5.x"]
+
+  # ============================================================
+  # GitHub Actions
+  # ============================================================
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+      day: monday
+      time: "06:00"
+      timezone: America/La_Paz
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "ci"
+    commit-message:
+      prefix: "chore(ci)"

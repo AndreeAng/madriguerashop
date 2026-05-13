@@ -9,10 +9,8 @@ import {
   BarChart3,
   Globe,
   Zap,
-  Sparkles,
   ShieldCheck,
   ChevronRight,
-  Clock,
   Building2,
 } from "lucide-react";
 import { MarketingHeader } from "@/components/marketing/Header";
@@ -40,13 +38,17 @@ const industries = [
     color: "#d97706",
     accent: "bg-[#d97706]/10 text-[#92400e]",
     glyph: "F",
+    sample: "/la-latita",
+    sampleLabel: "La Latita",
   },
   {
     name: "Retail",
-    desc: "Catálogo con filtros, tallas, variantes y zoom. Moda y deporte.",
-    color: "#1e40af",
-    accent: "bg-[#1e40af]/10 text-[#1e3a8a]",
-    glyph: "B",
+    desc: "Catálogo con stock, variantes y combos. Granolas, ropa, accesorios.",
+    color: "#15803d",
+    accent: "bg-[#15803d]/10 text-[#14532d]",
+    glyph: "R",
+    sample: "/nutriarte",
+    sampleLabel: "Nutriarte",
   },
   {
     name: "Ferreterías",
@@ -54,13 +56,17 @@ const industries = [
     color: "#92400e",
     accent: "bg-[#92400e]/10 text-[#78350f]",
     glyph: "T",
+    sample: "/ferreteria-tunari",
+    sampleLabel: "Ferretería Tunari",
   },
   {
     name: "Servicios",
-    desc: "Reservas, cotizas, no vendes productos. Peluquerías, talleres, consultorios.",
+    desc: "Reservas, cotizaciones, no vendes productos. Peluquerías, talleres, consultorios.",
     color: "#be185d",
     accent: "bg-[#be185d]/10 text-[#831843]",
     glyph: "S",
+    sample: "/estudio-clara",
+    sampleLabel: "Estudio Clara",
   },
 ];
 
@@ -105,7 +111,7 @@ export default function HomePage() {
         {/* ── §00 · MASTHEAD ────────────────────────────────────── */}
         <div className="border-b border-[color:var(--line)] bg-[color:var(--bg-elevated)]">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-5 py-2.5 font-mono text-[10px] uppercase tracking-[0.22em] text-[color:var(--muted)] sm:text-[11px]">
-            <span className="text-[color:var(--fg)]">Nibble · No 01</span>
+            <span className="text-[color:var(--fg)]">Madriguera · No 01</span>
             <span className="hidden md:inline">
               Cobertura nacional · 9 departamentos
             </span>
@@ -151,7 +157,7 @@ export default function HomePage() {
                 <div className="flex flex-col gap-5">
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <Link
-                      href="#precio"
+                      href="/registro"
                       className="press group inline-flex items-center justify-center gap-2 rounded-full bg-[color:var(--color-bark-900)] px-7 py-4 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
                     >
                       Empezar por Bs 500/mes
@@ -181,14 +187,15 @@ export default function HomePage() {
         </section>
 
         {/* ── §02 · LIVE TICKER ─────────────────────────────────── */}
+        {/* `role="marquee"` no existe en ARIA — usamos `aria-hidden` porque
+            es decorativo; el texto no aporta info de navegación al SR. */}
         <div
-          role="marquee"
-          aria-label="Métricas de la red Nibble"
+          aria-hidden="true"
           className="overflow-hidden border-y border-[color:var(--color-bark-700)] bg-[color:var(--color-bark-900)] py-4 text-[color:var(--color-cream-50)]"
         >
           <div className="flex animate-marquee whitespace-nowrap font-mono text-sm">
             {[...tickerItems, ...tickerItems].map((item, i) => (
-              <span key={i} className="flex items-center gap-3 px-8">
+              <span key={`${i}-${item}`} className="flex items-center gap-3 px-8">
                 <span aria-hidden="true" className="size-1.5 rounded-full bg-[color:var(--color-amber-400)]" />
                 <span className="text-[color:var(--color-cream-100)]">{item}</span>
               </span>
@@ -211,7 +218,7 @@ export default function HomePage() {
                   <span className="font-display-wonk">a ninguna otra.</span>
                 </h2>
                 <p className="mt-7 max-w-md text-lg leading-[1.55] text-[color:var(--fg-soft)]">
-                  Cada Nibble nace diseñada para tu rubro. Una pizzería no se ve como
+                  Cada tienda nace diseñada para tu rubro. Una pizzería no se ve como
                   una ferretería; un food truck no se atiende como una peluquería.
                   Tu tienda nace tuya — no de un template global pintado de azul.
                 </p>
@@ -262,7 +269,7 @@ export default function HomePage() {
                 </h2>
                 <p className="mt-7 max-w-md text-[color:var(--fg-soft)]">
                   Nadie en Bolivia espera un checkout con tarjeta de crédito.
-                  Nibble respeta ese flujo — solo le pone una capa profesional encima.
+                  Nuestra plataforma respeta ese flujo — solo le pone una capa profesional encima.
                 </p>
               </div>
 
@@ -271,7 +278,7 @@ export default function HomePage() {
                   {
                     k: "01",
                     title: "El cliente abre tu tienda",
-                    desc: "Tu link nibble.bo/tutienda. Ve productos, fotos, precios — todo bonito, sin instalar nada.",
+                    desc: "Tu link madrigueras.shop/tutienda. Ve productos, fotos, precios — todo bonito, sin instalar nada.",
                   },
                   {
                     k: "02",
@@ -459,26 +466,33 @@ export default function HomePage() {
               {/* List of remaining industries */}
               <ul className="divide-y divide-[color:var(--line)] rounded-3xl border border-[color:var(--line-strong)] bg-[color:var(--card)] overflow-hidden">
                 {industries.slice(1).map((v) => (
-                  <li
-                    key={v.name}
-                    className="group flex items-center gap-4 px-6 py-5 transition-colors duration-200 ease-[var(--ease-out-quart)] hover:bg-[color:var(--card-soft)]"
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`grid size-11 place-items-center shrink-0 rounded-xl text-base font-bold ${v.accent}`}
+                  <li key={v.name}>
+                    <Link
+                      href={v.sample ?? "/tiendas"}
+                      className="group flex items-center gap-4 px-6 py-5 transition-colors duration-200 ease-[var(--ease-out-quart)] hover:bg-[color:var(--card-soft)]"
                     >
-                      {v.glyph}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-display text-xl leading-tight">{v.name}</h3>
-                      <p className="mt-1 text-sm leading-relaxed text-[color:var(--fg-soft)]">
-                        {v.desc}
-                      </p>
-                    </div>
-                    <ChevronRight
-                      aria-hidden="true"
-                      className="size-4 shrink-0 text-[color:var(--muted)] transition-[color,transform] duration-200 ease-[var(--ease-out-quart)] group-hover:translate-x-0.5 group-hover:text-[color:var(--fg)]"
-                    />
+                      <span
+                        aria-hidden="true"
+                        className={`grid size-11 place-items-center shrink-0 rounded-xl text-base font-bold ${v.accent}`}
+                      >
+                        {v.glyph}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-display text-xl leading-tight">{v.name}</h3>
+                        <p className="mt-1 text-sm leading-relaxed text-[color:var(--fg-soft)]">
+                          {v.desc}
+                        </p>
+                        {v.sampleLabel && (
+                          <p className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
+                            Ver demo: {v.sampleLabel} →
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight
+                        aria-hidden="true"
+                        className="size-4 shrink-0 text-[color:var(--muted)] transition-[color,transform] duration-200 ease-[var(--ease-out-quart)] group-hover:translate-x-0.5 group-hover:text-[color:var(--fg)]"
+                      />
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -554,7 +568,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-[color:var(--color-amber-300)]">
-                      Nibble dice
+                      Madriguera dice
                     </p>
                     <p className="mt-2 font-display text-2xl leading-tight md:text-3xl">
                       {v.nibble}
@@ -566,9 +580,9 @@ export default function HomePage() {
             </div>
 
             <p className="mt-10 max-w-3xl text-[color:var(--color-bark-100)] md:text-lg">
-              Nibble es el único hecho de cero para tu negocio: cobras en bolivianos, vives en{" "}
+              Madriguera Shop es el único hecho de cero para tu negocio: cobras en bolivianos, vives en{" "}
               <code className="rounded bg-[color:var(--color-bark-800)] px-1.5 py-0.5 font-mono text-xs">
-                nibble.bo/tutienda
+                madrigueras.shop/tutienda
               </code>
               , y el soporte responde por WhatsApp desde Cochabamba.
             </p>
@@ -631,7 +645,7 @@ export default function HomePage() {
                 </ul>
                 <Link
                   href={`https://wa.me/${SUPPORT_WA}?text=${encodeURIComponent(
-                    "Hola, quiero comenzar el plan mensual de Nibble.",
+                    "Hola, quiero comenzar el plan mensual de Madriguera Shop.",
                   )}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -692,7 +706,7 @@ export default function HomePage() {
                   </ul>
                   <Link
                     href={`https://wa.me/${SUPPORT_WA}?text=${encodeURIComponent(
-                      "Hola, quiero comenzar el plan anual de Nibble.",
+                      "Hola, quiero comenzar el plan anual de Madriguera Shop.",
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"

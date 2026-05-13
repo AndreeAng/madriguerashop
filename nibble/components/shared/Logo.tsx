@@ -32,11 +32,11 @@ export function NibbleLogo({ className, mono = false }: { className?: string; mo
       <NibbleMark className="h-7 w-7" />
       <span
         className={cn(
-          "font-display text-xl tracking-tight",
+          "font-display text-lg tracking-tight",
           mono ? "text-current" : "text-[color:var(--fg)]"
         )}
       >
-        nibble
+        madriguera<span className="text-[color:var(--color-amber-500)]">·</span>shop
       </span>
     </span>
   );

@@ -4,9 +4,18 @@
  */
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^\+?591\d{8}$/;
+/**
+ * Regex canónica de teléfono boliviano. Acepta `+591XXXXXXXX` o
+ * `591XXXXXXXX` (8 dígitos posteriores al código de país).
+ *
+ * Se exporta para que los schemas Zod de las server actions reutilicen
+ * esta misma fuente (orders, bookings, onboarding, admin-stores) en lugar
+ * de duplicar el literal. Antes había 5 copias que podían desincronizarse.
+ */
+export const PHONE_BO_RE = /^\+?591\d{8}$/;
+const PHONE_RE = PHONE_BO_RE;
 
-export type IdentifierKind = "email" | "phone" | "unknown";
+type IdentifierKind = "email" | "phone" | "unknown";
 
 /**
  * Normaliza un identifier. Retorna `{ kind, value }` donde value es la versión canónica.
@@ -53,4 +62,16 @@ export function normalizeIdentifier(input: string): { kind: IdentifierKind; valu
 export function isValidIdentifier(input: string): boolean {
   const { kind } = normalizeIdentifier(input);
   return kind === "email" || kind === "phone";
+}
+
+/**
+ * Normaliza un número de teléfono boliviano a `+591XXXXXXXX`. Acepta los
+ * mismos formatos que `normalizeIdentifier` para teléfonos. Útil para
+ * server actions que necesitan persistir el teléfono (orders, customers).
+ */
+export function normalizePhoneBO(raw: string): string {
+  const stripped = raw.replace(/[^\d+]/g, "");
+  if (/^\d{8}$/.test(stripped)) return `+591${stripped}`;
+  if (/^591\d{8}$/.test(stripped)) return `+${stripped}`;
+  return stripped.startsWith("+") ? stripped : `+${stripped}`;
 }
