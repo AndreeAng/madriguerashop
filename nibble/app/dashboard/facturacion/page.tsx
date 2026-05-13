@@ -42,10 +42,7 @@ export default async function FacturacionPage() {
 
   return (
     <>
-      <DashboardHeader
-        storeSlug={store.slug}
-        notificationDot={open.length > 0}
-      />
+      <DashboardHeader storeSlug={store.slug} />
 
       <main className="p-6 lg:p-8">
           <div>

@@ -75,20 +75,30 @@ export default async function ClientesPage({
       />
 
       <main className="p-6 lg:p-8">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Tu base
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Clientes</h1>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
-              {totalCustomers} {totalCustomers === 1 ? "cliente" : "clientes"} ·{" "}
-              {recurrentCount} recurrente{recurrentCount === 1 ? "" : "s"}
-              {q && total !== totalCustomers && (
-                <span className="ml-1.5 text-[color:var(--color-amber-600)]">
-                  · {total} {total === 1 ? "match" : "matches"} para &ldquo;{q}&rdquo;
-                </span>
-              )}
-            </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
+                Tu base
+              </p>
+              <h1 className="font-display mt-1 text-3xl">Clientes</h1>
+              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                {totalCustomers} {totalCustomers === 1 ? "cliente" : "clientes"} ·{" "}
+                {recurrentCount} recurrente{recurrentCount === 1 ? "" : "s"}
+                {q && total !== totalCustomers && (
+                  <span className="ml-1.5 text-[color:var(--color-amber-600)]">
+                    · {total} {total === 1 ? "match" : "matches"} para &ldquo;{q}&rdquo;
+                  </span>
+                )}
+              </p>
+            </div>
+            {/* Download endpoint: `<a>` con full reload, NO `<Link>`. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
+              href="/api/export/customers"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--bg)]"
+            >
+              ↓ Exportar CSV
+            </a>
           </div>
 
           <div className="mt-8 overflow-x-auto rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)]">

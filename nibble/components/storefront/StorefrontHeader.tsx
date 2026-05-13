@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, User, Menu, MapPin } from "lucide-react";
+import { ShoppingBag, User, Menu, MapPin, Search } from "lucide-react";
 import type { StoreView } from "@/lib/storefront/types";
 
 export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; cartCount?: number }) {
@@ -44,10 +44,25 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
           </div>
         </Link>
 
-        {/* Búsqueda removida: el input antes era decorativo (sin onChange ni
-            submit). Volverá cuando exista una ruta /[slug]/search real. */}
+        {/* Búsqueda: link al search page con form GET. Antes era un input
+            decorativo (sin onChange ni submit). Ahora delega al server. */}
+        <Link
+          href={`/${store.slug}/buscar`}
+          aria-label={`Buscar en ${store.name}`}
+          className="ml-2 hidden h-10 flex-1 items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3 text-sm text-[color:var(--muted)] transition hover:border-[color:var(--color-bark-300)] md:inline-flex md:max-w-md"
+        >
+          <Search className="size-4" />
+          <span>Buscar productos…</span>
+        </Link>
 
         <div className="ml-auto flex items-center gap-1.5">
+          <Link
+            href={`/${store.slug}/buscar`}
+            aria-label="Buscar"
+            className="grid size-10 place-items-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--card-soft)] md:hidden"
+          >
+            <Search className="size-5" />
+          </Link>
           <Link
             href="/login"
             className="hidden h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-[color:var(--fg-soft)] transition hover:bg-[color:var(--card-soft)] md:inline-flex"

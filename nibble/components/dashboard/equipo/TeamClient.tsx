@@ -260,12 +260,10 @@ function ResetPasswordDialog({
   onClose: () => void;
 }) {
   const [state, action] = useActionState(resetCashierPasswordAction, initialReset);
-  const fe = state.fieldErrors ?? {};
 
   useEffect(() => {
     if (state.ok) {
-      // Cerramos tras 2.5s para que el owner alcance a ver el mensaje OK.
-      const t = setTimeout(onClose, 2500);
+      const t = setTimeout(onClose, 3000);
       return () => clearTimeout(t);
     }
   }, [state, onClose]);
@@ -285,13 +283,14 @@ function ResetPasswordDialog({
         <input type="hidden" name="userId" value={cashier.id} />
         <h2 className="font-display text-lg">Resetear contraseña</h2>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          De <strong className="text-[color:var(--fg)]">{cashier.fullName}</strong>.
-          La nueva contraseña reemplaza la anterior; comunicásela vos.
+          Le enviamos un link de reseteo por email a{" "}
+          <strong className="text-[color:var(--fg)]">{cashier.fullName}</strong>.
+          El cajero define su nueva contraseña — vos no la ves.
         </p>
 
         {state.ok && (
           <p className="mt-3 rounded-lg bg-[color:var(--color-leaf-50)] px-3 py-2 text-xs text-[color:var(--color-leaf-700)]">
-            ✓ Contraseña actualizada.
+            ✓ Link enviado. Avisale al cajero que revise su email (válido 1 hora).
           </p>
         )}
         {state.error && (
@@ -303,26 +302,19 @@ function ResetPasswordDialog({
           </p>
         )}
 
-        <div className="mt-4">
-          <Field
-            label="Nueva contraseña"
-            name="newPassword"
-            type="password"
-            placeholder="Mínimo 8 caracteres"
-            error={fe.newPassword}
-            required
-          />
-        </div>
-
         <div className="mt-6 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
             className="rounded-full px-4 py-2 text-sm text-[color:var(--muted)] hover:text-[color:var(--fg)]"
           >
-            Cerrar
+            {state.ok ? "Cerrar" : "Cancelar"}
           </button>
-          <SubmitButton shape="pill" size="sm">Cambiar</SubmitButton>
+          {!state.ok && (
+            <SubmitButton shape="pill" size="sm" pendingLabel="Enviando…">
+              Enviar link
+            </SubmitButton>
+          )}
         </div>
       </form>
     </div>

@@ -105,7 +105,8 @@ export default async function OrdersPage({
     <>
       <DashboardHeader
         storeSlug={store.slug}
-        notificationDot={awaitingCount > 0}
+        initialActive={activeCount}
+        initialAwaiting={awaitingCount}
         leftSlot={
           <form action="/dashboard/pedidos" className="relative w-72 max-w-full">
             <input type="hidden" name="filter" value={filter} />
@@ -121,14 +122,25 @@ export default async function OrdersPage({
       />
 
       <main className="p-6 lg:p-8">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Operación
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Pedidos</h1>
-            <p className="mt-1 text-sm text-[color:var(--muted)]">
-              {activeCount} activos · {awaitingCount} con pago por verificar
-            </p>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
+                Operación
+              </p>
+              <h1 className="font-display mt-1 text-3xl">Pedidos</h1>
+              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                {activeCount} activos · {awaitingCount} con pago por verificar
+              </p>
+            </div>
+            {/* Download endpoints son `<a>` con full reload, NO `<Link>`:
+                soft nav de Next interceptaría el download. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+            <a
+              href="/api/export/orders"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--bg)]"
+            >
+              ↓ Exportar CSV
+            </a>
           </div>
 
           {/* Filter tabs */}
