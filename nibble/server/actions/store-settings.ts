@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { normalizePhoneBO, PHONE_BO_RE } from "@/lib/auth/identifiers";
+import { audit } from "@/lib/audit/log";
 
 // ============== Tipos comunes ==============
 
@@ -113,7 +114,7 @@ export async function updateIdentityAction(
   _prev: ActionState<IdentityField>,
   formData: FormData,
 ): Promise<ActionState<IdentityField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const raw = readForm(formData, [...identityFields]);
 
   const parsed = identitySchema.safeParse(raw);
@@ -147,6 +148,12 @@ export async function updateIdentityAction(
   });
 
   invalidateStore(store.slug);
+  await audit({
+    action: "store.settings_changed",
+    actorId: userId,
+    storeId,
+    metadata: { section: "identity" },
+  });
   return { ok: true };
 }
 
@@ -181,7 +188,7 @@ export async function updatePaymentsAction(
   _prev: ActionState<PaymentsField>,
   formData: FormData,
 ): Promise<ActionState<PaymentsField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const raw = {
     qrImageUrl: String(formData.get("qrImageUrl") ?? ""),
     qrInstructions: String(formData.get("qrInstructions") ?? ""),
@@ -206,6 +213,12 @@ export async function updatePaymentsAction(
   });
 
   invalidateStore(store.slug);
+  await audit({
+    action: "store.settings_changed",
+    actorId: userId,
+    storeId,
+    metadata: { section: "payments" },
+  });
   return { ok: true };
 }
 
@@ -240,7 +253,7 @@ export async function updateDeliveryAction(
   _prev: ActionState<DeliveryField>,
   formData: FormData,
 ): Promise<ActionState<DeliveryField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const raw = {
     deliveryEnabled: (formData.get("deliveryEnabled") ? "on" : "") as "on" | "",
     pickupEnabled: (formData.get("pickupEnabled") ? "on" : "") as "on" | "",
@@ -273,6 +286,12 @@ export async function updateDeliveryAction(
   });
 
   invalidateStore(store.slug);
+  await audit({
+    action: "store.settings_changed",
+    actorId: userId,
+    storeId,
+    metadata: { section: "delivery" },
+  });
   return { ok: true };
 }
 
@@ -307,7 +326,7 @@ export async function updateHoursAction(
   _prev: ActionState<HoursField>,
   formData: FormData,
 ): Promise<ActionState<HoursField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
 
   const fieldErrors: Partial<Record<HoursField, string>> = {};
   const validated: { dayOfWeek: number; openTime: string; closeTime: string; isClosed: boolean }[] = [];
@@ -350,6 +369,12 @@ export async function updateHoursAction(
 
   const storeSlug = await getStoreSlugById(storeId);
   if (storeSlug) invalidateStore(storeSlug);
+  await audit({
+    action: "store.settings_changed",
+    actorId: userId,
+    storeId,
+    metadata: { section: "hours" },
+  });
   return { ok: true };
 }
 
@@ -369,7 +394,7 @@ export async function updateSeoAction(
   _prev: ActionState<SeoField>,
   formData: FormData,
 ): Promise<ActionState<SeoField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const raw = readForm(formData, [...seoFields]);
 
   const parsed = seoSchema.safeParse(raw);
@@ -389,5 +414,11 @@ export async function updateSeoAction(
   });
 
   invalidateStore(store.slug);
+  await audit({
+    action: "store.settings_changed",
+    actorId: userId,
+    storeId,
+    metadata: { section: "seo" },
+  });
   return { ok: true };
 }

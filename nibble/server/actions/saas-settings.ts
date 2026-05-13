@@ -10,6 +10,10 @@ import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import type { ActionState } from "./store-settings";
 
+// `featureDynamicQr`, `featureAiChatbot`, `featureMultiBranch` se removieron
+// del schema y del UI: los toggles eran decorativos, ningún action los leía.
+// Los campos persisten en `SaasSettings` (Prisma) reservados para cuando se
+// implementen los features V2 — entonces se re-agregan acá con la lógica real.
 const settingsSchema = z.object({
   paymentQrUrl: z.string().trim().url().or(z.literal("")).optional(),
   paymentInstructions: z.string().trim().min(10).max(1000),
@@ -21,9 +25,6 @@ const settingsSchema = z.object({
     .regex(/^[A-Z0-9-]+$/i, "Sólo letras, números y guiones"),
   billingDueDays: z.coerce.number().int().min(0).max(60),
   billingGraceDays: z.coerce.number().int().min(0).max(30),
-  featureDynamicQr: z.union([z.literal("on"), z.literal("")]).optional(),
-  featureAiChatbot: z.union([z.literal("on"), z.literal("")]).optional(),
-  featureMultiBranch: z.union([z.literal("on"), z.literal("")]).optional(),
 });
 
 export async function updateSaasSettingsAction(
@@ -41,9 +42,6 @@ export async function updateSaasSettingsAction(
     billingInvoicePrefix: formData.get("billingInvoicePrefix"),
     billingDueDays: formData.get("billingDueDays"),
     billingGraceDays: formData.get("billingGraceDays"),
-    featureDynamicQr: formData.get("featureDynamicQr"),
-    featureAiChatbot: formData.get("featureAiChatbot"),
-    featureMultiBranch: formData.get("featureMultiBranch"),
   });
   if (!parsed.success) {
     return { fieldErrors: zodIssuesToFieldErrors<string>(parsed.error) };
@@ -60,9 +58,6 @@ export async function updateSaasSettingsAction(
       billingInvoicePrefix: data.billingInvoicePrefix.toUpperCase(),
       billingDueDays: data.billingDueDays,
       billingGraceDays: data.billingGraceDays,
-      featureDynamicQr: data.featureDynamicQr === "on",
-      featureAiChatbot: data.featureAiChatbot === "on",
-      featureMultiBranch: data.featureMultiBranch === "on",
     },
     update: {
       paymentQrUrl: data.paymentQrUrl || null,
@@ -70,9 +65,6 @@ export async function updateSaasSettingsAction(
       billingInvoicePrefix: data.billingInvoicePrefix.toUpperCase(),
       billingDueDays: data.billingDueDays,
       billingGraceDays: data.billingGraceDays,
-      featureDynamicQr: data.featureDynamicQr === "on",
-      featureAiChatbot: data.featureAiChatbot === "on",
-      featureMultiBranch: data.featureMultiBranch === "on",
     },
   });
 

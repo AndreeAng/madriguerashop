@@ -91,7 +91,7 @@ export default async function ClientesPage({
             </p>
           </div>
 
-          <div className="mt-8 overflow-hidden rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)]">
+          <div className="mt-8 overflow-x-auto rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)]">
             {customers.length === 0 ? (
               <div className="p-10 text-center">
                 <Users className="mx-auto size-8 text-[color:var(--muted)]" />
