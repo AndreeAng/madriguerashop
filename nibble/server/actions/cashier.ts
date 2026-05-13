@@ -6,6 +6,13 @@ import { Prisma, Role } from "@prisma/client";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { normalizeIdentifier } from "@/lib/auth/identifiers";
+import {
+  generateRecoveryTokenPlain,
+  hashRecoveryToken,
+} from "@/lib/auth/recovery-token";
+import { sendEmailBackground } from "@/lib/email/send";
+import { passwordResetEmail } from "@/lib/email/templates/password-reset";
+import { appUrl } from "@/lib/email/client";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
@@ -174,15 +181,29 @@ export async function toggleCashierAction(
 
 const resetSchema = z.object({
   userId: z.string().min(1),
-  newPassword: z.string().min(8, "Mínimo 8 caracteres").max(128),
 });
 
 export type ResetCashierPasswordState = {
   ok?: true;
   error?: string;
-  fieldErrors?: Partial<Record<"newPassword", string>>;
+  fieldErrors?: Partial<Record<"userId", string>>;
 };
 
+/**
+ * Reset de password de un cajero via magic link.
+ *
+ * Antes el owner tipeaba la password nueva en pantalla y la comunicaba
+ * verbalmente al cajero — eso exponía la password en logs/proxies/Sentry
+ * y rompía el principio "el dueño nunca conoce las passwords de su staff".
+ *
+ * Ahora: el owner clickea "Enviar link de reseteo". Generamos un
+ * `PasswordReset` token igual que en `requestPasswordResetAction` y se lo
+ * mandamos al email del cajero. El cajero define su propia password.
+ *
+ * Si el cajero no tiene email (registrado solo con teléfono), devolvemos
+ * error claro — el owner tiene que pedirle al cajero que agregue un email
+ * primero (o, edge case, contactar soporte).
+ */
 export async function resetCashierPasswordAction(
   _prev: ResetCashierPasswordState,
   formData: FormData,
@@ -191,7 +212,6 @@ export async function resetCashierPasswordAction(
 
   const parsed = resetSchema.safeParse({
     userId: formData.get("userId"),
-    newPassword: formData.get("newPassword"),
   });
   if (!parsed.success) {
     return {
@@ -203,20 +223,47 @@ export async function resetCashierPasswordAction(
 
   const target = await db.user.findFirst({
     where: { id: parsed.data.userId, storeId, role: Role.CASHIER },
-    select: { id: true },
+    select: { id: true, email: true, fullName: true, isActive: true },
   });
   if (!target) return { error: "Cajero no encontrado en tu tienda." };
+  if (!target.isActive) {
+    return {
+      error: "Cajero suspendido. Reactivalo primero para poder resetear su password.",
+    };
+  }
+  if (!target.email) {
+    return {
+      error:
+        "Este cajero no tiene email registrado. Pedile que ingrese uno desde su perfil antes de resetear la contraseña.",
+    };
+  }
 
-  await db.user.update({
-    where: { id: target.id },
-    data: { passwordHash: await hashPassword(parsed.data.newPassword) },
-  });
+  // Mismo patrón que `requestPasswordResetAction`: invalidamos tokens
+  // previos del mismo usuario (token flooding) y guardamos solo el hash.
+  const tokenPlain = generateRecoveryTokenPlain();
+  const tokenHash = hashRecoveryToken(tokenPlain);
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+  await db.$transaction([
+    db.passwordReset.updateMany({
+      where: { userId: target.id, usedAt: null },
+      data: { usedAt: new Date() },
+    }),
+    db.passwordReset.create({
+      data: { userId: target.id, token: tokenHash, expiresAt },
+    }),
+  ]);
+
+  const resetUrl = `${appUrl()}/recovery/${tokenPlain}`;
+  sendEmailBackground(
+    passwordResetEmail({ to: target.email, resetUrl, expiresAt }),
+  );
 
   await audit({
     action: "saas.user_password_reset_sent",
     actorId,
     target: target.id,
-    metadata: { storeId, byOwner: true },
+    metadata: { storeId, byOwner: true, method: "magic_link" },
   });
 
   revalidatePath("/dashboard/equipo");

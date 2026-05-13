@@ -150,7 +150,7 @@ export default async function DashboardHome() {
     <>
       <DashboardHeader
         storeSlug={store.slug}
-        notificationDot={awaitingPayments > 0}
+        initialAwaiting={awaitingPayments}
       />
 
       <main className="p-6 lg:p-8">

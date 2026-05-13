@@ -107,13 +107,29 @@ export default async function ProductsPage({
                 )}
               </p>
             </div>
-            <Link
-              href="/dashboard/productos/nuevo"
-              className="press inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--color-bark-900)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
-            >
-              <Plus className="size-4" />
-              Nuevo producto
-            </Link>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Download endpoint: `<a>` con full reload, NO `<Link>`. */}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+              <a
+                href="/api/export/products"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--bg)]"
+              >
+                ↓ Exportar CSV
+              </a>
+              <Link
+                href="/dashboard/productos/importar"
+                className="inline-flex items-center gap-1.5 rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2 text-xs font-medium hover:bg-[color:var(--bg)]"
+              >
+                ↑ Importar CSV
+              </Link>
+              <Link
+                href="/dashboard/productos/nuevo"
+                className="press inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--color-bark-900)] px-4 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
+              >
+                <Plus className="size-4" />
+                Nuevo producto
+              </Link>
+            </div>
           </div>
 
           <div className="mt-8">

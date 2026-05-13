@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ArrowUpRight, Bell } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
+import { LiveOrderBadge } from "./LiveOrderBadge";
 
 /**
  * Header sticky compartido del dashboard. Estaba duplicado en 7 pages — el
@@ -8,17 +9,23 @@ import { ArrowUpRight, Bell } from "lucide-react";
  * de lo que cada page muestra a la izquierda (search forms, etc).
  *
  * `leftSlot` permite a cada page inyectar su search bar o controles propios.
- * `notificationDot` controla el punto rojo del bell sin acoplar al header
- * un fetch de notificaciones.
+ * `notificationDot` (deprecated) ahora se reemplaza por `LiveOrderBadge`
+ * que polea el endpoint `/api/dashboard/orders-meta` cada 30s — el caller
+ * puede seguir pasando initial counts via SSR para que el badge tenga
+ * estado correcto en el primer paint sin esperar el primer poll.
  */
 export function DashboardHeader({
   storeSlug,
   leftSlot,
-  notificationDot = false,
+  initialActive = 0,
+  initialAwaiting = 0,
 }: {
   storeSlug: string;
   leftSlot?: ReactNode;
-  notificationDot?: boolean;
+  /** Conteo inicial de pedidos activos (NEW/CONFIRMED/PREPARING/IN_DELIVERY). */
+  initialActive?: number;
+  /** Conteo inicial de pagos AWAITING_VERIFICATION. */
+  initialAwaiting?: number;
 }) {
   return (
     <header className="sticky top-0 z-20 border-b border-[color:var(--line)] bg-[color:var(--bg)]/85 backdrop-blur">
@@ -33,17 +40,10 @@ export function DashboardHeader({
           >
             Ver mi tienda <ArrowUpRight className="size-3.5" />
           </Link>
-          <button
-            type="button"
-            aria-label="Notificaciones (próximamente)"
-            disabled
-            className="relative inline-flex size-9 cursor-not-allowed items-center justify-center rounded-full border border-[color:var(--line)] opacity-70"
-          >
-            <Bell className="size-4" />
-            {notificationDot && (
-              <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-[color:var(--color-amber-500)]" />
-            )}
-          </button>
+          <LiveOrderBadge
+            initialActive={initialActive}
+            initialAwaiting={initialAwaiting}
+          />
         </div>
       </div>
     </header>
