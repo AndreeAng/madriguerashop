@@ -85,6 +85,20 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
               {store.hoursSummary}
             </li>
           </ul>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+            <Link
+              href={`/${store.slug}/sobre-nosotros`}
+              className="text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+            >
+              Sobre nosotros
+            </Link>
+            <Link
+              href={`/${store.slug}/contacto`}
+              className="text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+            >
+              Contacto
+            </Link>
+          </div>
         </div>
 
         {/* Payment */}

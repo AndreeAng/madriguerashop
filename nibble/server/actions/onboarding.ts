@@ -14,6 +14,9 @@ import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { signIn } from "@/auth";
 import { sendEmailBackground } from "@/lib/email/send";
 import { welcomeEmail } from "@/lib/email/templates/welcome";
+import { emailVerificationEmail } from "@/lib/email/templates/email-verification";
+import { generateEmailVerificationToken } from "@/lib/auth/email-verification-token";
+import { appUrl } from "@/lib/email/client";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 
@@ -224,6 +227,7 @@ export async function registerStoreAction(
   // emite inmediatamente (ver paso 7).
   const passwordHash = await hashPassword(data.password);
   let createdStoreId: string | null = null;
+  let createdUserId: string | null = null;
 
   try {
     await db.$transaction(async (tx) => {
@@ -242,7 +246,7 @@ export async function registerStoreAction(
       });
       createdStoreId = store.id;
 
-      await tx.user.create({
+      const user = await tx.user.create({
         data: {
           username,
           email,
@@ -254,6 +258,7 @@ export async function registerStoreAction(
           isActive: true,
         },
       });
+      createdUserId = user.id;
 
       // Horarios por defecto: Lun–Dom, 09:00–21:00. El owner los edita en /dashboard/settings.
       await tx.storeHours.createMany({
@@ -313,6 +318,20 @@ export async function registerStoreAction(
         storeSlug: slug,
       }),
     );
+    // Email de verificación con token stateless firmado (24h). Si el
+    // usuario nunca lo clickea, no pasa nada — `emailVerifiedAt` queda
+    // null y la app sigue funcionando. La verificación habilita
+    // notificaciones (futuro) y previene typos en el email del registro.
+    if (createdUserId) {
+      const token = generateEmailVerificationToken(createdUserId);
+      sendEmailBackground(
+        emailVerificationEmail({
+          to: email,
+          verifyUrl: `${appUrl()}/verify-email/${token}`,
+          storeName: data.storeName,
+        }),
+      );
+    }
   }
 
   // 9. Auto-login. signIn() lanza un `NEXT_REDIRECT` cuando todo va bien —

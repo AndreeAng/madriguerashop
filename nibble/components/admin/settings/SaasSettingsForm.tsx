@@ -85,14 +85,12 @@ export function SaasSettingsForm({ settings }: { settings: SaasSettings }) {
         </div>
       </Section>
 
-      <Section
-        title="Feature flags · roadmap V2"
-        description="⚠ Los flags se guardan pero ningún server action los chequea todavía. Toggleo decorativo hasta que se implementen los features."
-      >
-        <Toggle name="featureDynamicQr" label="QR dinámico" description="Generar QR por pedido (requiere integración con banco). Sin implementar." defaultChecked={settings.featureDynamicQr} />
-        <Toggle name="featureAiChatbot" label="AI Chatbot" description="Habilita el chatbot por tienda. Sin implementar." defaultChecked={settings.featureAiChatbot} />
-        <Toggle name="featureMultiBranch" label="Multi-sucursal" description="Permite que una tienda tenga varias sucursales. Sin implementar." defaultChecked={settings.featureMultiBranch} />
-      </Section>
+      {/* La sección "Feature flags · roadmap V2" se removió porque exponía
+          toggles decorativos: ningún server action consumía los flags
+          (`featureDynamicQr`, `featureAiChatbot`, `featureMultiBranch`).
+          Los campos siguen en el schema de Prisma para no romper la
+          migración — cuando cada feature se implemente, se vuelve a agregar
+          aquí con su toggle real. */}
 
       <div className="sticky bottom-4 flex items-center justify-end gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 shadow-soft">
         <SubmitButton />
@@ -144,29 +142,3 @@ function Field({
   );
 }
 
-function Toggle({
-  name,
-  label,
-  description,
-  defaultChecked,
-}: {
-  name: string;
-  label: string;
-  description: string;
-  defaultChecked: boolean;
-}) {
-  return (
-    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--line)] bg-[color:var(--bg)] p-4 transition hover:bg-[color:var(--card)]">
-      <input
-        type="checkbox"
-        name={name}
-        defaultChecked={defaultChecked}
-        className="mt-0.5 size-4 rounded border-[color:var(--line-strong)] accent-[color:var(--color-amber-500)]"
-      />
-      <span className="flex-1">
-        <span className="block text-sm font-medium">{label}</span>
-        <span className="mt-0.5 block text-xs text-[color:var(--muted)]">{description}</span>
-      </span>
-    </label>
-  );
-}

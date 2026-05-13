@@ -157,7 +157,7 @@ export default async function AdminTiendasPage({
             })}
           </div>
 
-          <div className="mt-6 overflow-hidden rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)]">
+          <div className="mt-6 overflow-x-auto rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)]">
             {stores.length === 0 ? (
               <div className="p-10 text-center">
                 <StoreIcon className="mx-auto size-8 text-[color:var(--muted)]" />

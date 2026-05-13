@@ -59,12 +59,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Sin DB en build → caemos a sólo estáticas
   }
 
-  const storePaths: MetadataRoute.Sitemap = stores.map((s) => ({
-    url: `${base}/${s.slug}`,
-    lastModified: s.updatedAt,
-    changeFrequency: "daily",
-    priority: 0.8,
-  }));
+  const storePaths: MetadataRoute.Sitemap = stores.flatMap((s) => [
+    {
+      url: `${base}/${s.slug}`,
+      lastModified: s.updatedAt,
+      changeFrequency: "daily" as const,
+      priority: 0.8,
+    },
+    {
+      url: `${base}/${s.slug}/sobre-nosotros`,
+      lastModified: s.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    },
+    {
+      url: `${base}/${s.slug}/contacto`,
+      lastModified: s.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    },
+  ]);
 
   const productPaths: MetadataRoute.Sitemap = products.map((p) => ({
     url: `${base}/${p.storeSlug}/p/${p.slug}`,

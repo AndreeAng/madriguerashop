@@ -13,6 +13,7 @@ import { getStorefrontData } from "@/lib/tenant/resolve";
 import { toStoreView } from "@/lib/storefront/adapter";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { WhatsAppContactLink } from "@/components/storefront/WhatsAppContactLink";
+import { CustomerCancelOrder } from "@/components/storefront/CustomerCancelOrder";
 import { MapView } from "@/components/shared/MapsClient";
 import { formatBob, formatWaPhone } from "@/lib/utils";
 import {
@@ -163,6 +164,15 @@ export default async function OrderTrackingPage({
               className="hidden items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-2 text-xs font-medium text-white md:inline-flex"
             />
           </div>
+
+          {/* Cancelación del cliente: solo si todavía no entró a preparación.
+              Una vez `CONFIRMED` o más avanzado, el local ya empezó a trabajar
+              y la cancelación debe ser coordinada por WhatsApp. */}
+          {(order.status === "PENDING_PAYMENT" || order.status === "NEW") && (
+            <div className="mt-4">
+              <CustomerCancelOrder token={token} />
+            </div>
+          )}
 
           {/* Timeline */}
           {!isCancelled ? (

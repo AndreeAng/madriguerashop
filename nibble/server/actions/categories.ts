@@ -8,6 +8,7 @@ import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { audit } from "@/lib/audit/log";
 import type { ActionState } from "./store-settings";
 
 // ============== Schemas ==============
@@ -42,7 +43,7 @@ export async function upsertCategoryAction(
   _prev: ActionState<UpsertField>,
   formData: FormData,
 ): Promise<ActionState<UpsertField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
 
   const raw = {
     id: (formData.get("id") as string) || undefined,
@@ -137,19 +138,26 @@ export async function upsertCategoryAction(
   }
 
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: data.id ? "category.updated" : "category.created",
+    actorId: userId,
+    storeId,
+    target: data.id ?? null,
+    metadata: { name: data.name, slug },
+  });
   return { ok: true };
 }
 
 // ============== Delete ==============
 
 export async function deleteCategoryAction(formData: FormData): Promise<ActionState> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "ID requerido" };
 
   const existing = await db.category.findFirst({
     where: { id, storeId },
-    select: { id: true, _count: { select: { products: true, children: true } } },
+    select: { id: true, name: true, slug: true, _count: { select: { products: true, children: true } } },
   });
   if (!existing) return { error: "Categoría no encontrada" };
 
@@ -166,13 +174,20 @@ export async function deleteCategoryAction(formData: FormData): Promise<ActionSt
 
   await db.category.delete({ where: { id } });
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: "category.deleted",
+    actorId: userId,
+    storeId,
+    target: id,
+    metadata: { name: existing.name, slug: existing.slug },
+  });
   return { ok: true };
 }
 
 // ============== Toggle visibility ==============
 
 export async function toggleCategoryVisibilityAction(formData: FormData): Promise<ActionState> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const id = String(formData.get("id") ?? "");
 
   // Read-then-write atómico: leemos el estado real de DB en lugar de confiar
@@ -188,6 +203,13 @@ export async function toggleCategoryVisibilityAction(formData: FormData): Promis
     data: { isVisible: !existing.isVisible },
   });
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: "category.toggled_visibility",
+    actorId: userId,
+    storeId,
+    target: existing.id,
+    metadata: { isVisible: !existing.isVisible },
+  });
   return { ok: true };
 }
 
@@ -200,7 +222,7 @@ const reorderSchema = z.object({
 export async function reorderCategoriesAction(input: {
   ids: string[];
 }): Promise<ActionState> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const parsed = reorderSchema.safeParse(input);
   if (!parsed.success) return { error: "Input inválido" };
 
@@ -220,5 +242,11 @@ export async function reorderCategoriesAction(input: {
   );
 
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: "category.reordered",
+    actorId: userId,
+    storeId,
+    metadata: { count: parsed.data.ids.length },
+  });
   return { ok: true };
 }

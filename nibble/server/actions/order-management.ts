@@ -595,3 +595,107 @@ export async function rejectPaymentAction(
   return { ok: true };
 }
 
+// ============== Cancelación por el cliente (vía tracking token) ==============
+//
+// El SRS exige permitir que el cliente cancele su propio pedido desde la
+// página pública de tracking. NO hay auth — la autorización es por
+// `trackingToken` (132 bits de entropía). El cliente solo puede cancelar
+// si el pedido aún no entró a preparación: una vez el local empezó a
+// preparar, la cancelación debe ser coordinada por WhatsApp.
+
+const CUSTOMER_CANCELLABLE_STATUSES: OrderStatus[] = [
+  OrderStatus.PENDING_PAYMENT,
+  OrderStatus.NEW,
+];
+
+const customerCancelSchema = z.object({
+  token: z
+    .string()
+    .min(8)
+    .max(64)
+    .regex(/^[A-Za-z0-9_-]+$/),
+  reason: z.string().trim().min(3).max(200),
+});
+
+export async function customerCancelOrderAction(
+  _prev: ActionState<"reason">,
+  formData: FormData,
+): Promise<ActionState<"reason">> {
+  const parsed = customerCancelSchema.safeParse({
+    token: formData.get("token"),
+    reason: formData.get("reason"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: zodIssuesToFieldErrors<"reason">(parsed.error) };
+  }
+
+  const order = await db.order.findUnique({
+    where: { trackingToken: parsed.data.token },
+    select: {
+      id: true,
+      status: true,
+      orderNumber: true,
+      storeId: true,
+      trackingToken: true,
+      store: { select: { slug: true } },
+    },
+  });
+  if (!order) return { error: "Pedido no encontrado." };
+
+  if (!CUSTOMER_CANCELLABLE_STATUSES.includes(order.status)) {
+    return {
+      error:
+        "Este pedido ya está en preparación. Para cancelarlo, escribinos por WhatsApp.",
+    };
+  }
+
+  try {
+    await db.$transaction(async (tx) => {
+      // Claim atómico: si otro proceso cambió el status entre el read y el
+      // update, no cancelamos. `updateMany` devuelve count=0 y abortamos.
+      const claim = await tx.order.updateMany({
+        where: { id: order.id, status: { in: CUSTOMER_CANCELLABLE_STATUSES } },
+        data: {
+          status: OrderStatus.CANCELLED,
+          cancelledAt: new Date(),
+          cancelReason: `Cancelado por el cliente: ${parsed.data.reason}`,
+        },
+      });
+      if (claim.count === 0) throw new Error("__already_processed__");
+
+      await tx.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: "STATUS_CANCELLED",
+          description: `Cancelado por el cliente — ${parsed.data.reason}`,
+          // sin byUserId/byUserName porque el cliente no tiene cuenta.
+          metadata: { source: "customer", reason: parsed.data.reason },
+        },
+      });
+      await revertOrderImpact(tx, order.id);
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "__already_processed__") {
+      return { error: "Este pedido ya cambió de estado. Refrescá la página." };
+    }
+    throw err;
+  }
+
+  await audit({
+    action: "order.status_changed",
+    storeId: order.storeId,
+    target: order.id,
+    metadata: {
+      orderNumber: order.orderNumber,
+      from: order.status,
+      to: "CANCELLED",
+      source: "customer",
+      reason: parsed.data.reason,
+    },
+  });
+
+  revalidatePath(`/${order.store.slug}/orden/${order.trackingToken}`);
+  revalidatePath("/dashboard/pedidos");
+  return { ok: true };
+}
+

@@ -8,6 +8,7 @@ import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { audit } from "@/lib/audit/log";
 import type { ActionState } from "./store-settings";
 
 // ============== Schemas ==============
@@ -157,7 +158,7 @@ export async function upsertProductAction(
   _prev: ActionState<ProductField>,
   formData: FormData,
 ): Promise<ActionState<ProductField>> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
 
   const raw = {
     id: (formData.get("id") as string) || undefined,
@@ -363,19 +364,26 @@ export async function upsertProductAction(
   }
 
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: data.id ? "product.updated" : "product.created",
+    actorId: userId,
+    storeId,
+    target: data.id ?? null,
+    metadata: { name: data.name, slug: data.slug },
+  });
   return { ok: true };
 }
 
 // ============== Delete ==============
 
 export async function deleteProductAction(formData: FormData): Promise<ActionState> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const id = String(formData.get("id") ?? "");
   if (!id) return { error: "ID requerido" };
 
   const existing = await db.product.findFirst({
     where: { id, storeId },
-    select: { id: true },
+    select: { id: true, name: true, slug: true },
   });
   if (!existing) return { error: "Producto no encontrado" };
 
@@ -392,13 +400,20 @@ export async function deleteProductAction(formData: FormData): Promise<ActionSta
 
   await db.product.delete({ where: { id } });
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: "product.deleted",
+    actorId: userId,
+    storeId,
+    target: id,
+    metadata: { name: existing.name, slug: existing.slug },
+  });
   return { ok: true };
 }
 
 // ============== Toggle isActive ==============
 
 export async function toggleProductActiveAction(formData: FormData): Promise<ActionState> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { storeId, userId } = await requireOwnerOnlyIds();
   const id = String(formData.get("id") ?? "");
 
   // Read-then-write atómico: leemos el estado real de DB en lugar de confiar
@@ -414,5 +429,12 @@ export async function toggleProductActiveAction(formData: FormData): Promise<Act
     data: { isActive: !existing.isActive },
   });
   invalidate(await getStoreSlugById(storeId));
+  await audit({
+    action: "product.toggled_active",
+    actorId: userId,
+    storeId,
+    target: existing.id,
+    metadata: { isActive: !existing.isActive },
+  });
   return { ok: true };
 }
