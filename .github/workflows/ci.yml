@@ -1,0 +1,401 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Permite re-ejecutar manualmente desde la UI de Actions.
+  workflow_dispatch:
+
+# Cancela runs viejos del mismo branch/PR cuando llega uno nuevo.
+# Para `main` no cancelamos (cada commit a main es deploy-relevante).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# Permisos mínimos por defecto — cada job pide solo lo que necesita.
+permissions:
+  contents: read
+
+env:
+  NODE_VERSION: "20"
+  # Valores ficticios compartidos entre jobs que NO tocan DB real (build,
+  # E2E). Cada job los referencia con `${{ env.CI_DATABASE_URL }}` etc.
+  # para que cambiar uno aquí impacte todos los jobs.
+  CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_ci
+  CI_AUTH_SECRET: ci-secret-32-chars-not-real-aaaaaaaaaaa
+  CI_ENCRYPTION_KEY: ci-encryption-key-32-chars-not-real-bbbbb
+  CI_APP_URL: http://localhost:3000
+
+jobs:
+  # ============================================================
+  # 1) lint — ESLint + TypeScript en un solo job
+  # ============================================================
+  lint:
+    name: Lint + Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: nibble
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Prisma schema formato canónico
+        # `prisma format` ordena modelos/campos según convención. Si alguien
+        # editó el schema sin formatear, este step lo detecta usando git diff
+        # contra el árbol limpio del checkout.
+        run: |
+          npx prisma format
+          if ! git diff --exit-code prisma/schema.prisma; then
+            echo "✗ El schema.prisma no está en formato canónico. Corré 'npx prisma format' localmente y comiteá."
+            exit 1
+          fi
+
+  # ============================================================
+  # 2) test-unit — Vitest (rápido, sin DB)
+  # ============================================================
+  test-unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: nibble
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Vitest
+        run: npm run test
+
+  # ============================================================
+  # 3) migrations-validate — Postgres real + drift check
+  # ============================================================
+  migrations-validate:
+    name: Validate migrations + schema drift
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: nibble
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nibble_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_ci
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Apply migrations to empty DB
+        # `migrate deploy` aplica todas las migrations en orden — falla si
+        # alguna está mal formada o si hay conflicto entre archivos.
+        run: npx prisma migrate deploy
+
+      - name: Verify no schema drift
+        # `migrate diff` compara la DB resultante (después de aplicar
+        # migrations) contra el schema.prisma. Si hay diferencias, alguien
+        # editó el schema sin generar la migration correspondiente.
+        run: |
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code \
+            && echo "✓ No drift entre migrations aplicadas y schema.prisma" \
+            || (echo "✗ DRIFT detectado: editaste el schema sin generar migration. Corré 'npx prisma migrate dev'." && exit 1)
+
+      - name: Seed runs cleanly
+        env:
+          SEED_SUPER_ADMIN_EMAIL: ci@example.com
+          SEED_SUPER_ADMIN_PASSWORD: ci-password-not-real-12345
+          # Sin DEMO_OWNER_PASSWORD → el seed salta tiendas demo (Sprint 7).
+        run: npm run db:seed
+
+  # ============================================================
+  # 4) test-e2e — Playwright con Postgres real + app levantada
+  # ============================================================
+  test-e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [lint, test-unit]
+    defaults:
+      run:
+        working-directory: nibble
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nibble_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_e2e
+      AUTH_SECRET: ${{ env.CI_AUTH_SECRET }}
+      AUTH_URL: ${{ env.CI_APP_URL }}
+      APP_URL: ${{ env.CI_APP_URL }}
+      ENCRYPTION_KEY: ${{ env.CI_ENCRYPTION_KEY }}
+      # `next build` requiere NODE_ENV=production. Playwright corre contra ese
+      # build; las pruebas que necesiten fixtures testeables deben exponerse
+      # vía un flag explícito de la app, no vía NODE_ENV=test.
+      NODE_ENV: production
+      SEED_SUPER_ADMIN_EMAIL: admin@nibble.bo
+      SEED_SUPER_ADMIN_PASSWORD: ci-admin-password-not-real
+      SEED_DEMO_OWNER_PASSWORD: ci-demo-password-not-real
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations + seed
+        run: |
+          npx prisma migrate deploy
+          npm run db:seed
+
+      - name: Get Playwright version
+        id: playwright-version
+        run: |
+          version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit case)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: Cache Next build
+        uses: actions/cache@v4
+        with:
+          path: nibble/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('nibble/package-lock.json') }}-${{ hashFiles('nibble/**/*.ts', 'nibble/**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('nibble/package-lock.json') }}-
+
+      - name: Build Next
+        run: npm run build
+
+      - name: Run Playwright
+        env:
+          CI: "true"
+        run: npx playwright test --project=chromium
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: nibble/playwright-report/
+          retention-days: 14
+
+      - name: Upload test traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: nibble/test-results/
+          retention-days: 14
+
+  # ============================================================
+  # 5) build — verifica que `next build` produce un artefacto + bundle report
+  # ============================================================
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint, test-unit]
+    defaults:
+      run:
+        working-directory: nibble
+
+    env:
+      DATABASE_URL: ${{ env.CI_DATABASE_URL }}
+      AUTH_SECRET: ${{ env.CI_AUTH_SECRET }}
+      AUTH_URL: ${{ env.CI_APP_URL }}
+      APP_URL: ${{ env.CI_APP_URL }}
+      ENCRYPTION_KEY: ${{ env.CI_ENCRYPTION_KEY }}
+      NODE_ENV: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Cache Next build
+        # Misma key que test-e2e: si E2E ya buildeó este mismo sha, este job
+        # reusa el .next/cache y `next build` corre incremental — evita
+        # rebuild duplicado de 2-3 minutos por PR.
+        uses: actions/cache@v4
+        with:
+          path: nibble/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('nibble/package-lock.json') }}-${{ hashFiles('nibble/**/*.ts', 'nibble/**/*.tsx') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('nibble/package-lock.json') }}-
+
+      - name: Build
+        run: npm run build
+
+      - name: Report bundle size
+        # Resumen del bundle en el job summary — útil para detectar regresiones.
+        run: |
+          {
+            echo "## Build summary"
+            echo ""
+            echo '```'
+            du -sh .next 2>/dev/null || true
+            echo ""
+            echo "Top 10 chunks de cliente:"
+            find .next/static/chunks -name "*.js" -printf "%s %p\n" 2>/dev/null | sort -rn | head -10 | awk '{ printf "%7.1f KB  %s\n", $1/1024, $2 }'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ============================================================
+  # 6) audit — npm audit (vulnerabilidades en prod deps)
+  # ============================================================
+  audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    defaults:
+      run:
+        working-directory: nibble
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Audit (high+)
+        # `--omit=dev` ignora vulnerabilidades en devDeps (tooling); las prod
+        # sí bloquean. `--audit-level=high` ignora low/moderate (típicamente ruido).
+        run: npm audit --omit=dev --audit-level=high
+
+  # ============================================================
+  # 7) ci-success — marca agregada para branch protection
+  # ============================================================
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - test-unit
+      - test-e2e
+      - migrations-validate
+      - build
+      - audit
+    # `!cancelled()` permite que el agregado corra cuando algún job falló
+    # (para reportar el fallo a branch protection) pero NO cuando el workflow
+    # entero fue cancelado por el usuario o por concurrency. Con `always()`
+    # un cancel manual quedaba como "fallo" en el dashboard.
+    if: ${{ !cancelled() }}
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}" != "success" \
+             || "${{ needs.test-unit.result }}" != "success" \
+             || "${{ needs.test-e2e.result }}" != "success" \
+             || "${{ needs.migrations-validate.result }}" != "success" \
+             || "${{ needs.build.result }}" != "success" \
+             || "${{ needs.audit.result }}" != "success" ]]; then
+            echo "✗ Uno o más jobs fallaron"
+            exit 1
+          fi
+          echo "✓ Todos los checks pasaron"

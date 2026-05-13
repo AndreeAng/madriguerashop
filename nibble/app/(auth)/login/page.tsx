@@ -1,20 +1,14 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth } from "@/auth";
+import { requireGuest } from "@/lib/auth/session";
 import { NibbleLogo } from "@/components/shared/Logo";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = {
-  title: "Acceder · Nibble",
+  title: "Acceder · Madriguera Shop",
 };
 
 export default async function LoginPage() {
-  // Si ya está autenticado, redirigir según rol
-  const session = await auth();
-  if (session?.user) {
-    if (session.user.role === "SUPER_ADMIN") redirect("/admin");
-    redirect("/dashboard");
-  }
+  await requireGuest();
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
@@ -33,13 +27,13 @@ export default async function LoginPage() {
 
           <p className="mt-8 text-center text-sm text-[color:var(--muted)]">
             ¿No tienes cuenta?{" "}
-            <Link href="/#precio" className="font-medium text-[color:var(--fg)] hover:underline">
+            <Link href="/registro" className="font-medium text-[color:var(--fg)] hover:underline">
               Crear una tienda
             </Link>
           </p>
         </div>
 
-        <p className="text-xs text-[color:var(--muted)]">© 2026 Nibble · Cochabamba, Bolivia</p>
+        <p className="text-xs text-[color:var(--muted)]">© {new Date().getFullYear()} Madriguera Shop · Cochabamba, Bolivia</p>
       </div>
 
       <div className="relative hidden overflow-hidden bg-[color:var(--color-bark-900)] lg:block">
@@ -55,7 +49,7 @@ export default async function LoginPage() {
             Tienda de muestra
           </p>
           <h2 className="font-display mt-3 text-4xl leading-tight">
-            "Migramos a Nibble en una tarde. Las ventas subieron 40% el primer mes solo por el mapa de calor."
+            &ldquo;Migramos a Madriguera Shop en una tarde. Las ventas subieron 40% el primer mes solo por el mapa de calor.&rdquo;
           </h2>
           <div className="mt-6 flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-full bg-[color:var(--color-amber-500)] text-sm font-bold">

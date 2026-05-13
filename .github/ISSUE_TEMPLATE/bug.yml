@@ -1,0 +1,82 @@
+name: 🐛 Bug report
+description: Algo no funciona como debería en producción o en dev.
+title: "[bug] "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar. Llená los campos que apliquen — los marcados
+        como obligatorios son los mínimos para triage.
+
+  - type: textarea
+    id: what-happens
+    attributes:
+      label: Qué pasa
+      description: Comportamiento actual. Sé concreto — "no funciona" no alcanza.
+      placeholder: Ej. "Al hacer click en 'Verificar pago' en /dashboard/pedidos/[id], el botón queda spinning y no pasa nada visible."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Qué esperabas
+      placeholder: Ej. "Después de click, el badge de payment status debería cambiar a 'Verificado'."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Cómo reproducir
+      description: Pasos numerados desde un estado limpio (dev seed o producción).
+      placeholder: |
+        1. Login como dueño de tienda
+        2. Ir a /dashboard/pedidos
+        3. Click en un pedido con paymentStatus="AWAITING_VERIFICATION"
+        4. Click "Verificar pago"
+        5. ...
+    validations:
+      required: true
+
+  - type: input
+    id: where
+    attributes:
+      label: Dónde
+      description: URL exacta + entorno.
+      placeholder: madrigueras.shop/dashboard/pedidos/cl... (producción) · localhost:3000/... (dev)
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severidad
+      options:
+        - "Crítico — afecta a todos los usuarios / pierde plata / data corruption"
+        - "Alto — afecta a un flujo principal, hay workaround"
+        - "Medio — UX degradada, workflows alternativos existen"
+        - "Bajo — cosmético / corner case"
+      default: 2
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Pega errores de consola, network panel, logs del server, capturas. Si es un error con SHA de deploy, incluí el digest.
+      render: shell
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser + versión (si aplica)
+      placeholder: Chrome 130 / Safari iOS 17 / Firefox 121
+
+  - type: checkboxes
+    id: checked
+    attributes:
+      label: Antes de submit
+      options:
+        - label: Busqué en issues existentes y no encontré uno igual.
+          required: true
+        - label: Esto NO es un reporte de seguridad (esos van por advisory privado).
+          required: true

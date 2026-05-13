@@ -1,13 +1,72 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, Minus, Plus, Star, MessageCircle, Clock } from "lucide-react";
-import { getStore } from "@/lib/mock/stores";
-import { getProduct, getProductsByStore } from "@/lib/mock/products";
+import { ChevronLeft, Star, MessageCircle, Clock } from "lucide-react";
+import { db } from "@/lib/db";
+import { getStorefrontData } from "@/lib/tenant/resolve";
+import { toStoreView, toProductView } from "@/lib/storefront/adapter";
+import { getCartSnapshot } from "@/server/actions/cart";
+import { trackPageView } from "@/lib/analytics/track";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { ProductCard } from "@/components/storefront/ProductCard";
+import { ProductPdpAdd } from "@/components/storefront/ProductPdpAdd";
+import { BookingForm } from "@/components/storefront/BookingForm";
 import { formatBob } from "@/lib/utils";
+
+const PRODUCT_INCLUDE = {
+  images: { orderBy: { sortOrder: "asc" as const } },
+  variants: { where: { isActive: true } },
+  category: { select: { id: true, name: true, sortOrder: true } },
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string; product: string }>;
+}) {
+  const { slug, product: productSlug } = await params;
+  const storeData = await getStorefrontData(slug).catch(() => null);
+  if (!storeData) return {};
+
+  const product = await db.product.findFirst({
+    where: { storeId: storeData.id, slug: productSlug, isActive: true },
+    select: {
+      name: true,
+      description: true,
+      shortDescription: true,
+      images: {
+        take: 1,
+        orderBy: { sortOrder: "asc" as const },
+        select: { url: true },
+      },
+    },
+  });
+  if (!product) return {};
+
+  const description =
+    product.shortDescription ||
+    product.description?.slice(0, 200) ||
+    `Pedí ${product.name} en ${storeData.name}.`;
+  const image = product.images[0]?.url;
+  const canonical = `/${slug}/p/${productSlug}`;
+
+  return {
+    title: `${product.name} · ${storeData.name}`,
+    description,
+    alternates: { canonical },
+    openGraph: {
+      title: `${product.name} · ${storeData.name}`,
+      description,
+      url: canonical,
+      type: "website",
+      ...(image ? { images: [{ url: image }] } : {}),
+    },
+    twitter: image
+      ? { card: "summary_large_image", title: product.name, description, images: [image] }
+      : { card: "summary", title: product.name, description },
+  };
+}
 
 export default async function ProductDetailPage({
   params,
@@ -15,20 +74,60 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string; product: string }>;
 }) {
   const { slug, product: productSlug } = await params;
-  const store = getStore(slug);
-  const product = getProduct(slug, productSlug);
-  if (!store || !product) notFound();
 
-  const related = getProductsByStore(slug)
-    .filter((p) => p.slug !== product.slug)
-    .slice(0, 4);
+  const storeData = await getStorefrontData(slug);
+
+  const productRaw = await db.product.findFirst({
+    where: { storeId: storeData.id, slug: productSlug, isActive: true },
+    include: PRODUCT_INCLUDE,
+  });
+
+  if (!productRaw) notFound();
+
+  // Track visita al detalle (fire-and-forget, no bloqueante)
+  void trackPageView({
+    storeId: storeData.id,
+    path: `/${slug}/p/${productSlug}`,
+    productId: productRaw.id,
+  });
+
+  const relatedRaw = await db.product.findMany({
+    where: {
+      storeId: storeData.id,
+      isActive: true,
+      id: { not: productRaw.id },
+      ...(productRaw.categoryId ? { categoryId: productRaw.categoryId } : {}),
+    },
+    include: PRODUCT_INCLUDE,
+    take: 4,
+    orderBy: { isFeatured: "desc" },
+  });
+
+  // `now` compartido para producto + related: si un producto está al borde
+  // de su `availableTo`, su disponibilidad debe ser consistente en toda la
+  // página (PDP + grilla de relacionados).
+  const now = new Date();
+  const store = toStoreView(storeData, { hours: storeData.storeHours, now });
+  const product = toProductView(productRaw, slug, now);
+  const related = relatedRaw.map((p) => toProductView(p, slug, now));
+  const cart = await getCartSnapshot(slug);
+  const cartCount = cart?.itemCount ?? 0;
+
+  // Galería: si el producto tiene <2 imágenes, mostramos la principal repetida (compatible con grid)
+  const allImages =
+    productRaw.images.length > 0
+      ? productRaw.images.map((i) => i.url)
+      : [product.image];
 
   return (
     <div>
-      <StorefrontHeader store={store} />
+      <StorefrontHeader store={store} cartCount={cartCount} />
 
       <nav className="mx-auto max-w-6xl px-4 pt-6 text-sm">
-        <Link href={`/${slug}`} className="inline-flex items-center gap-1 text-[color:var(--muted)] hover:text-[color:var(--fg)]">
+        <Link
+          href={`/${slug}`}
+          className="inline-flex items-center gap-1 text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+        >
           <ChevronLeft className="size-4" /> Volver al menú
         </Link>
       </nav>
@@ -37,24 +136,41 @@ export default async function ProductDetailPage({
         <div className="grid gap-10 md:grid-cols-2">
           <div className="space-y-3">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-[color:var(--card)]">
-              <Image src={product.image} alt={product.name} fill priority className="object-cover" />
+              <Image
+                src={allImages[0] ?? product.image}
+                alt={product.name}
+                fill
+                priority
+                className="object-cover"
+              />
               {product.badge && product.badgeLabel && (
                 <span className="absolute left-4 top-4 rounded-full bg-[color:var(--color-amber-500)] px-3 py-1.5 text-xs font-semibold text-white">
                   {product.badgeLabel}
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-4 gap-2">
-              {[product.image, product.image, product.image, product.image].map((img, i) => (
-                <div key={i} className={`relative aspect-square overflow-hidden rounded-xl border ${i === 0 ? "border-[color:var(--color-bark-900)]" : "border-[color:var(--line)]"}`}>
-                  <Image src={img} alt="" fill className="object-cover" />
-                </div>
-              ))}
-            </div>
+            {allImages.length > 1 && (
+              <div className="grid grid-cols-4 gap-2">
+                {allImages.slice(0, 4).map((img, i) => (
+                  <div
+                    key={img + i}
+                    className={`relative aspect-square overflow-hidden rounded-xl border ${
+                      i === 0
+                        ? "border-[color:var(--color-bark-900)]"
+                        : "border-[color:var(--line)]"
+                    }`}
+                  >
+                    <Image src={img} alt="" fill className="object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-[color:var(--muted)]">{product.category}</p>
+            <p className="text-[11px] uppercase tracking-wider text-[color:var(--muted)]">
+              {product.category}
+            </p>
             <h1 className="font-display mt-2 text-4xl">{product.name}</h1>
 
             {product.rating && (
@@ -63,7 +179,6 @@ export default async function ProductDetailPage({
                   <Star className="size-3.5 fill-current text-[color:var(--color-amber-500)]" />
                   <span className="font-medium">{product.rating}</span>
                 </span>
-                <span className="text-[color:var(--muted)]">· 87 reseñas</span>
               </div>
             )}
 
@@ -76,62 +191,31 @@ export default async function ProductDetailPage({
               )}
             </div>
 
-            <p className="mt-5 leading-relaxed text-[color:var(--muted)]">{product.description}</p>
+            <p className="mt-5 leading-relaxed text-[color:var(--muted)]">
+              {product.description}
+            </p>
 
-            {product.variants && (
-              <div className="mt-7">
-                <p className="text-sm font-medium">Tamaño</p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {product.variants.map((v, i) => (
-                    <button
-                      key={v.name}
-                      className={`rounded-2xl border px-4 py-3 text-left text-sm transition ${
-                        i === 1
-                          ? "border-[color:var(--color-bark-900)] bg-[color:var(--color-bark-900)] text-white"
-                          : "border-[color:var(--line)] hover:border-[color:var(--color-bark-300)]"
-                      }`}
-                    >
-                      <div className="font-medium">{v.name}</div>
-                      <div className="text-xs opacity-80">
-                        {v.priceDelta === 0
-                          ? formatBob(product.price)
-                          : v.priceDelta > 0
-                          ? `+${formatBob(v.priceDelta)}`
-                          : `−${formatBob(Math.abs(v.priceDelta))}`}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-7">
-              <p className="text-sm font-medium">Notas para la cocina (opcional)</p>
-              <textarea
-                rows={2}
-                placeholder="Sin cebolla, salsa aparte..."
-                className="mt-2 w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 text-sm outline-none focus:border-[color:var(--color-bark-300)]"
+            {/* Productos reservables (servicios) usan BookingForm con
+                calendario en lugar del "Agregar al carrito" tradicional. */}
+            {productRaw.isBookable ? (
+              <BookingForm
+                productId={productRaw.id}
+                productName={productRaw.name}
+                storeSlug={slug}
+                durationMin={productRaw.bookingDurationMin}
               />
-            </div>
-
-            <div className="mt-8 flex items-center gap-3">
-              <div className="flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--card)]">
-                <button className="size-10 rounded-full hover:bg-[color:var(--line)]"><Minus className="mx-auto size-4" /></button>
-                <span className="w-8 text-center text-sm font-semibold">1</span>
-                <button className="size-10 rounded-full hover:bg-[color:var(--line)]"><Plus className="mx-auto size-4" /></button>
-              </div>
-              <Link
-                href={`/${slug}/checkout`}
-                className="flex-1 rounded-full bg-[color:var(--color-bark-900)] px-5 py-3 text-center text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
-              >
-                Agregar — {formatBob(product.price)}
-              </Link>
-            </div>
+            ) : (
+              <ProductPdpAdd
+                product={product}
+                storeSlug={slug}
+                vertical={storeData.vertical}
+              />
+            )}
 
             <div className="mt-6 grid gap-3 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4 text-sm">
               <div className="flex items-center gap-3">
                 <Clock className="size-4 text-[color:var(--muted)]" />
-                <span>Entrega 30–45 min en {store.city}</span>
+                <span>Entrega en {store.city}</span>
               </div>
               <div className="flex items-center gap-3">
                 <MessageCircle className="size-4 text-[color:var(--muted)]" />

@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronRight, Flame } from "lucide-react";
-import type { MockProduct } from "@/lib/mock/products";
-import type { MockStore } from "@/lib/mock/stores";
+import type { ProductView, StoreView } from "@/lib/storefront/types";
+import { storefrontCopy } from "@/lib/storefront/copy";
+import { categoryAnchorId as slugCat } from "@/lib/storefront/category-anchor";
 import { ProductCard } from "./ProductCard";
 import { ProductQuickView } from "./ProductQuickView";
 
 const ALL_KEY = "todos";
-const slugCat = (c: string) => c.toLowerCase().replace(/\s+/g, "-");
 
 export function StorefrontMenu({
   store,
@@ -17,13 +17,14 @@ export function StorefrontMenu({
   productsByCategory,
   promoSlot,
 }: {
-  store: MockStore;
-  featured: MockProduct[];
+  store: StoreView;
+  featured: ProductView[];
   populatedCategories: string[];
-  productsByCategory: Record<string, MockProduct[]>;
+  productsByCategory: Record<string, ProductView[]>;
   promoSlot?: ReactNode;
 }) {
-  const [active, setActive] = useState<MockProduct | null>(null);
+  const copy = storefrontCopy(store.vertical);
+  const [active, setActive] = useState<ProductView | null>(null);
   const [activeCat, setActiveCat] = useState<string>(ALL_KEY);
   const navScrollRef = useRef<HTMLDivElement>(null);
 
@@ -39,8 +40,9 @@ export function StorefrontMenu({
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        if (visible.length) {
-          const id = visible[0].target.id;
+        const top = visible[0];
+        if (top) {
+          const id = top.target.id;
           if (id === "destacados") setActiveCat(ALL_KEY);
           else setActiveCat(id.replace("cat-", ""));
         }
@@ -106,61 +108,67 @@ export function StorefrontMenu({
         </div>
       </nav>
 
-      {/* Featured — editorial 1 hero + 2 stacked layout */}
-      <section id="destacados" className="mx-auto max-w-6xl scroll-mt-32 px-4 pt-10">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-100)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-amber-700)]">
-              <Flame className="size-3" /> Lo más pedido hoy
-            </span>
-            <h2 className="font-display mt-3 text-3xl leading-tight md:text-4xl">
-              Las <span className="underline-amber">imperdibles</span> de la casa
-            </h2>
-            <p className="mt-1.5 max-w-md text-sm text-[color:var(--muted)]">
-              Tres platos que nuestros clientes piden semana tras semana.
-            </p>
-          </div>
-          <a
-            href="#cat-wings"
-            onClick={(e) => {
-              e.preventDefault();
-              handleChipClick(slugCat(populatedCategories[0] || ""));
-            }}
-            className="hidden items-center gap-1 text-sm font-medium text-[color:var(--fg-soft)] hover:text-[color:var(--color-amber-600)] md:inline-flex"
-          >
-            Ver todo <ChevronRight className="size-4" />
-          </a>
-        </div>
-
-        {featured.length >= 3 ? (
-          <div className="mt-6 grid gap-4 md:grid-cols-2 md:grid-rows-2">
-            <div
-              className="animate-slide-up md:row-span-2"
-              style={{ animationDelay: "0.05s" }}
+      {/* Featured — editorial 1 hero + 2 stacked layout.
+          Sólo se renderiza si hay destacados configurados; antes el header
+          "Destacados" + título + subtítulo + grilla vacía aparecía aunque el
+          owner no hubiera marcado ningún producto como isFeatured, dando
+          impresión de tienda rota. */}
+      {featured.length > 0 && (
+        <section id="destacados" className="mx-auto max-w-6xl scroll-mt-32 px-4 pt-10">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-100)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-amber-700)]">
+                <Flame className="size-3" /> {copy.featuredPill}
+              </span>
+              <h2 className="font-display mt-3 text-3xl leading-tight md:text-4xl">
+                {copy.featuredTitle}
+              </h2>
+              <p className="mt-1.5 max-w-md text-sm text-[color:var(--muted)]">
+                {copy.featuredSubtitle}
+              </p>
+            </div>
+            <a
+              href={populatedCategories[0] ? `#cat-${slugCat(populatedCategories[0])}` : "#menu"}
+              onClick={(e) => {
+                e.preventDefault();
+                handleChipClick(slugCat(populatedCategories[0] ?? ""));
+              }}
+              className="hidden items-center gap-1 text-sm font-medium text-[color:var(--fg-soft)] hover:text-[color:var(--color-amber-600)] md:inline-flex"
             >
-              <ProductCard product={featured[0]} onOpen={setActive} variant="hero" />
-            </div>
-            <div className="animate-slide-up" style={{ animationDelay: "0.12s" }}>
-              <ProductCard product={featured[1]} onOpen={setActive} variant="row" />
-            </div>
-            <div className="animate-slide-up" style={{ animationDelay: "0.18s" }}>
-              <ProductCard product={featured[2]} onOpen={setActive} variant="row" />
-            </div>
+              Ver todo <ChevronRight className="size-4" />
+            </a>
           </div>
-        ) : (
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {featured.map((p, i) => (
+
+          {featured.length >= 3 && featured[0] && featured[1] && featured[2] ? (
+            <div className="mt-6 grid gap-4 md:grid-cols-2 md:grid-rows-2">
               <div
-                key={p.slug}
-                className="animate-slide-up"
-                style={{ animationDelay: `${i * 0.08}s` }}
+                className="animate-slide-up md:row-span-2"
+                style={{ animationDelay: "0.05s" }}
               >
-                <ProductCard product={p} onOpen={setActive} />
+                <ProductCard product={featured[0]} onOpen={setActive} variant="hero" />
               </div>
-            ))}
-          </div>
-        )}
-      </section>
+              <div className="animate-slide-up" style={{ animationDelay: "0.12s" }}>
+                <ProductCard product={featured[1]} onOpen={setActive} variant="row" />
+              </div>
+              <div className="animate-slide-up" style={{ animationDelay: "0.18s" }}>
+                <ProductCard product={featured[2]} onOpen={setActive} variant="row" />
+              </div>
+            </div>
+          ) : (
+            <div className="mt-6 grid gap-4 md:grid-cols-3">
+              {featured.map((p, i) => (
+                <div
+                  key={p.slug}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${i * 0.08}s` }}
+                >
+                  <ProductCard product={p} onOpen={setActive} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {promoSlot}
 
@@ -201,6 +209,8 @@ export function StorefrontMenu({
         <ProductQuickView
           product={active}
           city={store.city}
+          storeSlug={store.slug}
+          vertical={store.vertical}
           onClose={() => setActive(null)}
         />
       )}

@@ -1,0 +1,39 @@
+# CODEOWNERS — quién debe revisar cada parte del código.
+# Doc: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Cuando un PR toca un path, GitHub auto-pide review al/los owners listados.
+# Cambiar @AndreeAng al username/team real del repo.
+
+# Fallback global
+*                                  @AndreeAng
+
+# ============================================================
+# Áreas críticas — exigir review extra
+# ============================================================
+
+# Auth, seguridad, crypto — cambios acá afectan a todos los users
+/nibble/auth.ts                    @AndreeAng
+/nibble/middleware.ts              @AndreeAng
+/nibble/lib/auth/                  @AndreeAng
+/nibble/lib/crypto/                @AndreeAng
+/nibble/lib/security/              @AndreeAng
+
+# Schema y migrations — cambios irreversibles en producción
+/nibble/prisma/schema.prisma       @AndreeAng
+/nibble/prisma/migrations/         @AndreeAng
+
+# Billing / money — bugs acá pierden plata real
+/nibble/lib/billing/               @AndreeAng
+/nibble/server/actions/orders.ts   @AndreeAng
+/nibble/server/actions/order-management.ts @AndreeAng
+/nibble/server/actions/invoices.ts @AndreeAng
+
+# SIAT — facturación electrónica oficial
+/nibble/lib/billing/siat/          @AndreeAng
+
+# CI/CD — bypass del pipeline tiene que ser visible
+/.github/                          @AndreeAng
+
+# Docs
+/docs/                             @AndreeAng
+/README.md                         @AndreeAng

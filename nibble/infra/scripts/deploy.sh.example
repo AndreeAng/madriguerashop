@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Script de deploy para VPS Linux (Ubuntu/Debian).
+# Ejemplo — adaptá rutas a tu setup real.
+set -euo pipefail
+
+APP_DIR=/var/www/nibble
+BRANCH=${BRANCH:-main}
+
+cd "$APP_DIR"
+
+echo "→ Pulling $BRANCH"
+git fetch origin
+git checkout "$BRANCH"
+git pull origin "$BRANCH"
+
+echo "→ Installing dependencies"
+cd nibble
+npm ci --production=false
+
+echo "→ Generating Prisma client"
+npm run db:generate
+
+echo "→ Applying migrations"
+npx prisma migrate deploy
+
+echo "→ Building"
+npm run build
+
+echo "→ Restarting service"
+sudo systemctl restart nibble
+
+echo "✓ Deploy completo"

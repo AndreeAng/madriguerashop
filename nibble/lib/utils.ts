@@ -5,6 +5,84 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatBob(amount: number): string {
-  return `Bs ${amount.toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+/**
+ * Formatea un monto en bolivianos. Acepta `number` o cualquier objeto con
+ * `toNumber()` (Prisma `Decimal`) — los campos `@db.Decimal` del schema
+ * llegan como Decimal, no como primitivo.
+ */
+export function formatBob(amount: number | { toNumber: () => number }): string {
+  return `Bs ${formatBobAmount(amount)}`;
+}
+
+/** Como `formatBob` pero sin el prefijo "Bs " — para componer mensajes
+ *  donde el "Bs" ya está fuera (ej. WhatsApp). */
+export function formatBobAmount(amount: number | { toNumber: () => number }): string {
+  const n = typeof amount === "number" ? amount : amount.toNumber();
+  return n.toLocaleString("es-BO", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+/** Formato corto "13/05/2026 14:32" para tablas y eventos del dashboard. */
+export function formatDateTimeShort(d: Date): string {
+  return d.toLocaleString("es-BO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Formato corto "13/05/2026" (sin hora). */
+export function formatDateShort(d: Date): string {
+  return d.toLocaleDateString("es-BO", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
+/** Construye un link `https://wa.me/<phone>?text=<encoded>` listo para
+ *  abrirse desde el browser. Limpia caracteres no numéricos del phone
+ *  y aplica `encodeURIComponent` al mensaje. */
+export function buildWhatsAppUrl(phone: string, message: string): string {
+  return `https://wa.me/${formatWaPhone(phone)}?text=${encodeURIComponent(message)}`;
+}
+
+/** Suma `days` días a una fecha. No muta el argumento. */
+export function addDays(d: Date, days: number): Date {
+  const next = new Date(d);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+/**
+ * Limpia caracteres no numéricos de un teléfono para armar links wa.me.
+ * Ej: "+591-72201700" → "59172201700".
+ */
+export function formatWaPhone(phone: string): string {
+  return phone.replace(/\D/g, "");
+}
+
+/**
+ * Iniciales para avatares — toma las primeras 2 palabras del nombre y
+ * devuelve sus iniciales en mayúsculas. Si no hay nombre, devuelve "·".
+ *
+ * Vive en `lib/utils.ts` (módulo neutro, sin "use client") para que server
+ * components puedan invocarlo. Antes estaba exportado desde un archivo
+ * `"use client"`, lo que hacía que Turbopack lo tratara como server-action
+ * y rompiera al usarlo desde el server (ej. AdminSidebar RSC).
+ */
+export function nameToInitials(name: string | null | undefined): string {
+  if (!name) return "·";
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0]?.toUpperCase() ?? "")
+      .join("") || "·"
+  );
 }

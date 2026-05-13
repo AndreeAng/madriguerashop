@@ -1,5 +1,64 @@
 import { Bell, Search, ChevronDown, MapPin } from "lucide-react";
-import { orders } from "@/lib/mock/orders";
+
+// Datos ilustrativos para el preview del dashboard en la landing.
+// Es decoración: NO se conecta a DB porque la landing es pública/estática.
+type PreviewOrder = {
+  id: string;
+  number: number;
+  customerName: string;
+  itemsSummary: string;
+  zone?: string;
+  total: number;
+  status: keyof typeof STATUS_LABEL;
+};
+
+const PREVIEW_ORDERS: PreviewOrder[] = [
+  {
+    id: "1",
+    number: 1247,
+    customerName: "Carla Mendoza",
+    itemsSummary: "12 Wings BBQ + Cheese Fries",
+    zone: "Cala Cala",
+    total: 96,
+    status: "NEW",
+  },
+  {
+    id: "2",
+    number: 1246,
+    customerName: "Marco Vargas",
+    itemsSummary: "Combo Familiar + 2 Limonadas",
+    zone: "Tupuraya",
+    total: 165,
+    status: "PREPARING",
+  },
+  {
+    id: "3",
+    number: 1245,
+    customerName: "Ana Salazar",
+    itemsSummary: "Buffalo Hot · 12 piezas",
+    zone: "Recoleta",
+    total: 58,
+    status: "IN_DELIVERY",
+  },
+  {
+    id: "4",
+    number: 1244,
+    customerName: "Diego Rojas",
+    itemsSummary: "Honey Mustard + Limonada",
+    zone: "Sarco",
+    total: 76,
+    status: "CONFIRMED",
+  },
+  {
+    id: "5",
+    number: 1243,
+    customerName: "Lucía Pérez",
+    itemsSummary: "Wings Clásicos · 6 piezas",
+    zone: "Queru Queru",
+    total: 42,
+    status: "DELIVERED",
+  },
+];
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   NEW:               { label: "Nuevo",        tone: "bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]" },
@@ -12,8 +71,6 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
 };
 
 export function DashboardPreview() {
-  const visible = orders.slice(0, 5);
-
   return (
     <div className="overflow-hidden rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] shadow-soft">
       {/* topbar */}
@@ -56,7 +113,7 @@ export function DashboardPreview() {
           <span>Total</span>
           <span>Estado</span>
         </div>
-        {visible.map((o) => {
+        {PREVIEW_ORDERS.map((o) => {
           const s = STATUS_LABEL[o.status] ?? { label: o.status, tone: "" };
           return (
             <div

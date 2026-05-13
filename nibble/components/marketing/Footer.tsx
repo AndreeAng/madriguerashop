@@ -14,6 +14,9 @@ export function MarketingFooter() {
               Construido en Bolivia para emprendedores que venden por WhatsApp y
               merecen una tienda que se note.
             </p>
+            <p className="mt-3 text-[10px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
+              Una empresa Nibble
+            </p>
 
             <div className="mt-6 inline-flex items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3 py-1.5 text-xs">
               <MapPin className="size-3.5 text-[color:var(--color-amber-500)]" />
@@ -25,7 +28,7 @@ export function MarketingFooter() {
           <FooterCol
             title="Producto"
             links={[
-              { label: "Tiendas en Nibble", href: "/tiendas" },
+              { label: "Tiendas en madriguera·shop", href: "/tiendas" },
               { label: "Industrias", href: "#industrias" },
               { label: "Cómo funciona", href: "#como-funciona" },
               { label: "Precio", href: "#precio" },
@@ -36,7 +39,7 @@ export function MarketingFooter() {
             title="Empresa"
             links={[
               { label: "Acceder", href: "/login" },
-              { label: "hola@nibble.bo", href: "mailto:hola@nibble.bo" },
+              { label: "hola@madrigueras.shop", href: "mailto:hola@madrigueras.shop" },
               { label: "+591 7220 1700", href: "https://wa.me/59172201700" },
             ]}
             className="md:col-span-2"
@@ -44,9 +47,8 @@ export function MarketingFooter() {
           <FooterCol
             title="Legal"
             links={[
-              { label: "Términos", href: "#" },
-              { label: "Privacidad", href: "#" },
-              { label: "Estado del servicio", href: "#" },
+              { label: "Términos", href: "/terminos" },
+              { label: "Privacidad", href: "/privacidad" },
             ]}
             className="md:col-span-2"
           />
@@ -54,7 +56,7 @@ export function MarketingFooter() {
 
         {/* Decorative line */}
         <div className="mt-14 flex flex-col items-start justify-between gap-3 border-t border-[color:var(--line)] pt-6 text-xs text-[color:var(--muted)] md:flex-row md:items-center">
-          <p>© {new Date().getFullYear()} Nibble. Una empresa boliviana.</p>
+          <p>© {new Date().getFullYear()} Madriguera Shop · Operado por Nibble (Bolivia).</p>
           <p className="inline-flex items-center gap-1.5">
             <span className="size-1.5 rounded-full bg-[color:var(--color-leaf-500)] animate-pulse-dot" />
             Todos los servicios operativos

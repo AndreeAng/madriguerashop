@@ -1,35 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import Link from "next/link";
-import { ArrowRight, AtSign, Lock, Loader2 } from "lucide-react";
+import { ArrowRight, AtSign, Lock } from "lucide-react";
 import { loginAction, type LoginState } from "@/server/actions/auth";
+import { ErrorAlert } from "@/components/ui/Alert";
+import { SubmitButton } from "@/components/ui/SubmitButton";
 
 const initialState: LoginState = {};
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="press mt-2 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[color:var(--color-bark-900)] px-5 py-3 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)] disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pending ? (
-        <>
-          <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-          Entrando…
-        </>
-      ) : (
-        <>
-          Entrar
-          <ArrowRight className="size-4" aria-hidden="true" />
-        </>
-      )}
-    </button>
-  );
-}
 
 export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, initialState);
@@ -95,16 +73,17 @@ export function LoginForm() {
         )}
       </label>
 
-      {state.error && (
-        <p
-          role="alert"
-          className="rounded-lg border border-[color:var(--color-tomato-500)]/30 bg-[color:var(--color-tomato-500)]/10 px-3 py-2 text-sm text-[color:var(--color-tomato-600)]"
-        >
-          {state.error}
-        </p>
-      )}
+      {state.error && <ErrorAlert>{state.error}</ErrorAlert>}
 
-      <SubmitButton />
+      <SubmitButton
+        width="full"
+        size="md"
+        className="mt-2 py-3"
+        pendingLabel="Entrando…"
+        icon={<ArrowRight className="size-4" aria-hidden="true" />}
+      >
+        Entrar
+      </SubmitButton>
     </form>
   );
 }

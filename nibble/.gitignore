@@ -7,3 +7,6 @@ node_modules
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+# Comprobantes de pago: sirven por route handler con auth, NO se commitean.
+private-uploads/
+public/uploads/

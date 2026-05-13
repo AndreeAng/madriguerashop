@@ -1,0 +1,11 @@
+#!/usr/bin/env sh
+
+# Hook pre-commit: corre lint-staged sobre los archivos staged.
+# - ESLint --fix sobre .ts/.tsx (corrige lo que pueda + falla si queda algo)
+# - Prisma format sobre schema.prisma
+# - Migrations validate no aquí (es lento) — eso es responsabilidad del CI
+#
+# Bypass de emergencia: `git commit --no-verify` (NO usar para PRs).
+
+cd nibble || exit 1
+npx lint-staged --concurrent false

@@ -35,10 +35,3 @@ export async function ensureGuestToken(): Promise<string> {
   return token;
 }
 
-/**
- * Borra la cookie del guest token (ej. al hacer login → migrar carrito).
- */
-export async function clearGuestToken(): Promise<void> {
-  const store = await cookies();
-  store.delete(GUEST_TOKEN_COOKIE);
-}
