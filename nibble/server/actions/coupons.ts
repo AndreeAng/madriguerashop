@@ -198,7 +198,7 @@ export async function upsertCouponAction(
       // Unique constraint (storeId, code) — el código ya existe en esta tienda.
       return {
         fieldErrors: {
-          code: "Ya tenés un cupón con este código en tu tienda.",
+          code: "Ya tienes un cupón con este código en tu tienda.",
         },
       };
     }

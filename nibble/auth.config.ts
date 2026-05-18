@@ -27,7 +27,7 @@ import { IMPERSONATION_COOKIE_NAME } from "@/lib/auth/impersonation-shared";
  * cualquier guard `requireX` en una page) re-valide el token y lo invalide.
  * Las MUTACIONES (server actions) siempre corren en Node → siempre revalidan.
  *
- * Si necesitás revocación instantánea para un caso concreto:
+ * Si necesitas revocación instantánea para un caso concreto:
  *   - cambiar la `passwordHash` del usuario en DB (rompe el JWT en el próximo
  *     `verifyPassword` del recovery flow), o
  *   - migrar a sesiones DB-backed (cuesta una query Prisma por request).

@@ -31,8 +31,18 @@ export type StoreView = {
   logoEmoji: string; // fallback del logo cuando no hay logoUrl (2 letras del nombre)
   bannerImage: string;
 
-  /** Hora de cierre de hoy en formato "HH:MM", o null si está cerrado. */
+  /** Hora de cierre de hoy en formato "HH:MM", o null si HOY está marcado
+   *  como cerrado (`isClosed`). NO indica si el local está abierto ahora —
+   *  para eso usar `isOpenNow`. */
   closesTodayAt: string | null;
+  /** True si la tienda está abierta AHORA según la hora local del browser
+   *  del servidor (que en VPS Bolivia coincide con hora de Cochabamba).
+   *  Considera día de la semana + rango open/close del día actual. */
+  isOpenNow: boolean;
+  /** Texto humano "Abre mañana a las 10:00", "Abre el lunes 10:00", etc.
+   *  Solo presente si `isOpenNow=false`. Null si la tienda no tiene
+   *  horarios futuros configurados (todos los días cerrados). */
+  nextOpeningLabel: string | null;
   /** "Lun – Dom · 11:00 – 23:00" formateado para el footer. Derivado de
    * `hoursGroups.map(g => "días · horario").join(" · ")` — mantener para
    * componentes que sólo quieren una línea. */

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Bell } from "lucide-react";
 
 /**
- * Badge "tenés pedidos nuevos" en el header del dashboard.
+ * Badge "tienes pedidos nuevos" en el header del dashboard.
  *
  * Polling cada 30s a `/api/dashboard/orders-meta`. Si detecta un pedido
  * cuyo `latestOrderId` cambió desde la última lectura visible al usuario

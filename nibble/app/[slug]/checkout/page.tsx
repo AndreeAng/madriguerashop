@@ -86,7 +86,15 @@ export default async function CheckoutPage({
           deliveryNote: storeData.deliveryNote,
           qrImageUrl: storeData.qrImageUrl,
           qrInstructions: storeData.qrInstructions,
+          isOpenNow: store.isOpenNow,
+          nextOpeningLabel: store.nextOpeningLabel,
         }}
+        hoursByDay={storeData.storeHours.map((h) => ({
+          dayOfWeek: h.dayOfWeek,
+          openTime: h.openTime,
+          closeTime: h.closeTime,
+          isClosed: h.isClosed,
+        }))}
         cart={cart}
         deliveryZones={zones.map((z) => {
           const shape = readCircleShape(z.polygon);

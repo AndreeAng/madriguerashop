@@ -133,10 +133,10 @@ export async function checkOrderLimitThisMonth(
 
 export function productLimitMessage(s: LimitStatus): string {
   if (!s.exceeded || s.limit === null) return "";
-  return `Llegaste al tope de ${s.limit} productos activos del plan. Suspendé alguno o pasá a un plan superior para agregar más.`;
+  return `Llegaste al tope de ${s.limit} productos activos del plan. Suspende alguno o pasa a un plan superior para agregar más.`;
 }
 
 export function staffLimitMessage(s: LimitStatus): string {
   if (!s.exceeded || s.limit === null) return "";
-  return `Tu plan permite ${s.limit} ${s.limit === 1 ? "cajero" : "cajeros"}. Suspendé alguno o subí de plan para invitar más.`;
+  return `Tu plan permite ${s.limit} ${s.limit === 1 ? "cajero" : "cajeros"}. Suspende alguno o sube de plan para invitar más.`;
 }

@@ -74,7 +74,7 @@ const storeBaseSchema = z.object({
     ),
   city: z.string().trim().min(2, "Ingresá la ciudad").max(60),
   planSlug: z.string().trim().min(1, "Elegí un plan"),
-  /** Si está marcado, la tienda aparece en /tiendas. Para demos lo dejás
+  /** Si está marcado, la tienda aparece en /tiendas. Para demos lo dejas
    * apagado: el cliente ve su tienda por URL directa, pero no en el
    * directorio público. */
   isPubliclyListed: z.boolean().default(false),
@@ -329,7 +329,7 @@ export async function adminCreateStoreAction(
   }
 
   if (!createdId) {
-    return { error: "No pudimos crear la tienda. Probá de nuevo." };
+    return { error: "No pudimos crear la tienda. Prueba de nuevo." };
   }
 
   await audit({

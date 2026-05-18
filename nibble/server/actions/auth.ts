@@ -74,7 +74,7 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
         case "CredentialsSignin":
           return { error: "Email/teléfono o contraseña incorrectos." };
         default:
-          return { error: "No pudimos iniciar sesión. Probá de nuevo." };
+          return { error: "No pudimos iniciar sesión. Prueba de nuevo." };
       }
     }
     throw error;

@@ -212,6 +212,16 @@ export default async function OrdersPage({
                                   Verificar pago
                                 </span>
                               )}
+                              {order.scheduledFor && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-bark-100)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-bark-800)]">
+                                  📅 {order.scheduledFor.toLocaleString("es-BO", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              )}
                             </div>
                             <p className="mt-0.5 text-xs text-[color:var(--muted)]">
                               {order._count.items}{" "}

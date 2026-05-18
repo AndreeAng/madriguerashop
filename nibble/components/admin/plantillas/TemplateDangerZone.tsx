@@ -147,7 +147,7 @@ function DeleteForm({
     <form action={action} className="mt-3 space-y-2">
       <input type="hidden" name="id" value={templateId} />
       <p className="text-xs text-[color:var(--color-tomato-700)]">
-        ¿Confirmás eliminar <strong>{templateName}</strong>? Esta acción es irreversible.
+        ¿Confirmas eliminar <strong>{templateName}</strong>? Esta acción es irreversible.
       </p>
       <div className="flex items-center gap-2">
         <DeleteButton />

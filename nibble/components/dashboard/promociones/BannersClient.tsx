@@ -320,7 +320,7 @@ function BannerForm({
         categories={pickerContext.categories}
         products={pickerContext.products}
         error={fe.linkUrl}
-        hint="Elegí una categoría, un producto o WhatsApp. Si dejás 'Sin enlace', la imagen se muestra sola."
+        hint="Elegí una categoría, un producto o WhatsApp. Si dejas 'Sin enlace', la imagen se muestra sola."
       />
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -330,7 +330,7 @@ function BannerForm({
           type="datetime-local"
           defaultValue={validFromLocal}
           error={fe.validFrom}
-          hint="Si lo dejás vacío, está activo ya."
+          hint="Si lo dejas vacío, está activo ya."
         />
         <Field
           label="Mostrar hasta (opcional)"
@@ -338,7 +338,7 @@ function BannerForm({
           type="datetime-local"
           defaultValue={validToLocal}
           error={fe.validTo}
-          hint="Si lo dejás vacío, no expira."
+          hint="Si lo dejas vacío, no expira."
         />
       </div>
 

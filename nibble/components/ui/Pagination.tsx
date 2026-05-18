@@ -6,7 +6,7 @@ import Link from "next/link";
  * cobranzas, usuarios), cada una construyendo su propio `buildPageHref`.
  *
  * El caller pasa `buildPageHref` para mantener los demás query params
- * (filter, q, etc) — la lib no sabe qué params querés preservar.
+ * (filter, q, etc) — la lib no sabe qué params quieres preservar.
  */
 export function Pagination({
   page,

@@ -195,7 +195,7 @@ export async function createBookingAction(
       return {
         fieldErrors: {
           startsAt:
-            "Alguien acaba de reservar ese horario. Probá otro de la lista.",
+            "Alguien acaba de reservar ese horario. Prueba otro de la lista.",
         },
       };
     }
@@ -203,13 +203,13 @@ export async function createBookingAction(
       return {
         fieldErrors: {
           startsAt:
-            "Ese horario ya no está disponible (el local lo bloqueó). Probá otro.",
+            "Ese horario ya no está disponible (el local lo bloqueó). Prueba otro.",
         },
       };
     }
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       // Colisión de trackingToken — astronómicamente rara, sino bug.
-      return { error: "Error generando la reserva. Probá de nuevo." };
+      return { error: "Error generando la reserva. Prueba de nuevo." };
     }
     throw err;
   }
@@ -352,7 +352,7 @@ export async function markBookingCompletedAction(
  * confirmado. Estado terminal (no se puede revertir vía UI) — habilita
  * métricas de fiabilidad de clientes a futuro. Transición solo desde
  * CONFIRMED, igual que `markBookingCompletedAction`: una PENDING que
- * "no vino" semánticamente no tiene sentido (no confirmaste, no podés
+ * "no vino" semánticamente no tiene sentido (no confirmaste, no puedes
  * marcar ausencia).
  */
 export async function markBookingNoShowAction(

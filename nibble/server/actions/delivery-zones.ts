@@ -165,7 +165,7 @@ export async function upsertDeliveryZoneAction(
     }
   } catch (err) {
     console.error("[delivery-zones] upsert failed", err);
-    return { error: "No pudimos guardar la zona. Probá de nuevo." };
+    return { error: "No pudimos guardar la zona. Prueba de nuevo." };
   }
 
   revalidatePath("/dashboard/delivery");

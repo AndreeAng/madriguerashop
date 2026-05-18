@@ -37,7 +37,7 @@ export default async function TeamPage() {
           <p className="mt-1 text-sm text-[color:var(--muted)]">
             Los cajeros pueden ver pedidos y marcar estados (preparando, en
             entrega, entregado). NO pueden crear/editar productos, ver
-            facturación ni cambiar configuración. Vos como dueño guardás
+            facturación ni cambiar configuración. Tú como dueño guardas
             ese control.
           </p>
         </div>

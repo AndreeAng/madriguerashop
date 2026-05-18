@@ -9,21 +9,21 @@ export function emailVerificationEmail(opts: {
 }): SendInput {
   const body = `
     <p>
-      ¡Bienvenido a Madriguera Shop! Confirmá tu email para activar las
+      ¡Bienvenido a Madriguera Shop! Confirma tu email para activar las
       notificaciones de pedidos, recordatorios de facturación y reset de
       contraseña de <strong>${escapeHtml(opts.storeName)}</strong>.
     </p>
     <p>
-      Este link es válido por <strong>24 horas</strong>. Si no fuiste vos,
+      Este link es válido por <strong>24 horas</strong>. Si no fuiste tú,
       ignora este email — tu cuenta queda en estado normal igualmente.
     </p>
   `;
 
   return {
     to: opts.to,
-    subject: "Confirmá tu email — Madriguera Shop",
+    subject: "Confirma tu email — Madriguera Shop",
     html: renderEmail({
-      title: "Confirmá tu email",
+      title: "Confirma tu email",
       body,
       ctaText: "Verificar mi email",
       ctaUrl: opts.verifyUrl,
