@@ -48,9 +48,12 @@ jobs:
       run:
         working-directory: nibble
 
+    # GitHub Actions no permite `${{ secrets.* }}` en `environment.url`.
+    # Antes era `url: ${{ secrets.PROD_APP_URL }}` y rechazaba el workflow.
+    # Si querés un link clickable en la UI de GitHub Deployments, hardcodealo
+    # acá; el smoke test sigue usando $PROD_APP_URL desde secrets.
     environment:
       name: production
-      url: ${{ secrets.PROD_APP_URL }}
 
     steps:
       - uses: actions/checkout@v4
