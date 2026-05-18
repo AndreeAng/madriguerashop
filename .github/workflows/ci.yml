@@ -233,7 +233,7 @@ jobs:
 
       - name: Cache Playwright browsers
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
@@ -247,7 +247,7 @@ jobs:
         run: npx playwright install-deps chromium
 
       - name: Cache Next build
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: nibble/.next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('nibble/package-lock.json') }}-${{ hashFiles('nibble/**/*.ts', 'nibble/**/*.tsx') }}
@@ -317,7 +317,7 @@ jobs:
         # Misma key que test-e2e: si E2E ya buildeó este mismo sha, este job
         # reusa el .next/cache y `next build` corre incremental — evita
         # rebuild duplicado de 2-3 minutos por PR.
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: nibble/.next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('nibble/package-lock.json') }}-${{ hashFiles('nibble/**/*.ts', 'nibble/**/*.tsx') }}
