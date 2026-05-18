@@ -11,7 +11,7 @@ import { IMPERSONATION_COOKIE_NAME as COOKIE_NAME_SHARED } from "./impersonation
  * - `sameSite: "lax"` → no se manda en navegaciones cross-site sospechosas.
  * - `maxAge: 4h` → vida máxima acotada. Antes la cookie era "de sesión"
  *   (sin maxAge) pero los browsers modernos restauran sesiones al reabrir,
- *   dejándola viva días. Si un admin entra a una tienda y cierra el laptop,
+ *   dejandola viva días. Si un admin entra a una tienda y cierra el laptop,
  *   la cookie podía sobrevivir indefinidamente. 4h alcanza para configurar
  *   una tienda demo y se re-ingresa al volver del almuerzo.
  *

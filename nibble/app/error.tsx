@@ -90,7 +90,7 @@ export default function GlobalError({
         </div>
         {!canRetry && (
           <p className="mt-3 text-xs text-[color:var(--muted)]">
-            Probamos varias veces sin éxito. Volvé al inicio o escribinos.
+            Probamos varias veces sin éxito. Vuelve al inicio o escríbenos.
           </p>
         )}
       </div>

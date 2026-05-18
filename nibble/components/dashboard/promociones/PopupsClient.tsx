@@ -270,7 +270,7 @@ function PopupForm({
       <TextareaField
         label="Mensaje"
         name="message"
-        placeholder="Decorá tu evento con nuestros combos especiales. Reservá hasta 7 días antes."
+        placeholder="Decora tu evento con nuestros combos especiales. Reserva hasta 7 días antes."
         defaultValue={popup?.message ?? ""}
         error={fe.message}
         required
@@ -290,7 +290,7 @@ function PopupForm({
         placeholder="Ver combos"
         defaultValue={popup?.ctaText ?? ""}
         error={fe.ctaText}
-        hint="Si dejás texto y destino, aparece un botón en el popup."
+        hint="Si dejas texto y destino, aparece un botón en el popup."
       />
 
       <LinkTargetPicker

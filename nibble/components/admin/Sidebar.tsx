@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Settings,
   AlertCircle,
+  DownloadCloud,
 } from "lucide-react";
 import { NibbleLogo } from "@/components/shared/Logo";
 import {
@@ -24,6 +25,7 @@ const ICON_CLS = "size-4";
 const items: SidebarItem[] = [
   { href: "/admin", icon: <LayoutDashboard className={ICON_CLS} />, label: "Inicio" },
   { href: "/admin/tiendas", icon: <Store className={ICON_CLS} />, label: "Tiendas" },
+  { href: "/admin/importar", icon: <DownloadCloud className={ICON_CLS} />, label: "Importar de Quick" },
   { href: "/admin/usuarios", icon: <Users className={ICON_CLS} />, label: "Usuarios" },
   { href: "/admin/cobranzas", icon: <CreditCard className={ICON_CLS} />, label: "Cobranzas" },
   { href: "/admin/plantillas", icon: <Layout className={ICON_CLS} />, label: "Plantillas" },

@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 
 /**
- * Endpoint de polling para el badge "tenés pedidos para atender" del
+ * Endpoint de polling para el badge "tienes pedidos para atender" del
  * dashboard. Devuelve contadores ligeros — 2 queries, ambas con índices.
  *
  * Diseño:

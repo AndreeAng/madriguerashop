@@ -32,7 +32,7 @@ export function AdminCreateStoreForm({
 
   // Post-éxito: redirige al detalle. Lo manejamos client-side (con router)
   // porque la action devuelve `createdSlug` y queremos navegar a
-  // /admin/tiendas/<id> usando una query adicional. Si querés simplificar,
+  // /admin/tiendas/<id> usando una query adicional. Si quieres simplificar,
   // se puede usar `adminCreateStoreAndRedirect` del módulo de actions.
   useEffect(() => {
     if (state.ok && state.createdSlug) {
@@ -137,9 +137,9 @@ export function AdminCreateStoreForm({
       <section className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-6">
         <h2 className="font-display text-lg">Owner (opcional)</h2>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          Llenalo si ya sabés quién será el dueño. Si lo dejás vacío, la
+          Llénalo si ya sabes quién será el dueño. Si lo dejas vacío, la
           tienda queda <strong>sin owner</strong> — perfecta para mostrar como
-          demo. Después podés asignar owner desde el detalle de la tienda.
+          demo. Después puedes asignar owner desde el detalle de la tienda.
         </p>
 
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -276,7 +276,7 @@ function SelectField({
         } bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]`}
       >
         <option value="" disabled>
-          Elegí…
+          Elige…
         </option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>

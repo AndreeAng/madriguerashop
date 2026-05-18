@@ -102,7 +102,7 @@ export async function registerStoreAction(
     console.log("[register] honeypot triggered");
     // Hacemos timeout artificial para no diferenciar respuesta de un registro real
     await new Promise((r) => setTimeout(r, 800));
-    return { error: "No pudimos completar el registro. Probá de nuevo." };
+    return { error: "No pudimos completar el registro. Prueba de nuevo." };
   }
 
   // 1. Rate limit por IP — 5 registros / hora es generoso pero detiene spam
@@ -142,7 +142,7 @@ export async function registerStoreAction(
       fieldErrors: {
         slug:
           slugCheck.reason === "reserved"
-            ? "Este identificador está reservado. Probá con otro."
+            ? "Este identificador está reservado. Prueba con otro."
             : "Identificador inválido. Sólo letras, números y guiones.",
       },
     };

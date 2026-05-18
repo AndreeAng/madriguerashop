@@ -121,6 +121,6 @@ export function slugErrorMessage(reason: SlugInvalidReason): string {
     case "bad_format":
       return "Sólo letras, números y guiones. Sin espacios ni acentos.";
     case "reserved":
-      return "Este nombre está reservado. Probá con otro.";
+      return "Este nombre está reservado. Prueba con otro.";
   }
 }

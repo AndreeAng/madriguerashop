@@ -214,6 +214,27 @@ export default async function OrderDetailPage({
                   </div>
                 </div>
 
+                {order.scheduledFor && (
+                  <div className="mt-4 rounded-xl border border-[color:var(--color-bark-300)] bg-[color:var(--color-bark-50)] p-3 text-sm">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
+                      📅 Pedido programado
+                    </p>
+                    <p className="mt-1 font-medium">
+                      {order.scheduledFor.toLocaleString("es-BO", {
+                        weekday: "long",
+                        day: "2-digit",
+                        month: "long",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                    <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+                      El cliente eligió este horario al momento del pago.
+                      Preparalo para entregar/recoger en este momento.
+                    </p>
+                  </div>
+                )}
+
                 {order.customerNotes && (
                   <div className="mt-4 rounded-xl bg-[color:var(--bg)] p-3 text-sm">
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--muted)]">

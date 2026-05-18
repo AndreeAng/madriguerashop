@@ -78,7 +78,7 @@ export default async function VerifyEmailPage({
             </div>
             <h1 className="font-display text-2xl">Email verificado</h1>
             <p className="text-sm text-[color:var(--muted)]">
-              Tu email quedó confirmado. Ya podés recibir notificaciones de
+              Tu email quedó confirmado. Ya puedes recibir notificaciones de
               pedidos y recordatorios de facturación.
             </p>
           </>

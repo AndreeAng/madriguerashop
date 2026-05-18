@@ -49,7 +49,7 @@ export function CustomerCancelOrder({ token }: { token: string }) {
       <input type="hidden" name="token" value={token} />
       <label className="block">
         <span className="text-xs font-medium text-[color:var(--color-tomato-700)]">
-          ¿Por qué cancelás? (lo verá el local)
+          ¿Por qué cancelas? (lo verá el local)
         </span>
         <textarea
           name="reason"

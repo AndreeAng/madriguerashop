@@ -29,7 +29,7 @@ export default async function DeliveryPage() {
             </p>
             <h1 className="font-display mt-1 text-3xl">Zonas de delivery</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              Definí cuánto cobrás por entregar en cada zona. El cliente
+              Define cuánto cobras por entregar en cada zona. El cliente
               elige su zona en el checkout y el costo se suma al pedido.
             </p>
           </div>
@@ -61,7 +61,7 @@ export default async function DeliveryPage() {
         <p className="mt-6 text-xs text-[color:var(--muted)]">
           Tip: si una zona ya tuvo pedidos, no se borra — queda como
           inactiva para preservar el historial. Crea una zona nueva con la
-          tarifa actualizada si necesitás ajustar precio.
+          tarifa actualizada si necesitas ajustar precio.
         </p>
       </main>
     </>

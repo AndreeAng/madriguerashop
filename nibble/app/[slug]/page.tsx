@@ -21,6 +21,7 @@ import { StorefrontFooter } from "@/components/storefront/StorefrontFooter";
 import { StorefrontMenu } from "@/components/storefront/StorefrontMenu";
 import { StorefrontBanner } from "@/components/storefront/StorefrontBanner";
 import { StorefrontPopup } from "@/components/storefront/StorefrontPopup";
+import { ClosedStoreNotice } from "@/components/storefront/ClosedStoreNotice";
 import { formatBob } from "@/lib/utils";
 
 export async function generateMetadata({
@@ -182,7 +183,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
               <div className="mx-auto w-full max-w-6xl px-4 pb-12 md:pb-16">
                 <div className="reveal-stagger">
                   <div className="flex flex-wrap items-center gap-2">
-                    {store.closesTodayAt ? (
+                    {store.isOpenNow ? (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
                         <span className="relative grid place-items-center">
                           <span className="absolute size-2 animate-pulse-dot rounded-full bg-[color:var(--color-leaf-400)]" />
@@ -192,7 +193,8 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                       </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-                        Cerrado hoy
+                        <span className="size-2 rounded-full bg-white/40" aria-hidden />
+                        {store.nextOpeningLabel ?? "Cerrado"}
                       </span>
                     )}
                     {store.ordersThisMonth !== undefined && store.ordersThisMonth > 0 && (
@@ -260,8 +262,14 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
               />
               <TrustItem
                 icon={<Clock className="size-4" />}
-                label={store.closesTodayAt ? "Abierto" : "Cerrado"}
-                hint={store.closesTodayAt ? `Hasta ${store.closesTodayAt}` : "Hoy"}
+                label={store.isOpenNow ? "Abierto" : "Cerrado"}
+                hint={
+                  store.isOpenNow
+                    ? store.closesTodayAt
+                      ? `Hasta ${store.closesTodayAt}`
+                      : "Ahora"
+                    : (store.nextOpeningLabel ?? "Vuelve pronto")
+                }
               />
             </div>
           </div>
@@ -300,7 +308,9 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                 <HoursDetail
                   icon={<Clock className="size-4" />}
                   groups={store.hoursGroups}
+                  isOpenNow={store.isOpenNow}
                   closesTodayAt={store.closesTodayAt}
+                  nextOpeningLabel={store.nextOpeningLabel}
                 />
                 <Detail
                   icon={<MapPin className="size-4" />}
@@ -330,7 +340,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                   ¿Dudas? Te respondemos en menos de 5 min
                 </h3>
                 <p className="mt-1.5 text-sm text-white/85">
-                  Escribinos al WhatsApp y resolvemos en el momento.
+                  Escríbenos al WhatsApp y resolvemos en el momento.
                 </p>
                 <a
                   href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}`}
@@ -348,6 +358,28 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
       </main>
 
       <StorefrontFooter store={store} />
+
+      {/* Aviso automático "tienda cerrada" — solo si está fuera de horario.
+          Tiene precedencia visual sobre el popup promocional porque le da
+          al cliente la info crítica (no puedes comprar AHORA) y la CTA
+          "programar pedido". */}
+      {!store.isOpenNow && (
+        <ClosedStoreNotice
+          store={{
+            name: store.name,
+            isOpenNow: store.isOpenNow,
+            nextOpeningLabel: store.nextOpeningLabel,
+            whatsapp: store.whatsapp,
+            slug: store.slug,
+          }}
+          hours={storeData.storeHours.map((h) => ({
+            dayOfWeek: h.dayOfWeek,
+            openTime: h.openTime,
+            closeTime: h.closeTime,
+            isClosed: h.isClosed,
+          }))}
+        />
+      )}
 
       {/* Popup promocional (si hay uno activo en la ventana). Lo renderizamos
           al final del DOM para que el z-index sea predecible y no quede
@@ -484,13 +516,16 @@ function Detail({
 function HoursDetail({
   icon,
   groups,
+  isOpenNow,
   closesTodayAt,
+  nextOpeningLabel,
 }: {
   icon: React.ReactNode;
   groups: Array<{ days: string; time: string }>;
+  isOpenNow: boolean;
   closesTodayAt: string | null;
+  nextOpeningLabel: string | null;
 }) {
-  const isOpenNow = closesTodayAt !== null;
   const hasSchedule = groups.length > 0;
 
   return (
@@ -536,7 +571,9 @@ function HoursDetail({
             }`}
           />
           <span>
-            {isOpenNow ? `Abierto hasta las ${closesTodayAt}` : "Cerrado hoy"}
+            {isOpenNow
+              ? `Abierto hasta las ${closesTodayAt}`
+              : (nextOpeningLabel ?? "Cerrado")}
           </span>
         </p>
       )}

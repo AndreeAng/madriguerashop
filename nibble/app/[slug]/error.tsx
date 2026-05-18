@@ -28,7 +28,7 @@ export default function StorefrontError({
         <h1 className="font-display mt-4 text-3xl">No pudimos cargar la tienda</h1>
         <p className="mt-2 max-w-md text-sm text-[color:var(--muted)]">
           Algo se rompió de nuestro lado mientras preparábamos esta página.
-          Probá refrescar — y si sigue, contactá al dueño por WhatsApp.
+          Prueba refrescar — y si sigue, contactá al dueño por WhatsApp.
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-2">

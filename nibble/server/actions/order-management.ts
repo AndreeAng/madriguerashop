@@ -645,7 +645,7 @@ export async function customerCancelOrderAction(
   if (!CUSTOMER_CANCELLABLE_STATUSES.includes(order.status)) {
     return {
       error:
-        "Este pedido ya está en preparación. Para cancelarlo, escribinos por WhatsApp.",
+        "Este pedido ya está en preparación. Para cancelarlo, escríbenos por WhatsApp.",
     };
   }
 

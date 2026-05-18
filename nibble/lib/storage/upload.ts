@@ -175,7 +175,7 @@ export async function saveImage(
   } catch {
     throw new UploadError(
       "bad_content",
-      "No pudimos procesar la imagen. Probá con otra.",
+      "No pudimos procesar la imagen. Prueba con otra.",
     );
   }
 

@@ -65,7 +65,7 @@ export function ImageUploadField({
       }
       setUrl(data.url);
     } catch {
-      setErrorLocal("Error de red. Probá de nuevo.");
+      setErrorLocal("Error de red. Prueba de nuevo.");
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";

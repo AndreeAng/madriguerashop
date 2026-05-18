@@ -9,7 +9,7 @@ type TabKey = "banners" | "popups" | "cupones";
  * intercambia paneles sin recargar la página — el dashboard `/promociones`
  * no necesita route per tab.
  *
- * Si en el futuro querés URL-bookmark por tab, pasalo a un query param
+ * Si en el futuro quieres URL-bookmark por tab, pásalo a un query param
  * (`?tab=popups`) y leelo desde el RSC. Hoy con un useState alcanza.
  */
 export function PromocionesTabs({

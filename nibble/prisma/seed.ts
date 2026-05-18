@@ -357,7 +357,7 @@ async function seedDemoStore(
 
   await db.coupon.deleteMany({ where: { storeId: store.id } });
   if (spec.coupons && spec.coupons.length > 0) {
-    // Vigencia de los cupones demo: 30 días desde hoy. Si querés probar
+    // Vigencia de los cupones demo: 30 días desde hoy. Si quieres probar
     // "fuera de fecha" en la UI, editás desde el dashboard.
     const validFrom = new Date();
     const validTo = new Date();
@@ -595,7 +595,7 @@ const demoStores: DemoStoreSpec[] = [
       {
         slug: "coca-vidrio",
         name: "Coca-Cola en vidrio",
-        description: "Mexicana, 355ml. Con hielo si querés.",
+        description: "Mexicana, 355ml. Con hielo si quieres.",
         basePrice: 12,
         category: "Bebidas",
         imageUrl:
@@ -839,7 +839,7 @@ const demoStores: DemoStoreSpec[] = [
         slug: "clavos-acero",
         name: "Clavos de acero por kilo",
         description:
-          "Clavos con cabeza, acero galvanizado. Varios calibres — elegí el que necesitás.",
+          "Clavos con cabeza, acero galvanizado. Varios calibres — elige el que necesitas.",
         basePrice: 18,
         category: "Accesorios",
         imageUrl:
@@ -866,7 +866,7 @@ const demoStores: DemoStoreSpec[] = [
     name: "Estudio Clara",
     vertical: StoreVertical.SERVICES,
     description:
-      "Peluquería profesional y estética. Reservás por WhatsApp, te atendemos a tu hora — sin esperas.",
+      "Peluquería profesional y estética. Reservas por WhatsApp, te atendemos a tu hora — sin esperas.",
     bannerUrl:
       "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1920&q=80",
     primaryColor: "#be185d",
@@ -1540,7 +1540,7 @@ const demoStores: DemoStoreSpec[] = [
     },
     banner: {
       title: "Mes de Madres — 20% off",
-      subtitle: "Maquillaje profesional + cuidado facial. Reservá tu turno por WhatsApp.",
+      subtitle: "Maquillaje profesional + cuidado facial. Reserva tu turno por WhatsApp.",
       imageUrl:
         "https://images.unsplash.com/photo-1487412947147-5cebf100ffc2?w=1600&q=80",
       linkUrl: "https://wa.me/59169123456",
@@ -1548,7 +1548,7 @@ const demoStores: DemoStoreSpec[] = [
     popup: {
       title: "Primer turno con descuento",
       message:
-        "Si es tu primera vez en Estudio Bella, tenés 15% off en cualquier servicio. Reservá tu turno por WhatsApp con código BELLA15.",
+        "Si es tu primera vez en Estudio Bella, tienes 15% off en cualquier servicio. Reserva tu turno por WhatsApp con código BELLA15.",
       imageUrl:
         "https://images.unsplash.com/photo-1522337660859-02fbefca4702?w=900&q=80",
       ctaText: "Reservar turno",
@@ -1757,7 +1757,7 @@ const demoStores: DemoStoreSpec[] = [
       linkUrl: "https://wa.me/59172112233",
     },
     popup: {
-      title: "¿Tenés receta médica?",
+      title: "¿Tienes receta médica?",
       message:
         "Subila por WhatsApp con tu pedido y verificamos disponibilidad inmediata. Atención farmacéutica con tu prescripción al lado.",
       ctaText: "Enviar receta",
