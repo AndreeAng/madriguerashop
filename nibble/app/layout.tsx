@@ -45,31 +45,21 @@ export const viewport: Viewport = {
   ],
 };
 
-// Script defensivo: desregistra cualquier Service Worker residual que el
-// browser tenga del origen. Pasa cuando el dev tuvo OTRO proyecto en
-// localhost que registraba SW; el SW queda activo cross-app porque vive
-// por origen, no por proyecto, y empieza a interceptar requests
-// devolviendo HTML cacheado de la app anterior. Síntoma típico: "subí
-// código nuevo pero el browser muestra la versión vieja". Se ejecuta
-// inline antes de hidratación para que sea efectivo en el primer render.
-const UNREGISTER_SW_SCRIPT = `
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function (regs) {
-      for (var i = 0; i < regs.length; i++) regs[i].unregister();
-    }).catch(function () {});
-    if ('caches' in window) {
-      caches.keys().then(function (keys) {
-        for (var i = 0; i < keys.length; i++) caches.delete(keys[i]);
-      }).catch(function () {});
-    }
-  }
-`.replace(/\s+/g, " ");
+// Script defensivo en `/public/unregister-sw.js`: desregistra cualquier
+// Service Worker residual que el browser tenga del origen. Pasa cuando el
+// dev tuvo OTRO proyecto en localhost que registraba SW; el SW queda
+// activo cross-app porque vive por origen, no por proyecto, y empieza a
+// interceptar requests devolviendo HTML cacheado de la app anterior.
+// Síntoma típico: "subí código nuevo pero el browser muestra la versión
+// vieja". El script vive como archivo estático (no inline) para que la
+// CSP pueda prohibir scripts inline sin excepción — un XSS futuro no
+// puede inyectar `<script>` y ejecutarse.
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es-BO" className={`${inter.variable} ${fraunces.variable}`}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: UNREGISTER_SW_SCRIPT }} />
+        <script src="/unregister-sw.js" defer />
       </head>
       <body>{children}</body>
     </html>

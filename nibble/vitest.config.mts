@@ -9,6 +9,9 @@ export default defineConfig({
     include: ["tests/unit/**/*.test.ts", "tests/unit/**/*.test.tsx"],
     environment: "node",
     globals: true,
+    // `setupFiles` corre antes que cualquier test. Lo usamos para forzar
+    // TZ=UTC y desbugear timezone tests entre dev (BOT) y CI (UTC).
+    setupFiles: ["./tests/setup.ts"],
   },
   resolve: {
     alias: {

@@ -92,10 +92,12 @@ export async function GET(request: Request) {
     o.customerNotes ?? "",
   ]);
 
+  // Trail de exports de PII para cumplimiento (los pedidos llevan nombre,
+  // teléfono, email y dirección del cliente). Antes esto se loggeaba como
+  // "order.created" — mezclaba creaciones de pedidos con exportaciones de
+  // datos personales, imposibilitando filtrar quién extrajo qué.
   await audit({
-    action: "order.created",
-    // Reusamos esta action por ahora — TODO: agregar `order.exported` al
-    // enum cuando el audit log se filtre por tipo de export.
+    action: "order.exported",
     actorId: user.id,
     storeId: store.id,
     metadata: { exportedCount: orders.length, from, to },

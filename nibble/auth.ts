@@ -43,11 +43,14 @@ declare module "@auth/core/jwt" {
 // dispara un findUnique para chequear isActive/role/storeId.
 // Worst case: un usuario suspendido sigue accediendo hasta JWT_REVALIDATE_MS.
 //
-// 5 min es un balance razonable: para revocar un admin que el super suspendió,
-// la latencia máxima es 5 min — suficiente para casos no-críticos. Si surge
-// uno crítico (admin comprometido), se cambia la password (rompe pwHash) o
-// se setea isActive=false + se invalidan todas las sesiones (no implementado).
-const JWT_REVALIDATE_MS = 5 * 60_000;
+// 60s es el balance elegido entre revocación rápida y carga de DB: para un
+// owner suspendido por morosidad o compromiso de cuenta, la ventana ciega
+// es de hasta 1 minuto — corto suficiente para que no opere significativo
+// y largo suficiente para que un cliente activo no pague una query Prisma
+// por cada navegación. Las mutaciones (server actions) siempre revalidan
+// si el token quedó viejo durante la sesión, así que el riesgo real está
+// solo en lecturas RSC, donde 60s de exposición es aceptable.
+const JWT_REVALIDATE_MS = 60_000;
 
 const credentialsSchema = z.object({
   username: z.string().min(1, "Email o teléfono requerido"),

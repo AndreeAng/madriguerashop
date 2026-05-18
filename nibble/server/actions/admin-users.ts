@@ -33,7 +33,7 @@ export async function suspendUserAction(
   if (!parsed.success) return { error: "Datos inválidos" };
 
   if (parsed.data.userId === admin.id) {
-    return { error: "No podés suspender tu propia cuenta." };
+    return { error: "No puedes suspender tu propia cuenta." };
   }
 
   const target = await db.user.findUnique({
@@ -47,7 +47,7 @@ export async function suspendUserAction(
   if (!target.isActive) return { ok: true };
 
   // Suspender. La sesión JWT del usuario se invalida en su próxima request
-  // dentro de JWT_REVALIDATE_MS (5 min, ver `auth.ts:50`) — el callback jwt
+  // dentro de JWT_REVALIDATE_MS (60s, ver `auth.ts:50`) — el callback jwt
   // re-consulta isActive contra la DB y retorna null cuando lo encuentra false.
   await db.user.update({
     where: { id: target.id },

@@ -24,16 +24,27 @@ export type BannerFormState = {
   >;
 };
 
-// Validador de URL: aceptamos "/" relativo o https absoluto. Esto cubre
-// los casos típicos: imagen subida via /api/upload (relativa) o desde
-// una CDN externa (absoluta).
-const urlRel = z
+// Validador de URL para IMÁGENES: acepta path relativo (`/`) o http(s)
+// absoluto para soportar CDNs/imágenes externas legacy.
+const imageUrlRel = z
   .string()
   .trim()
   .refine(
     (v) =>
       v === "" || v.startsWith("/") || /^https?:\/\//.test(v),
-    "URL inválida — usá una imagen subida o un enlace https://",
+    "URL inválida — usa una imagen subida o un enlace https://",
+  );
+
+// Validador para URLs de CLICK (link de banner, CTA de popup). Más estricto:
+// solo path relativo o `https://` — rechaza `http://` para evitar que el
+// owner mande clientes a un dominio en plano que un MITM puede manipular,
+// y no permite `javascript:` ni `data:` por construcción.
+const clickUrlRel = z
+  .string()
+  .trim()
+  .refine(
+    (v) => v === "" || v.startsWith("/") || v.startsWith("https://"),
+    "Usa https:// o una ruta relativa (/) — http no se permite por seguridad",
   );
 
 const baseSchema = z
@@ -41,9 +52,9 @@ const baseSchema = z
     id: z.string().optional(),
     title: z.string().trim().max(80).optional().default(""),
     subtitle: z.string().trim().max(160).optional().default(""),
-    imageUrl: urlRel.refine((v) => v.length > 0, "La imagen es obligatoria"),
-    mobileImageUrl: urlRel.optional().default(""),
-    linkUrl: urlRel.optional().default(""),
+    imageUrl: imageUrlRel.refine((v) => v.length > 0, "La imagen es obligatoria"),
+    mobileImageUrl: imageUrlRel.optional().default(""),
+    linkUrl: clickUrlRel.optional().default(""),
     validFrom: z.string().optional().default(""),
     validTo: z.string().optional().default(""),
     isActive: z.boolean().optional().default(true),
@@ -151,7 +162,7 @@ export async function upsertBannerAction(
     }
   } catch (err) {
     console.error("[banners] upsert failed", err);
-    return { error: "No pudimos guardar el banner. Probá de nuevo." };
+    return { error: "No pudimos guardar el banner. Prueba de nuevo." };
   }
 
   // Invalidación: el storefront cachea la página de la tienda; el tag

@@ -8,7 +8,8 @@ import type {
   Category,
 } from "@prisma/client";
 import type { StoreView, ProductView } from "./types";
-import { isProductAvailableNow } from "./availability";
+import { isProductAvailableNow, isStoreOpenNow } from "./availability";
+import { inBolivia } from "@/lib/booking/timezone";
 
 const FALLBACK_BANNER =
   "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=1600&q=80";
@@ -105,11 +106,65 @@ function summarizeHours(groups: Array<{ days: string; time: string }>): string {
   return groups.map((g) => `${g.days} · ${g.time}`).join(" · ");
 }
 
-/** Hora de cierre de HOY si está abierta, o null. */
+/** Hora de cierre de HOY si el día NO está marcado cerrado, o null. NO
+ *  refleja si está abierto ahora (eso lo decide `isStoreOpenNow`).
+ *  Evalúa el día en hora Bolivia para que en Vercel (UTC) "hoy" sea el
+ *  mismo día que ve el cliente — sin esto el footer mostraba "Cierra a
+ *  las X" del día siguiente entre las 20:00 y la medianoche BOT. */
 function closesTodayAt(hours: StoreHours[], now = new Date()): string | null {
-  const today = hours.find((h) => h.dayOfWeek === now.getDay());
+  const bot = inBolivia(now);
+  const today = hours.find((h) => h.dayOfWeek === bot.weekday);
   if (!today || today.isClosed) return null;
   return today.closeTime;
+}
+
+const DAY_NAMES_LONG = [
+  "domingo",
+  "lunes",
+  "martes",
+  "miércoles",
+  "jueves",
+  "viernes",
+  "sábado",
+];
+
+/**
+ * Devuelve un label humano de la próxima vez que la tienda abre.
+ * Considera:
+ *   - Si hoy ya pasó la hora de cierre → próximo día abierto
+ *   - Si hoy aún no abrió → "Abre hoy a las HH:MM"
+ *   - Si todos los días están cerrados → null
+ *
+ * Sólo se llama cuando la tienda NO está abierta ahora; si está abierta,
+ * el caller usa `closesTodayAt` para mostrar "cierra a las X".
+ */
+function computeNextOpening(hours: StoreHours[], now: Date): string | null {
+  if (hours.length === 0) return null;
+  const bot = inBolivia(now);
+  const dow = bot.weekday;
+  const hhmm =
+    String(bot.hours).padStart(2, "0") +
+    ":" +
+    String(bot.minutes).padStart(2, "0");
+
+  // Caso 1: hoy aún no abrió (estamos antes del openTime)
+  const today = hours.find((h) => h.dayOfWeek === dow);
+  if (today && !today.isClosed && hhmm < today.openTime) {
+    return `Abre hoy a las ${today.openTime}`;
+  }
+
+  // Caso 2: buscar el próximo día abierto (incluye los siguientes 7 días)
+  for (let i = 1; i <= 7; i++) {
+    const targetDow = (dow + i) % 7;
+    const day = hours.find((h) => h.dayOfWeek === targetDow);
+    if (day && !day.isClosed) {
+      const dayName = DAY_NAMES_LONG[targetDow];
+      const prefix = i === 1 ? "Abre mañana" : `Abre el ${dayName}`;
+      return `${prefix} a las ${day.openTime}`;
+    }
+  }
+  // Todos los días marcados cerrados — config rota
+  return null;
 }
 
 // ============== Store ==============
@@ -144,6 +199,10 @@ export function toStoreView(
     bannerImage: store.bannerUrl ?? FALLBACK_BANNER,
 
     closesTodayAt: closesTodayAt(opts.hours, opts.now),
+    isOpenNow: isStoreOpenNow(opts.hours, opts.now ?? new Date()),
+    nextOpeningLabel: isStoreOpenNow(opts.hours, opts.now ?? new Date())
+      ? null
+      : computeNextOpening(opts.hours, opts.now ?? new Date()),
     hoursGroups: groupHours(opts.hours),
     hoursSummary: summarizeHours(groupHours(opts.hours)),
 

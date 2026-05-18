@@ -65,7 +65,7 @@ export function BookingForm({
     const ymd = ymdLocal(selectedDate);
     startLoadingSlots(async () => {
       try {
-        const result = await fetchAvailableSlotsAction(productId, ymd);
+        const result = await fetchAvailableSlotsAction(storeSlug, productId, ymd);
         setSlots(result);
       } catch (err) {
         // Server action falló (red, server error, etc.). Sin este catch
@@ -74,11 +74,11 @@ export function BookingForm({
         console.error("[BookingForm] slot fetch failed", err);
         setSlots([]);
         setSlotsError(
-          "No pudimos cargar los horarios. Probá recargar la página.",
+          "No pudimos cargar los horarios. Prueba recargar la página.",
         );
       }
     });
-  }, [selectedDate, productId]);
+  }, [selectedDate, productId, storeSlug]);
 
   // Redirigir al tracking de la reserva al confirmar.
   useEffect(() => {
@@ -201,7 +201,7 @@ export function BookingForm({
           </p>
         ) : slots.length === 0 ? (
           <p className="mt-3 rounded-lg bg-[color:var(--bg)] px-3 py-2 text-sm text-[color:var(--muted)]">
-            No hay horarios libres ese día. Probá otro.
+            No hay horarios libres ese día. Prueba otro.
           </p>
         ) : (
           <div className="mt-2 grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5">

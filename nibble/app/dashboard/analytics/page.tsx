@@ -19,7 +19,7 @@ import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MapDensity } from "@/components/shared/MapsClient";
-import { formatBob } from "@/lib/utils";
+import { formatBob, formatBobAmount } from "@/lib/utils";
 
 export const metadata = { title: "Analytics · Madriguera Shop" };
 
@@ -1136,7 +1136,7 @@ function DailyOrdersChart({
                 opacity={s.count > 0 ? 1 : 0.15}
               >
                 <title>
-                  {shortDateWithWeekday(s.day)}: {s.count} pedidos · Bs {s.revenue.toFixed(2)}
+                  {shortDateWithWeekday(s.day)}: {s.count} pedidos · Bs {formatBobAmount(s.revenue)}
                 </title>
               </rect>
             </g>

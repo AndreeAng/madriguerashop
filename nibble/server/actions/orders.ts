@@ -23,7 +23,7 @@ import {
   isProductAvailableNow,
   isStoreOpenNow,
 } from "@/lib/storefront/availability";
-import { buildWhatsAppUrl, formatBobAmount } from "@/lib/utils";
+import { buildWhatsAppUrl, formatBobAmount, formatDateLong } from "@/lib/utils";
 import { appUrl } from "@/lib/email/client";
 
 // ============== Tipos ==============
@@ -40,7 +40,8 @@ export type CreateOrderState = {
       | "deliveryZoneId"
       | "paymentMethod"
       | "paymentProofUrl"
-      | "couponCode",
+      | "couponCode"
+      | "scheduledFor",
       string
     >
   >;
@@ -111,6 +112,21 @@ const createOrderSchema = z
 
     customerNotes: z.string().trim().max(500),
     couponCode: z.string().trim().max(40),
+
+    // Programación opcional. Si viene seteado, el pedido se considera
+    // "para más tarde" — bypasea la validación de "tienda abierta ahora"
+    // pero la fecha/hora elegida debe caer dentro del horario abierto.
+    // Formato esperado: ISO 8601 (lo que devuelve `input[type=datetime-local]`
+    // pasado por `new Date().toISOString()` en el cliente).
+    scheduledFor: z
+      .string()
+      .trim()
+      .optional()
+      .transform((v) => {
+        if (!v) return null;
+        const d = new Date(v);
+        return Number.isFinite(d.getTime()) ? d : null;
+      }),
   })
   .refine(
     (v) => v.deliveryMethod !== "delivery" || v.deliveryAddress.length >= 5,
@@ -152,6 +168,7 @@ function buildWhatsAppMessage(opts: {
   paymentMethod: PaymentMethod;
   paymentProofUrl: string | null;
   customerNotes: string | null;
+  scheduledFor: Date | null;
 }): string {
   const fmt = formatBobAmount;
 
@@ -189,6 +206,11 @@ function buildWhatsAppMessage(opts: {
     lines.push("*Dirección:*");
     lines.push(opts.deliveryAddress);
     if (opts.deliveryNote) lines.push(`_${opts.deliveryNote}_`);
+    lines.push("");
+  }
+
+  if (opts.scheduledFor) {
+    lines.push(`📅 *Programado para:* ${formatDateLong(opts.scheduledFor)}`);
     lines.push("");
   }
 
@@ -234,6 +256,7 @@ export async function createOrderAction(
     paymentProofUrl: String(formData.get("paymentProofUrl") ?? ""),
     customerNotes: String(formData.get("customerNotes") ?? ""),
     couponCode: String(formData.get("couponCode") ?? ""),
+    scheduledFor: (formData.get("scheduledFor") as string) || undefined,
   };
 
   const parsed = createOrderSchema.safeParse(raw);
@@ -262,15 +285,38 @@ export async function createOrderAction(
     return { fieldErrors: { paymentMethod: "Esta tienda no acepta efectivo" } };
   }
 
-  // 3.b Validate store está abierta ahora. El cliente pudo haber armado el
-  // carrito mientras la tienda estaba abierta y demorarse en el checkout;
-  // si la tienda cerró entremedio, NO aceptamos el pedido — productos
-  // perecederos llegarían descompuestos a la mañana siguiente.
+  // 3.b Validate horario:
+  //   - Pedido inmediato (sin scheduledFor): la tienda debe estar abierta AHORA.
+  //   - Pedido programado: bypasea "abierto ahora" pero la fecha/hora
+  //     elegida debe caer dentro del horario abierto Y ser futura.
+  //
+  // Antes solo rechazábamos cuando estaba cerrada — ahora el cliente
+  // puede comprar fuera de horario eligiendo cuándo recibe/recoge.
   const now = new Date();
   const storeHours = await db.storeHours.findMany({ where: { storeId: store.id } });
-  if (!isStoreOpenNow(storeHours, now)) {
+  const scheduled = data.scheduledFor;
+
+  if (scheduled) {
+    if (scheduled.getTime() < now.getTime() + 15 * 60 * 1000) {
+      return {
+        error: "El horario programado debe ser al menos 15 minutos en el futuro.",
+      };
+    }
+    if (scheduled.getTime() > now.getTime() + 14 * 24 * 60 * 60 * 1000) {
+      return {
+        error: "Sólo se pueden programar pedidos hasta 14 días por adelantado.",
+      };
+    }
+    if (!isStoreOpenNow(storeHours, scheduled)) {
+      return {
+        error:
+          "El horario programado cae fuera del horario de atención. Elegí otro.",
+      };
+    }
+  } else if (!isStoreOpenNow(storeHours, now)) {
     return {
-      error: "La tienda está cerrada ahora. Probá hacer el pedido durante el horario de atención.",
+      error:
+        "La tienda está cerrada ahora. Programá tu pedido eligiendo día y hora dentro del horario de atención.",
     };
   }
 
@@ -285,7 +331,7 @@ export async function createOrderAction(
   // 5. Resolve cart por guestToken
   const guestToken = await readGuestToken();
   if (!guestToken) {
-    return { error: "Carrito vacío. Volvé al menú y agregá productos." };
+    return { error: "Carrito vacío. Vuelve al menú y agrega productos." };
   }
 
   const cart = await db.cart.findFirst({
@@ -295,7 +341,7 @@ export async function createOrderAction(
     },
   });
   if (!cart || cart.items.length === 0) {
-    return { error: "Tu carrito está vacío. Volvé al menú." };
+    return { error: "Tu carrito está vacío. Vuelve al menú." };
   }
 
   // 6. Pull product info fresh + recalc todo server-side
@@ -450,12 +496,17 @@ export async function createOrderAction(
     if (coupon.minOrderAmount && subtotal < Number(coupon.minOrderAmount)) {
       return {
         fieldErrors: {
-          couponCode: `Mínimo de Bs ${coupon.minOrderAmount.toFixed(2)} para este cupón`,
+          couponCode: `Mínimo de Bs ${formatBobAmount(coupon.minOrderAmount)} para este cupón`,
         },
       };
     }
 
     // Sprint 2.7 — usageLimitPerUser: chequear contra CouponUsage por phone.
+    // Esto es solo un fail-fast de UX para no entrar a la tx si ya sabemos
+    // que el cupón está agotado para este cliente. El enforcement REAL vive
+    // dentro de la transacción (líneas ~763-779), donde el row-lock del
+    // UPDATE de Coupon serializa contra pedidos concurrentes del mismo
+    // teléfono.
     if (coupon.usageLimitPerUser) {
       const used = await db.couponUsage.count({
         where: { couponId: coupon.id, customerPhone },
@@ -463,7 +514,10 @@ export async function createOrderAction(
       if (used >= coupon.usageLimitPerUser) {
         return {
           fieldErrors: {
-            couponCode: "Ya usaste este cupón el máximo de veces permitido.",
+            couponCode:
+              coupon.usageLimitPerUser === 1
+                ? "Ya usaste este cupón."
+                : `Ya usaste este cupón el máximo de ${coupon.usageLimitPerUser} veces.`,
           },
         };
       }
@@ -623,6 +677,7 @@ export async function createOrderAction(
           paymentStatus,
           paymentProofUrl: data.paymentProofUrl || null,
           customerNotes: data.customerNotes || null,
+          scheduledFor: scheduled,
           stockApplied: applyStockNow,
           items: {
             create: lines.map((l) => ({
@@ -690,6 +745,16 @@ export async function createOrderAction(
       // incrementan a 5 y 6 — superando un cupón con limit=5. Solución:
       // increment condicional vía SQL con `usedCount < usageLimit` evaluado
       // por Postgres bajo el row lock del UPDATE.
+      //
+      // INVARIANTE CRÍTICO — no romper en refactors:
+      // El UPDATE de abajo es lo PRIMERO que se hace con el cupón dentro
+      // de la tx. Adquiere un ROW EXCLUSIVE lock sobre la fila del cupón
+      // que serializa cualquier otra tx que quiera tocar ESTE cupón. Bajo
+      // READ COMMITTED de Postgres, una tx concurrente del mismo teléfono
+      // se bloquea acá hasta que la primera commitee, y al desbloquearse
+      // ve el INSERT en CouponUsage de la primera — fallando correctamente
+      // en el check de `usageLimitPerUser`. Si moves este UPDATE después
+      // del count o lo eliminas, reintroduces el TOCTOU.
       if (couponId) {
         const updated = await tx.$executeRaw`
           UPDATE "Coupon"
@@ -701,7 +766,7 @@ export async function createOrderAction(
           // updateMany devuelve 0 si el cupón se agotó entre el check inicial
           // y este punto. Abortamos toda la transacción — el pedido no se crea.
           throw new Error(
-            "Cupón agotado — alguien lo usó mientras procesabas el pedido. Probá sin cupón.",
+            "Cupón agotado — alguien lo usó mientras procesabas el pedido. Prueba sin cupón.",
           );
         }
         // usageLimitPerUser bajo el mismo row lock: el COUNT corre después
@@ -716,7 +781,9 @@ export async function createOrderAction(
           });
           if (used >= c.usageLimitPerUser) {
             throw new Error(
-              "Ya usaste este cupón el máximo de veces permitido.",
+              c.usageLimitPerUser === 1
+                ? "Ya usaste este cupón."
+                : `Ya usaste este cupón el máximo de ${c.usageLimitPerUser} veces.`,
             );
           }
         }
@@ -737,7 +804,7 @@ export async function createOrderAction(
       const target = (err.meta?.target as string[] | undefined) ?? [];
       if (target.includes("trackingToken")) {
         // Colisión astronómicamente rara — 132 bits de entropía.
-        return { error: "Error generando el pedido. Probá de nuevo." };
+        return { error: "Error generando el pedido. Prueba de nuevo." };
       }
     }
     // Carreras de cupón (usageLimit o usageLimitPerUser detectadas dentro de
@@ -754,7 +821,7 @@ export async function createOrderAction(
   }
 
   if (!createdOrder) {
-    return { error: "No pudimos crear el pedido. Probá de nuevo." };
+    return { error: "No pudimos crear el pedido. Prueba de nuevo." };
   }
 
   await audit({
@@ -793,6 +860,7 @@ export async function createOrderAction(
     paymentMethod: data.paymentMethod as PaymentMethod,
     paymentProofUrl: data.paymentProofUrl || null,
     customerNotes: data.customerNotes || null,
+    scheduledFor: scheduled,
   });
   const whatsappUrl = buildWhatsAppUrl(store.whatsappPhone, message);
 

@@ -11,11 +11,11 @@ import { audit } from "@/lib/audit/log";
 
 // ============== Tipos comunes ==============
 
-export type ActionState<F extends string = string> = {
-  ok?: true;
-  error?: string;
-  fieldErrors?: Partial<Record<F, string>>;
-};
+// `ActionState` vive en `lib/validation/actionState.ts` — re-exportado acá
+// solo para no romper imports históricos. Los nuevos consumidores deben
+// importar desde `@/lib/validation/actionState` directamente.
+export type { ActionState } from "@/lib/validation/actionState";
+import type { ActionState } from "@/lib/validation/actionState";
 
 // ============== Helpers ==============
 

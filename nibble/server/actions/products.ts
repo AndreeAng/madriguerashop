@@ -216,7 +216,7 @@ export async function upsertProductAction(
       fieldErrors: {
         slug:
           slugCheck.reason === "reserved"
-            ? "Slug reservado. Probá otro."
+            ? "Slug reservado. Prueba otro."
             : "Slug inválido.",
       },
     };
@@ -293,7 +293,8 @@ export async function upsertProductAction(
 
       await db.$transaction(async (tx) => {
         await tx.product.update({ where: { id: data.id! }, data: productData });
-        // Reemplazar imágenes
+        // Reemplazar imágenes (no hay referencias externas — delete+create
+        // es seguro).
         await tx.productImage.deleteMany({ where: { productId: data.id! } });
         if (images.length > 0) {
           await tx.productImage.createMany({
@@ -305,22 +306,71 @@ export async function upsertProductAction(
             })),
           });
         }
-        // Reemplazar variantes (estrategia simple: full replace)
-        await tx.productVariant.deleteMany({ where: { productId: data.id! } });
-        if (variants.length > 0) {
-          await tx.productVariant.createMany({
-            data: variants.map((v, i) => ({
-              productId: data.id!,
-              name: v.name,
-              sku: v.sku || null,
-              price: v.price ? new Prisma.Decimal(v.price) : null,
-              attributes: v.attributes ?? {},
-              sortOrder: i,
-              isActive: true,
-              manageStock: v.manageStock,
-              stock: v.manageStock ? v.stock : 0,
-            })),
+
+        // Variantes: upsert por id en vez de full-replace. Las variantes
+        // pueden estar referenciadas por CartItem (carritos vivos del
+        // cliente) y OrderItem (histórico). Borrar+recrear:
+        //   - Para CartItem (`onDelete: SetNull`): la variante queda en
+        //     NULL silenciosamente y el carrito muestra el ítem sin la
+        //     elección original — el cliente paga por algo distinto a lo
+        //     que eligió. `buildSnapshot` detecta esto via el flag
+        //     `items_removed` y descarta + notifica.
+        //   - Para OrderItem (`onDelete: SetNull`): se pierde el ID
+        //     histórico de la variante, aunque `variantName` queda en el
+        //     OrderItem como snapshot.
+        // Con upsert preservamos los IDs que el owner no tocó y borramos
+        // solo las que efectivamente quitó del formulario.
+        const existingVariants = await tx.productVariant.findMany({
+          where: { productId: data.id! },
+          select: { id: true },
+        });
+        const existingIds = new Set(existingVariants.map((v) => v.id));
+        const submittedIds = new Set(
+          variants.map((v) => v.id).filter((id): id is string => Boolean(id)),
+        );
+        const idsToDelete = [...existingIds].filter(
+          (id) => !submittedIds.has(id),
+        );
+
+        if (idsToDelete.length > 0) {
+          // Borrar primero los CartItem vivos que referenciaban esas
+          // variantes — así el cliente verá el cart "purgado" (con el
+          // notice "items_removed") en lugar de la línea con variantId
+          // colgando en NULL. OrderItem queda con `variantId: NULL` pero
+          // mantiene `variantName` como snapshot histórico.
+          await tx.cartItem.deleteMany({
+            where: { variantId: { in: idsToDelete } },
           });
+          await tx.productVariant.deleteMany({
+            where: { id: { in: idsToDelete } },
+          });
+        }
+
+        // Upsert por orden. Cada variante con `id` se actualiza por ese
+        // id (validamos que pertenezca al producto para que un payload
+        // malicioso no toque variantes de OTROS productos).
+        for (let i = 0; i < variants.length; i++) {
+          const v = variants[i]!;
+          const variantData = {
+            name: v.name,
+            sku: v.sku || null,
+            price: v.price ? new Prisma.Decimal(v.price) : null,
+            attributes: v.attributes ?? {},
+            sortOrder: i,
+            isActive: true,
+            manageStock: v.manageStock,
+            stock: v.manageStock ? v.stock : 0,
+          };
+          if (v.id && existingIds.has(v.id)) {
+            await tx.productVariant.update({
+              where: { id: v.id },
+              data: variantData,
+            });
+          } else {
+            await tx.productVariant.create({
+              data: { productId: data.id!, ...variantData },
+            });
+          }
         }
       });
     } else {

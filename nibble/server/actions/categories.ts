@@ -69,7 +69,7 @@ export async function upsertCategoryAction(
       fieldErrors: {
         slug:
           slugCheck.reason === "reserved"
-            ? "Ese slug está reservado. Probá otro."
+            ? "Ese slug está reservado. Prueba otro."
             : "Slug inválido. Sólo letras, números y guiones.",
       },
     };
@@ -224,7 +224,7 @@ export async function reorderCategoriesAction(input: {
 }): Promise<ActionState> {
   const { storeId, userId } = await requireOwnerOnlyIds();
   const parsed = reorderSchema.safeParse(input);
-  if (!parsed.success) return { error: "Input inválido" };
+  if (!parsed.success) return { error: "Datos inválidos" };
 
   // Validar que todas las IDs son de esta tienda
   const found = await db.category.findMany({

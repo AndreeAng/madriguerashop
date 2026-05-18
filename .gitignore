@@ -40,7 +40,10 @@ coverage/
 .playwright-mcp/
 playwright-report/
 test-results/
-audit/
+# Anclar al root para no ignorar accidentalmente `nibble/lib/audit/`
+# (módulo de audit logging del SaaS, code-versionado), que sin la barra
+# inicial matcheaba el patrón y desaparecía silenciosamente de git.
+/audit/
 
 # ─── Editor / OS ───────────────────────────────────────
 .DS_Store

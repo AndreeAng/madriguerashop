@@ -641,6 +641,17 @@ model Order {
   customerNotes String? @db.Text
   ownerNotes    String? @db.Text
 
+  // Pedido programado: el cliente eligió día/hora futura para entrega o
+  // recojo. Útil cuando la tienda está cerrada (el cliente paga ahora, el
+  // local atiende en horario) o cuando el cliente pide "delivery para
+  // mañana 14:00" por preferencia.
+  //
+  // Restricciones:
+  //   - Si se setea, debe caer dentro del horario abierto de la tienda
+  //     (validado en server action `createOrder`).
+  //   - Si es NULL, el pedido se considera "lo antes posible" (default).
+  scheduledFor DateTime?
+
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   confirmedAt  DateTime?

@@ -2,13 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
+import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import { invalidateSaasSettings } from "@/lib/saas/settings";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
-import type { ActionState } from "./store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 
 // `featureDynamicQr`, `featureAiChatbot`, `featureMultiBranch` se removieron
 // del schema y del UI: los toggles eran decorativos, ningún action los leía.
@@ -31,10 +30,10 @@ export async function updateSaasSettingsAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth();
-  if (!session?.user || session.user.role !== Role.SUPER_ADMIN) {
-    return { error: "Sólo el super admin puede cambiar la configuración global." };
-  }
+  const guard = await requireSuperAdminOrFail(
+    "Sólo el super admin puede cambiar la configuración global.",
+  );
+  if ("error" in guard) return { error: guard.error };
 
   const parsed = settingsSchema.safeParse({
     paymentQrUrl: formData.get("paymentQrUrl"),
@@ -72,7 +71,7 @@ export async function updateSaasSettingsAction(
 
   await audit({
     action: "saas.settings_changed",
-    actorId: session.user.id,
+    actorId: guard.id,
     actorRole: "SUPER_ADMIN",
     target: "saas-settings",
     metadata: { changedFields: Object.keys(data) },
