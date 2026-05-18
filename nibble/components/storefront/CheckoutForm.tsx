@@ -42,6 +42,15 @@ type StoreInfo = {
   deliveryNote: string | null;
   qrImageUrl: string | null;
   qrInstructions: string | null;
+  isOpenNow: boolean;
+  nextOpeningLabel: string | null;
+};
+
+type HoursDay = {
+  dayOfWeek: number;
+  openTime: string;
+  closeTime: string;
+  isClosed: boolean;
 };
 
 type Zone = {
@@ -60,11 +69,13 @@ export function CheckoutForm({
   store,
   cart,
   deliveryZones,
+  hoursByDay,
 }: {
   slug: string;
   store: StoreInfo;
   cart: CartSnapshot;
   deliveryZones: Zone[];
+  hoursByDay: HoursDay[];
 }) {
   const router = useRouter();
   const [state, action] = useActionState(createOrderAction, initial);
@@ -152,7 +163,7 @@ export function CheckoutForm({
       }
       setProofUrl(data.url);
     } catch {
-      setProofError("Error de red. Probá de nuevo.");
+      setProofError("Error de red. Prueba de nuevo.");
     } finally {
       setUploadingProof(false);
     }
@@ -249,7 +260,7 @@ export function CheckoutForm({
                       disabled={!!autoDetectedZone}
                       className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)] disabled:opacity-60"
                     >
-                      <option value="">— Elegí tu zona —</option>
+                      <option value="">— Elige tu zona —</option>
                       {deliveryZones.map((z) => (
                         <option key={z.id} value={z.id}>
                           {z.name} — {formatBob(z.fee)}
@@ -259,7 +270,7 @@ export function CheckoutForm({
                     </select>
                     {autoDetectedZone && (
                       <p className="mt-1 text-xs text-[color:var(--muted)]">
-                        Detectamos tu zona desde el mapa. Si querés cambiarla
+                        Detectamos tu zona desde el mapa. Si quieres cambiarla
                         manualmente, quitá el pin.
                       </p>
                     )}
@@ -337,8 +348,26 @@ export function CheckoutForm({
             )}
           </Section>
 
-          {/* ============== 3. Pago ============== */}
-          <Section step="3" title="Método de pago">
+          {/* ============== 3. Programación (cuándo) ============== */}
+          <Section
+            step="3"
+            title={
+              store.isOpenNow
+                ? "¿Cuándo lo quieres?"
+                : "Programar para más tarde"
+            }
+          >
+            <SchedulePicker
+              isOpenNow={store.isOpenNow}
+              nextOpeningLabel={store.nextOpeningLabel}
+              hoursByDay={hoursByDay}
+              deliveryMethod={deliveryMethod}
+              error={fe.scheduledFor}
+            />
+          </Section>
+
+          {/* ============== 4. Pago ============== */}
+          <Section step="4" title="Método de pago">
             <div className="grid gap-3 md:grid-cols-2">
               {store.acceptsQR && (
                 <PayCard
@@ -410,7 +439,7 @@ export function CheckoutForm({
           </Section>
 
           {/* ============== 4. Cupón / notas ============== */}
-          <Section step="4" title="Cupón y notas (opcional)">
+          <Section step="5" title="Cupón y notas (opcional)">
             <div className="grid gap-3">
               <Field
                 label="Código de cupón"
@@ -436,6 +465,22 @@ export function CheckoutForm({
 
         {/* ============== Resumen ============== */}
         <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
+          {/* Aviso de cart purgado: aparece cuando un producto/variante del
+              carrito fue eliminado o desactivado entre visitas. Se purga
+              automáticamente con la próxima recarga (server limpia los IDs
+              huérfanos en buildSnapshot). */}
+          {cart.notice === "items_removed" && (
+            <div
+              role="status"
+              className="rounded-2xl border border-[color:var(--color-amber-300)] bg-[color:var(--color-amber-50)] p-4 text-sm text-[color:var(--color-amber-900)]"
+            >
+              <p className="font-medium">El producto cambió, revisa tu carrito.</p>
+              <p className="mt-1 text-xs">
+                Quitamos algún artículo porque ya no está disponible o el
+                vendedor lo modificó.
+              </p>
+            </div>
+          )}
           <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
             <h3 className="font-semibold">Tu pedido</h3>
             <ul className="mt-4 divide-y divide-[color:var(--line)]">
@@ -703,4 +748,191 @@ function Row({ label, value }: { label: string; value: string }) {
       <span className="num-tabular">{value}</span>
     </div>
   );
+}
+
+// ============== Schedule picker ==============
+//
+// Si la tienda está cerrada AHORA, el picker se muestra abierto y exige
+// elegir un horario futuro dentro del rango abierto. Si está abierta, se
+// puede dejar vacío (entrega ASAP) o programar para más tarde como opción.
+//
+// El input es `datetime-local` (nativo del browser): UX simple, sin
+// dependencias de date pickers. El server valida que caiga en horario.
+const DAY_NAMES_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+
+function SchedulePicker({
+  isOpenNow,
+  nextOpeningLabel,
+  hoursByDay,
+  deliveryMethod,
+  error,
+}: {
+  isOpenNow: boolean;
+  nextOpeningLabel: string | null;
+  hoursByDay: HoursDay[];
+  deliveryMethod: "delivery" | "pickup";
+  error?: string;
+}) {
+  const [mode, setMode] = useState<"asap" | "scheduled">(
+    isOpenNow ? "asap" : "scheduled",
+  );
+
+  // Default datetime: si está cerrado, sugerimos la próxima apertura
+  // (parsing del nextOpeningLabel sería frágil — lo calculamos local).
+  // Si está abierto, sugerimos 30 minutos en el futuro como punto de
+  // partida razonable.
+  const defaultDateTime = useMemo(() => {
+    if (isOpenNow) {
+      const d = new Date(Date.now() + 30 * 60 * 1000);
+      return toLocalInputValue(d);
+    }
+    // Encontrar el próximo día abierto y poner la hora de apertura
+    const now = new Date();
+    const dow = now.getDay();
+    const hhmm =
+      String(now.getHours()).padStart(2, "0") +
+      ":" +
+      String(now.getMinutes()).padStart(2, "0");
+    const today = hoursByDay.find((h) => h.dayOfWeek === dow);
+    if (today && !today.isClosed && hhmm < today.openTime) {
+      const d = new Date();
+      const [hh, mm] = today.openTime.split(":").map(Number);
+      d.setHours(hh ?? 10, mm ?? 0, 0, 0);
+      return toLocalInputValue(d);
+    }
+    for (let i = 1; i <= 7; i++) {
+      const targetDow = (dow + i) % 7;
+      const day = hoursByDay.find((h) => h.dayOfWeek === targetDow);
+      if (day && !day.isClosed) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const [hh, mm] = day.openTime.split(":").map(Number);
+        d.setHours(hh ?? 10, mm ?? 0, 0, 0);
+        return toLocalInputValue(d);
+      }
+    }
+    return "";
+  }, [isOpenNow, hoursByDay]);
+
+  const minDateTime = toLocalInputValue(new Date(Date.now() + 15 * 60 * 1000));
+  const maxDateTime = toLocalInputValue(
+    new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+  );
+
+  const [picked, setPicked] = useState(defaultDateTime);
+
+  // El cliente envía `scheduledFor` como ISO si está en modo scheduled,
+  // o vacío si es ASAP. El server interpreta el campo vacío como ASAP.
+  const scheduledIso = useMemo(() => {
+    if (mode !== "scheduled" || !picked) return "";
+    const d = new Date(picked);
+    return Number.isFinite(d.getTime()) ? d.toISOString() : "";
+  }, [mode, picked]);
+
+  // Hint humano: "Viernes 16/05 14:30" si tiene valor
+  const pickedLabel = useMemo(() => {
+    if (!picked) return null;
+    const d = new Date(picked);
+    if (!Number.isFinite(d.getTime())) return null;
+    const day = DAY_NAMES_ES[d.getDay()];
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const min = String(d.getMinutes()).padStart(2, "0");
+    return `${day} ${dd}/${mm} a las ${hh}:${min}`;
+  }, [picked]);
+
+  const verb = deliveryMethod === "delivery" ? "te llegue" : "lo recogés";
+
+  return (
+    <div className="space-y-3">
+      <input type="hidden" name="scheduledFor" value={scheduledIso} />
+
+      {!isOpenNow && (
+        <div className="rounded-xl border border-[color:var(--color-amber-300)] bg-[color:var(--color-amber-50)] p-3 text-xs text-[color:var(--color-amber-800)]">
+          La tienda está cerrada ahora{nextOpeningLabel ? ` — ${nextOpeningLabel.toLowerCase()}` : ""}.
+          Puedes pagar igual y elegir cuándo {verb}.
+        </div>
+      )}
+
+      {isOpenNow && (
+        <div className="grid grid-cols-2 gap-2 rounded-xl border border-[color:var(--line)] bg-[color:var(--bg)] p-1.5">
+          <ModeChip
+            active={mode === "asap"}
+            onClick={() => setMode("asap")}
+            label="Lo antes posible"
+          />
+          <ModeChip
+            active={mode === "scheduled"}
+            onClick={() => setMode("scheduled")}
+            label="Programar"
+          />
+        </div>
+      )}
+
+      {mode === "scheduled" && (
+        <div>
+          <label className="block text-xs font-medium text-[color:var(--muted)]">
+            Día y hora ({deliveryMethod === "delivery" ? "entrega" : "recojo"})
+          </label>
+          <input
+            type="datetime-local"
+            value={picked}
+            onChange={(e) => setPicked(e.target.value)}
+            min={minDateTime}
+            max={maxDateTime}
+            required
+            className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+          />
+          {pickedLabel && (
+            <p className="mt-1.5 text-xs text-[color:var(--muted)]">
+              Tu pedido queda agendado para{" "}
+              <strong className="text-[color:var(--fg)]">{pickedLabel}</strong>.
+            </p>
+          )}
+          {error && (
+            <p
+              role="alert"
+              className="mt-1.5 text-xs text-[color:var(--color-tomato-600)]"
+            >
+              {error}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ModeChip({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+        active
+          ? "bg-[color:var(--color-bark-900)] text-white"
+          : "text-[color:var(--fg-soft)] hover:bg-[color:var(--card)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+/** Convierte un `Date` a "YYYY-MM-DDTHH:mm" en hora LOCAL para el
+ *  `<input type="datetime-local">`. Sin la conversión a local, el input
+ *  pinta UTC y el cliente se confunde. */
+function toLocalInputValue(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }

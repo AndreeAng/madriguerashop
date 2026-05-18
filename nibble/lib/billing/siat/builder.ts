@@ -57,7 +57,14 @@ export function buildFacturaXml(input: FacturaInput): string {
     <montoTotalSujetoIva>${fmtMoney(input.montoTotalSujetoIva)}</montoTotalSujetoIva>
     <codigoMoneda>${input.codigoMoneda}</codigoMoneda>
     <tipoCambio>${fmtMoney(input.tipoCambio)}</tipoCambio>
-    <montoTotalMoneda>${fmtMoney(input.montoTotal)}</montoTotalMoneda>
+    <montoTotalMoneda>${fmtMoney(
+      // En BOB (tipoCambio = 1) montoTotalMoneda == montoTotal. En cualquier
+      // otra moneda el SIN espera el total CONVERTIDO a esa moneda. Antes
+      // siempre se enviaba `montoTotal` en BOB, produciendo facturas
+      // rechazadas con código 980 o, peor, válidas pero con monto erróneo
+      // reportado al fisco.
+      input.tipoCambio === 1 ? input.montoTotal : input.montoTotal / input.tipoCambio,
+    )}</montoTotalMoneda>
     <montoGiftCard>${fmtMoney(input.montoGiftCard)}</montoGiftCard>
     <descuentoAdicional>${fmtMoney(input.montoDescuento)}</descuentoAdicional>
     <codigoExcepcion>0</codigoExcepcion>

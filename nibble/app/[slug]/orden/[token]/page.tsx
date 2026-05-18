@@ -15,7 +15,7 @@ import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { WhatsAppContactLink } from "@/components/storefront/WhatsAppContactLink";
 import { CustomerCancelOrder } from "@/components/storefront/CustomerCancelOrder";
 import { MapView } from "@/components/shared/MapsClient";
-import { formatBob, formatWaPhone } from "@/lib/utils";
+import { formatBob, formatDateLong, formatWaPhone } from "@/lib/utils";
 import {
   TRACKING_STEPS,
   STATUS_LABELS,
@@ -289,6 +289,22 @@ export default async function OrderTrackingPage({
               </div>
             </div>
           </div>
+
+          {order.scheduledFor && (
+            <div className="rounded-3xl border border-[color:var(--color-bark-300)] bg-[color:var(--color-bark-50)] p-5">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
+                📅 Pedido programado
+              </p>
+              <p className="mt-2 font-display text-xl">
+                {formatDateLong(order.scheduledFor)}
+              </p>
+              <p className="mt-1 text-sm text-[color:var(--muted)]">
+                {order.deliveryAddress === "Recojo en local"
+                  ? "Pasá a recoger en este horario."
+                  : "Te entregamos en este horario."}
+              </p>
+            </div>
+          )}
 
           <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
             <h2 className="font-semibold">Entrega</h2>

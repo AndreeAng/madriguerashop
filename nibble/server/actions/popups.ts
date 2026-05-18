@@ -25,7 +25,8 @@ export type PopupFormState = {
   >;
 };
 
-const urlRel = z
+// `imageUrl` acepta http(s) absoluto (CDN externa) o ruta relativa.
+const imageUrlRel = z
   .string()
   .trim()
   .refine(
@@ -33,14 +34,25 @@ const urlRel = z
     "URL inválida",
   );
 
+// `ctaUrl` es destino de click: solo https o relativo, sin http plano,
+// sin javascript:, sin data:. Bloquear http evita que el owner mande al
+// cliente a un sitio MITM-eable desde su popup.
+const clickUrlRel = z
+  .string()
+  .trim()
+  .refine(
+    (v) => v === "" || v.startsWith("/") || v.startsWith("https://"),
+    "Usa https:// o una ruta relativa (/) — http no se permite por seguridad",
+  );
+
 const baseSchema = z
   .object({
     id: z.string().optional(),
     title: z.string().trim().min(2, "Mínimo 2 caracteres").max(80),
     message: z.string().trim().min(2, "Mínimo 2 caracteres").max(500),
-    imageUrl: urlRel.optional().default(""),
+    imageUrl: imageUrlRel.optional().default(""),
     ctaText: z.string().trim().max(40).optional().default(""),
-    ctaUrl: urlRel.optional().default(""),
+    ctaUrl: clickUrlRel.optional().default(""),
     delaySeconds: z
       .string()
       .trim()
@@ -69,7 +81,7 @@ const baseSchema = z
       ctx.addIssue({
         code: "custom",
         path: ["ctaUrl"],
-        message: "Si pusiste texto en el botón, agregá adónde lleva.",
+        message: "Si pusiste texto en el botón, agrega adónde lleva.",
       });
     }
     if (v.ctaUrl && !v.ctaText) {

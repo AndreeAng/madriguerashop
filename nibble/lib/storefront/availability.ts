@@ -1,4 +1,5 @@
 import type { StoreHours } from "@prisma/client";
+import { inBolivia } from "@/lib/booking/timezone";
 
 /**
  * Helpers de disponibilidad temporal compartidos entre el adapter del
@@ -10,6 +11,12 @@ import type { StoreHours } from "@prisma/client";
  * que diferentes calls dentro de la misma request usen el mismo timestamp
  * (evita el caso "producto válido a las 22:59:59 pero rechazado al
  * decrementar stock a las 23:00:00").
+ *
+ * Todo se evalúa en hora Bolivia (BOT, UTC-4) vía `inBolivia()`. Antes se
+ * usaba `Date.getDay()/getHours()` locales del proceso — en Vercel (UTC)
+ * el día y la hora salían desfasados 4h, así que un cliente programando
+ * "domingo 23:00 BOT" pasaba como "lunes 03:00 UTC" y el horario se
+ * evaluaba contra el día equivocado.
  */
 
 type ProductSchedule = {
@@ -18,6 +25,12 @@ type ProductSchedule = {
   availableTo: string | null;
   availableDays: number[];
 };
+
+function toHHMM(hours: number, minutes: number): string {
+  return (
+    String(hours).padStart(2, "0") + ":" + String(minutes).padStart(2, "0")
+  );
+}
 
 /**
  * True si el producto está dentro de su ventana horaria (o si no tiene
@@ -41,15 +54,14 @@ export function isProductAvailableNow(
   const hasTimeFilter = !!(product.availableFrom && product.availableTo);
   if (!hasDayFilter && !hasTimeFilter) return false;
 
-  if (hasDayFilter && !product.availableDays.includes(now.getDay())) {
+  const bot = inBolivia(now);
+
+  if (hasDayFilter && !product.availableDays.includes(bot.weekday)) {
     return false;
   }
 
   if (hasTimeFilter) {
-    const hhmm =
-      String(now.getHours()).padStart(2, "0") +
-      ":" +
-      String(now.getMinutes()).padStart(2, "0");
+    const hhmm = toHHMM(bot.hours, bot.minutes);
     const from = product.availableFrom!;
     const to = product.availableTo!;
     if (to >= from) {
@@ -80,13 +92,11 @@ export function isStoreOpenNow(hours: StoreHours[], now: Date = new Date()): boo
     // responsabilidad del owner configurar.
     return true;
   }
-  const today = hours.find((h) => h.dayOfWeek === now.getDay());
+  const bot = inBolivia(now);
+  const today = hours.find((h) => h.dayOfWeek === bot.weekday);
   if (!today || today.isClosed) return false;
 
-  const hhmm =
-    String(now.getHours()).padStart(2, "0") +
-    ":" +
-    String(now.getMinutes()).padStart(2, "0");
+  const hhmm = toHHMM(bot.hours, bot.minutes);
   const from = today.openTime;
   const to = today.closeTime;
   if (to >= from) {

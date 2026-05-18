@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { AdminCreateStoreForm } from "@/components/admin/tiendas/AdminCreateStoreForm";
 import { VERTICAL_LABELS } from "@/lib/saas/verticals";
+import { formatBob } from "@/lib/utils";
 
 export const metadata = { title: "Nueva tienda · Admin" };
 
@@ -46,7 +47,7 @@ export default async function AdminNewStorePage() {
           plans={plans.map((p) => ({
             slug: p.slug,
             name: p.name,
-            monthlyPriceBob: `Bs ${Number(p.monthlyPriceBob).toLocaleString("es-BO", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            monthlyPriceBob: formatBob(p.monthlyPriceBob),
           }))}
         />
       </div>

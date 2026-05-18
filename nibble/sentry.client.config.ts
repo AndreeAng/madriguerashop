@@ -80,10 +80,19 @@ if (dsn) {
 function scrubUrl(url: string): string {
   try {
     const u = new URL(url, "http://placeholder");
-    // Path: aplastar /recovery/<token>, /verify/<token>, etc.
-    if (/^\/(recovery|verify|magic-link)\//.test(u.pathname)) {
+    // Path: aplastar rutas con tokens en el path. `orden` y `verify-email`
+    // se agregaron en Sprint 5 porque sus tokens son guessable únicamente
+    // por entropía — si Sentry los recibe, alguien con acceso al dashboard
+    // de Sentry puede ver pedidos/emails arbitrarios sin auth de la app.
+    if (
+      /^\/(recovery|verify|verify-email|magic-link|orden)\//.test(u.pathname)
+    ) {
       u.pathname = u.pathname.split("/").slice(0, 2).join("/") + "/[Filtered]";
     }
+    // Defensa genérica: cualquier segmento de path que parezca token
+    // (22+ chars en base64url) se aplasta. `trackingToken` del Order
+    // tiene 22 chars (16 bytes base64url) — cubierto.
+    u.pathname = u.pathname.replace(/\/[A-Za-z0-9_-]{22,}/g, "/[Filtered]");
     // Query string: scrubear el valor de cualquier parámetro sospechoso.
     const sensitive = ["token", "code", "password", "key", "secret"];
     for (const k of sensitive) {

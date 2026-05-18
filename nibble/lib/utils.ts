@@ -44,6 +44,27 @@ export function formatDateShort(d: Date): string {
   });
 }
 
+/**
+ * Formato largo "lunes, 13 de mayo, 14:32" — para mensajes al cliente
+ * (WhatsApp, email, página de tracking). Tiene weekday + mes nombrado:
+ * más legible que el corto, más pesado visualmente.
+ */
+export function formatDateLong(d: Date): string {
+  return d.toLocaleString("es-BO", {
+    weekday: "long",
+    day: "2-digit",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** Formatea un número entero/decimal con separadores de miles es-BO.
+ *  Para moneda, usar `formatBob`/`formatBobAmount` en su lugar. */
+export function formatNumber(n: number): string {
+  return n.toLocaleString("es-BO");
+}
+
 /** Construye un link `https://wa.me/<phone>?text=<encoded>` listo para
  *  abrirse desde el browser. Limpia caracteres no numéricos del phone
  *  y aplica `encodeURIComponent` al mensaje. */

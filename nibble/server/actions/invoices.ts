@@ -4,13 +4,19 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
-import { auth } from "@/auth";
-import { requireOwnerOnlyIds } from "@/lib/auth/session";
+import {
+  requireOwnerOnlyIds,
+  requireSuperAdminOrFail,
+} from "@/lib/auth/session";
+import { rateLimit } from "@/lib/security/rateLimit";
 import { sendEmailBackground } from "@/lib/email/send";
 import { invoicePaidEmail } from "@/lib/email/templates/invoice-issued";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
-import type { ActionState } from "./store-settings";
+import {
+  INVALID_INPUT_ERROR,
+  type ActionState,
+} from "@/lib/validation/actionState";
 
 // ============== Owner: subir comprobante ==============
 
@@ -79,13 +85,22 @@ export async function verifyInvoicePaymentAction(
   _prev: ActionState,
   formData: FormData,
 ): Promise<ActionState> {
-  const session = await auth();
-  if (!session?.user || session.user.role !== Role.SUPER_ADMIN) {
-    return { error: "Sólo el super admin puede verificar pagos" };
+  const guard = await requireSuperAdminOrFail(
+    "Sólo el super admin puede verificar pagos",
+  );
+  if ("error" in guard) return { error: guard.error };
+
+  // Rate limit por admin: la acción mueve dinero real y se invoca con un
+  // click — sin throttle un click rápido o un script accidental podía
+  // disparar verificaciones repetidas (la lógica es idempotente, pero
+  // el spam ensucia logs y aumenta carga del SIN si se conecta más adelante).
+  const rl = await rateLimit(`invoice:verify:${guard.id}`, 20, 60_000);
+  if (!rl.success) {
+    return { error: "Demasiados intentos. Espera unos segundos." };
   }
 
   const parsed = verifySchema.safeParse({ invoiceId: formData.get("invoiceId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const invoice = await db.invoice.findUnique({
     where: { id: parsed.data.invoiceId },
@@ -120,7 +135,7 @@ export async function verifyInvoicePaymentAction(
         status: "PAID",
         paidAt: now,
         verifiedAt: now,
-        verifiedById: session.user.id,
+        verifiedById: guard.id,
       },
     });
     if (claim.count === 0) return false;
@@ -151,7 +166,7 @@ export async function verifyInvoicePaymentAction(
 
   await audit({
     action: "invoice.payment.verified",
-    actorId: session.user.id,
+    actorId: guard.id,
     actorRole: "SUPER_ADMIN",
     target: invoice.id,
     metadata: {
@@ -194,10 +209,10 @@ export async function cancelInvoiceAction(
   _prev: ActionState<"reason">,
   formData: FormData,
 ): Promise<ActionState<"reason">> {
-  const session = await auth();
-  if (!session?.user || session.user.role !== Role.SUPER_ADMIN) {
-    return { error: "Sólo el super admin puede cancelar facturas" };
-  }
+  const guard = await requireSuperAdminOrFail(
+    "Sólo el super admin puede cancelar facturas",
+  );
+  if ("error" in guard) return { error: guard.error };
 
   const parsed = cancelSchema.safeParse({
     invoiceId: formData.get("invoiceId"),
@@ -251,7 +266,7 @@ export async function cancelInvoiceAction(
   await audit({
     storeId: invoice.storeId,
     action: "invoice.cancelled",
-    actorId: session.user.id,
+    actorId: guard.id,
     actorRole: "SUPER_ADMIN",
     target: invoice.id,
     metadata: { invoiceNumber: invoice.invoiceNumber, reason: parsed.data.reason },

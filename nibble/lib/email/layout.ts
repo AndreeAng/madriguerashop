@@ -13,7 +13,21 @@ import "server-only";
 
 export type EmailLayoutInput = {
   title: string;
-  /** HTML del cuerpo (entre el header y el footer). */
+  /**
+   * HTML del cuerpo (entre el header y el footer).
+   *
+   * ⚠️ CONTRATO: el caller es RESPONSABLE de escapar todas las variables
+   * user-controlled antes de armar este string. `renderEmail` lo inserta
+   * raw (no escapa, no sanitiza). Usá `escapeHtml(value)` sobre cada
+   * variable que venga del usuario (customerName, customerNotes,
+   * productName, storeName, etc.).
+   *
+   * Por qué no auto-escapar: el body es composable — armás `<p>${escapeHtml(name)}</p>`
+   * y necesitás que los tags `<p>` queden literales. Auto-escape rompería
+   * el HTML. La convención en todos los templates de `lib/email/templates/`
+   * es escapar variables individualmente; si agregás un nuevo template,
+   * seguí esa misma convención.
+   */
   body: string;
   /** Texto del CTA principal (opcional). */
   ctaText?: string;

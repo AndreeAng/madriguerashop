@@ -5,11 +5,12 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { ensureGuestToken, readGuestToken } from "@/lib/cart/cookies";
 import { getStoreBySlug } from "@/lib/tenant/resolve";
+import { isProductAvailableNow } from "@/lib/storefront/availability";
 import {
-  isProductAvailableNow,
-  isStoreOpenNow,
-} from "@/lib/storefront/availability";
-import type { Cart, CartItem, ProductVariant } from "@prisma/client";
+  computeCartLines,
+  type CartProductInfo,
+  type CartWithItems,
+} from "@/lib/cart/snapshot";
 
 // ============== Types ==============
 
@@ -32,6 +33,16 @@ export type CartLine = {
   lineTotal: number;
 };
 
+/**
+ * `notice` se setea cuando `buildSnapshot` descarta líneas del cart porque
+ * el producto/variante referenciado ya no existe o quedó inactivo. La UI
+ * muestra el mensaje "el producto cambió, revisa tu carrito" y se asume
+ * que el cliente ya vio el cart "purgado". Las líneas afectadas se borran
+ * también del DB (lazy cleanup) para que el flag no se reactive en cada
+ * lectura sucesiva.
+ */
+export type CartNotice = "items_removed";
+
 export type CartSnapshot = {
   cartId: string;
   storeId: string;
@@ -39,6 +50,7 @@ export type CartSnapshot = {
   items: CartLine[];
   subtotal: number;
   itemCount: number;
+  notice: CartNotice | null;
 };
 
 // Alineado con la TTL de `nibble_guest_token` (30 días) para que el cliente
@@ -76,16 +88,16 @@ async function getOrCreateCart(storeId: string, storeSlug: string) {
 const cartIncludeShape = {
   items: {
     include: {
-      variant: { select: { id: true, name: true, price: true } },
+      // `isActive` se incluye para que `buildSnapshot` descarte variantes
+      // que el owner desactivó (pero no borró) sin tener que hacer otra
+      // query — sin esto un cart podía mostrar una variante "fantasma"
+      // que ya no se vende.
+      variant: {
+        select: { id: true, name: true, price: true, isActive: true },
+      },
     },
   },
 } as const;
-
-type CartWithItems = Cart & {
-  items: (CartItem & {
-    variant: Pick<ProductVariant, "id" | "name" | "price"> | null;
-  })[];
-};
 
 async function buildSnapshot(
   cart: CartWithItems,
@@ -95,50 +107,38 @@ async function buildSnapshot(
   // Filtramos por storeId para aislamiento multi-tenant: si por cualquier
   // inconsistencia un CartItem apunta a un productId de OTRA tienda, no
   // queremos materializar ese producto en el snapshot ni cobrarlo.
+  // `isActive` se trae para descartar productos que el owner desactivó.
   const productIds = Array.from(new Set(cart.items.map((i) => i.productId)));
   const products = productIds.length
     ? await db.product.findMany({
         where: { id: { in: productIds }, storeId: cart.storeId },
-        select: { id: true, name: true, slug: true, basePrice: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          basePrice: true,
+          isActive: true,
+        },
       })
     : [];
-  const productMap = new Map(products.map((p) => [p.id, p]));
+  const productMap = new Map<string, CartProductInfo>(
+    products.map((p) => [p.id, p]),
+  );
 
-  let subtotal = 0;
-  // Productos eliminados o de otra tienda → la línea se omite del snapshot.
-  // El CartItem queda huérfano en DB pero no se cobra ni se muestra al cliente.
-  const lines: CartLine[] = [];
-  for (const item of cart.items) {
-    const product = productMap.get(item.productId);
-    if (!product) continue;
-    const unitPrice = Number(item.unitPrice);
-    const variant = item.variant
-      ? {
-          id: item.variant.id,
-          name: item.variant.name,
-          price: item.variant.price !== null ? Number(item.variant.price) : null,
-        }
-      : null;
-    const lineTotal = unitPrice * item.quantity;
-    subtotal += lineTotal;
-    lines.push({
-      id: item.id,
-      cartId: item.cartId,
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: item.quantity,
-      notes: item.notes,
-      unitPrice,
-      createdAt: item.createdAt,
-      product: {
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        basePrice: Number(product.basePrice),
-      },
-      variant,
-      lineTotal,
-    });
+  const { lines, orphanIds, subtotal } = computeCartLines(
+    cart.items,
+    productMap,
+  );
+
+  // Lazy cleanup: borramos los items huérfanos de la DB para que el
+  // notice no se quede pegado en lecturas sucesivas. Best-effort: si
+  // falla, el snapshot ya está correcto y la próxima lectura limpiará.
+  if (orphanIds.length > 0) {
+    db.cartItem
+      .deleteMany({ where: { id: { in: orphanIds } } })
+      .catch((err) =>
+        console.error("[cart] orphan cleanup failed", err),
+      );
   }
 
   const itemCount = lines.reduce((sum, line) => sum + line.quantity, 0);
@@ -150,6 +150,7 @@ async function buildSnapshot(
     items: lines,
     subtotal,
     itemCount,
+    notice: orphanIds.length > 0 ? "items_removed" : null,
   };
 }
 
@@ -174,15 +175,12 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   // ocultaba el botón "Agregar" fuera de horario, pero un cliente con dev
   // tools podía submitear igual y el carrito aceptaba el ítem.
   const now = new Date();
-  const [product, storeHours] = await Promise.all([
-    db.product.findFirst({
-      where: { id: data.productId, storeId: store.id, isActive: true },
-      include: {
-        variants: data.variantId ? { where: { id: data.variantId } } : false,
-      },
-    }),
-    db.storeHours.findMany({ where: { storeId: store.id } }),
-  ]);
+  const product = await db.product.findFirst({
+    where: { id: data.productId, storeId: store.id, isActive: true },
+    include: {
+      variants: data.variantId ? { where: { id: data.variantId } } : false,
+    },
+  });
   if (!product) throw new Error("Producto no disponible");
 
   // Schedule del producto (combos del almuerzo, especiales del finde).
@@ -190,18 +188,13 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   // storefront, pero el cliente NO debe poder agregarlo al carrito.
   if (!isProductAvailableNow(product, now)) {
     throw new Error(
-      "Este producto no está disponible en este horario. Volvé en su horario de venta.",
+      "Este producto no está disponible en este horario. Vuelve en su horario de venta.",
     );
   }
 
-  // Tienda cerrada: bloqueamos el "agregar al carrito" para evitar pedidos
-  // a las 4am que el local recibe a la mañana siguiente con productos
-  // perecederos ya descompuestos.
-  if (!isStoreOpenNow(storeHours, now)) {
-    throw new Error(
-      "La tienda está cerrada ahora. Probá agregar al carrito durante el horario de atención.",
-    );
-  }
+  // Nota: NO validamos `isStoreOpenNow` acá. El cliente puede armar el
+  // carrito fuera de horario y elegir programar entrega/recojo en el
+  // checkout — la validación de horario está en `createOrderAction`.
 
   let unitPrice = Number(product.basePrice);
   let variantId: string | null = null;
@@ -230,6 +223,13 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   // ninguna fila. Ventana de race teórica con dos requests del MISMO
   // usuario al mismo instante creando duplicados — extremadamente raro
   // porque el cliente espera respuesta antes del próximo click.
+  //
+  // `unitPrice` se refresca al precio actual: si el owner sube el precio
+  // del producto mientras el cliente lo tiene en el carrito, el snapshot
+  // muestra el nuevo precio (y el checkout cobra ese mismo número, que
+  // se recalcula server-side igualmente). Sin esto, la UI mostraba el
+  // precio viejo guardado al insertar y el cobro final no coincidía —
+  // fuente directa de chargebacks.
   const updated = await db.cartItem.updateMany({
     where: {
       cartId: cart.id,
@@ -239,6 +239,7 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
     data: {
       quantity: { increment: data.quantity },
       notes: data.notes ?? undefined,
+      unitPrice,
     },
   });
   if (updated.count === 0) {
