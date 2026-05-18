@@ -20,13 +20,11 @@ permissions:
 
 env:
   NODE_VERSION: "20"
-  # Valores ficticios compartidos entre jobs que NO tocan DB real (build,
-  # E2E). Cada job los referencia con `${{ env.CI_DATABASE_URL }}` etc.
-  # para que cambiar uno aquí impacte todos los jobs.
-  CI_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_ci
-  CI_AUTH_SECRET: ci-secret-32-chars-not-real-aaaaaaaaaaa
-  CI_ENCRYPTION_KEY: ci-encryption-key-32-chars-not-real-bbbbb
-  CI_APP_URL: http://localhost:3000
+  # NOTA: GitHub Actions no permite referenciar `${{ env.* }}` desde el
+  # `env:` de un job (sólo desde steps y `run:`). Los valores ficticios
+  # del CI (AUTH_SECRET, APP_URL, DATABASE_URL, ENCRYPTION_KEY) viven
+  # duplicados en el `env:` de cada job que los necesita. Si los cambiás,
+  # buscá todas las ocurrencias para mantenerlos sincronizados.
 
 jobs:
   # ============================================================
@@ -192,11 +190,15 @@ jobs:
           --health-retries 10
 
     env:
+      # GitHub Actions NO permite referenciar `env.*` desde `env:` a nivel de
+      # job (sólo en steps y run). Antes esto era `${{ env.CI_AUTH_SECRET }}`
+      # — el workflow se rechazaba con "Unrecognized named-value: 'env'".
+      # Duplicamos los valores acá para que el parser los acepte.
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_e2e
-      AUTH_SECRET: ${{ env.CI_AUTH_SECRET }}
-      AUTH_URL: ${{ env.CI_APP_URL }}
-      APP_URL: ${{ env.CI_APP_URL }}
-      ENCRYPTION_KEY: ${{ env.CI_ENCRYPTION_KEY }}
+      AUTH_SECRET: ci-secret-32-chars-not-real-aaaaaaaaaaa
+      AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      ENCRYPTION_KEY: ci-encryption-key-32-chars-not-real-bbbbb
       # `next build` requiere NODE_ENV=production. Playwright corre contra ese
       # build; las pruebas que necesiten fixtures testeables deben exponerse
       # vía un flag explícito de la app, no vía NODE_ENV=test.
@@ -291,11 +293,12 @@ jobs:
         working-directory: nibble
 
     env:
-      DATABASE_URL: ${{ env.CI_DATABASE_URL }}
-      AUTH_SECRET: ${{ env.CI_AUTH_SECRET }}
-      AUTH_URL: ${{ env.CI_APP_URL }}
-      APP_URL: ${{ env.CI_APP_URL }}
-      ENCRYPTION_KEY: ${{ env.CI_ENCRYPTION_KEY }}
+      # Misma duplicación que en test-e2e — `${{ env.* }}` no es válido aquí.
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_ci
+      AUTH_SECRET: ci-secret-32-chars-not-real-aaaaaaaaaaa
+      AUTH_URL: http://localhost:3000
+      APP_URL: http://localhost:3000
+      ENCRYPTION_KEY: ci-encryption-key-32-chars-not-real-bbbbb
       NODE_ENV: production
 
     steps:
