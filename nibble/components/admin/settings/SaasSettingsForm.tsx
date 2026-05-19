@@ -3,7 +3,7 @@
 import { useActionState } from "react";
 import type { SaasSettings } from "@prisma/client";
 import { updateSaasSettingsAction } from "@/server/actions/saas-settings";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 
 const initial: ActionState = {};

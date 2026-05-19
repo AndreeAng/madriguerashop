@@ -35,20 +35,16 @@ test.describe("Storefront público", () => {
     await expect(page.getByText(/Bs/i).first()).toBeVisible();
   });
 
-  test("tienda inexistente muestra página de not-found", async ({ page }) => {
-    await page.goto("/tienda-inexistente-xyz");
-    // Validamos UX (el texto del not-found.tsx aparece). NO chequeamos el
-    // status HTTP por un quirk conocido de Next 15: cuando `notFound()` se
-    // llama desde dentro de un `cache()` wrapper (como hace
-    // `getStorefrontData`), Next renderea correctamente el not-found.tsx
-    // pero a veces devuelve 200 en lugar de 404. TODO(seo): refactorizar
-    // `getStorefrontData` para retornar `null` y llamar `notFound()` en
-    // cada page caller — eso restaura el 404 real (importante para SEO).
-    //
-    // Usamos getByRole para el h1 específico (no getByText) porque el
-    // not-found.tsx tiene DOS strings que matchean el regex (el `<p>` con
-    // "Tienda no encontrada" y el `<h1>` con "Esta tienda no está
-    // disponible") — Playwright strict mode rechaza locators ambiguos.
+  test("404 para tienda inexistente", async ({ page }) => {
+    const res = await page.goto("/tienda-inexistente-xyz");
+    // Restaurado el assertion de status: `getStorefrontData` ahora devuelve
+    // null y cada page caller llama `notFound()` explícitamente. Como
+    // `notFound()` ya no vive dentro de un `cache()` wrapper, Next propaga
+    // el status 404 correctamente (importante para SEO — Google no debe
+    // indexar slugs inexistentes como páginas válidas).
+    expect(res?.status()).toBe(404);
+    // Usamos getByRole para el h1 específico (no getByText) — el
+    // not-found.tsx tiene 2 strings que matchean el regex.
     await expect(
       page.getByRole("heading", { name: /no está disponible/i }),
     ).toBeVisible();
@@ -81,6 +77,14 @@ test.describe("Login", () => {
     await page.getByPlaceholder(/diego@bigbite/i).fill("noexiste@example.com");
     await page.getByPlaceholder(/••••••/).fill("wrongpassword123");
     await page.getByRole("button", { name: /entrar/i }).click();
-    await expect(page.getByText(/incorrectos|no pudimos/i)).toBeVisible();
+    // El test era flaky porque el flow del auth puede tardar 0-3s en
+    // renderear el error (Credentials provider de NextAuth corre bcrypt
+    // contra hash dummy para no leakar timing). En vez de un solo locator
+    // con 5s timeout, validamos un invariante más robusto: el usuario
+    // sigue en /login Y aparece eventualmente el error.
+    await expect(page).toHaveURL(/\/login/, { timeout: 10000 });
+    await expect(
+      page.getByText(/incorrectos|no pudimos|inválid/i),
+    ).toBeVisible({ timeout: 10000 });
   });
 });

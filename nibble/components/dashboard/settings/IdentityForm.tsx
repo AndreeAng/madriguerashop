@@ -2,10 +2,8 @@
 
 import { useActionState, useState } from "react";
 import type { Store } from "@prisma/client";
-import {
-  updateIdentityAction,
-  type ActionState,
-} from "@/server/actions/store-settings";
+import { updateIdentityAction } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import {
   SectionShell,
   StatusBadge,

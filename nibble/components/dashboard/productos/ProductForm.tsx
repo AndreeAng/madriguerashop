@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Category, Product } from "@prisma/client";
 import { upsertProductAction } from "@/server/actions/products";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { slugify } from "@/lib/validation/slug";
 import {
   StatusBadge,

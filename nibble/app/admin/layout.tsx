@@ -2,6 +2,13 @@ import type { ReactNode } from "react";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { AdminSidebar } from "@/components/admin/Sidebar";
 
+// El subtree /admin/* es 100% autenticado y data-fresh por cliente — no
+// tiene sentido prerenderearlo. Sin este flag Next intenta prerender
+// pages como /admin/usuarios al build y falla porque Prisma no puede
+// conectar a la DB en el contexto de build. Marcar el layout fuerza
+// dynamic en todas las pages hijas, evitando esa clase de errors.
+export const dynamic = "force-dynamic";
+
 /**
  * Layout compartido del panel /admin. Antes cada page repetía:
  *   const admin = await requireSuperAdmin();

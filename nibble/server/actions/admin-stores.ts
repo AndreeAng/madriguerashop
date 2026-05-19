@@ -26,6 +26,7 @@ import {
   readImpersonatedStoreId,
   setImpersonatedStore,
 } from "@/lib/auth/impersonation";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 // ============== Tipos ==============
 
@@ -84,7 +85,7 @@ const storeBaseSchema = z.object({
 const ownerOptionalSchema = z.object({
   ownerName: z.string().trim().max(80).optional().default(""),
   ownerIdentifier: z.string().trim().max(120).optional().default(""),
-  ownerPassword: z.string().max(128).optional().default(""),
+  ownerPassword: z.string().max(MAX_PASSWORD_LENGTH).optional().default(""),
 });
 
 const createSchema = storeBaseSchema.merge(ownerOptionalSchema).superRefine(
@@ -125,7 +126,7 @@ const assignOwnerSchema = z.object({
   storeId: z.string().min(1),
   ownerName: z.string().trim().min(2, "Mínimo 2 caracteres").max(80),
   ownerIdentifier: z.string().trim().min(1, "Email o teléfono").max(120),
-  ownerPassword: z.string().min(8, "Mínimo 8 caracteres").max(128),
+  ownerPassword: z.string().min(8, "Mínimo 8 caracteres").max(MAX_PASSWORD_LENGTH),
 });
 
 // ============== Helpers ==============

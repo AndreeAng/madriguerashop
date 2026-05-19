@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upsertTemplateAction } from "@/server/actions/admin-templates";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { ImageUploadField } from "@/components/dashboard/shared/ImageUploadField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ErrorAlert } from "@/components/ui/Alert";

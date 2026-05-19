@@ -16,6 +16,7 @@ import { appUrl } from "@/lib/email/client";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 // ============== Constantes ==============
 
@@ -135,7 +136,7 @@ const completeSchema = z
       .string()
       .length(RECOVERY_TOKEN_HEX_LEN, "Token inválido")
       .refine(isValidRecoveryTokenFormat, "Token inválido"),
-    password: z.string().min(8, "Mínimo 8 caracteres").max(128),
+    password: z.string().min(8, "Mínimo 8 caracteres").max(MAX_PASSWORD_LENGTH),
     confirmPassword: z.string(),
   })
   .refine((v) => v.password === v.confirmPassword, {

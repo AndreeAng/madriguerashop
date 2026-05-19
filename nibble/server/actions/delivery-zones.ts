@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
 export type DeliveryZoneFormState = {
   ok?: true;
@@ -182,7 +183,7 @@ export async function deleteDeliveryZoneAction(
   const { storeId, userId } = await requireOwnerOnlyIds();
 
   const parsed = deleteSchema.safeParse({ id: formData.get("id") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   // Si la zona ya fue usada en pedidos, NO la borramos físicamente —
   // setear isActive=false preserva la integridad histórica. El admin

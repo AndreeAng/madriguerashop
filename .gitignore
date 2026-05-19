@@ -60,3 +60,6 @@ Thumbs.db
 *.db
 *.db-journal
 prisma/dev.db*
+
+.vercel
+.env*.local

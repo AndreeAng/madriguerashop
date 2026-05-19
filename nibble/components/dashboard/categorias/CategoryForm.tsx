@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import type { Category } from "@prisma/client";
 import { upsertCategoryAction } from "@/server/actions/categories";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { slugify } from "@/lib/validation/slug";
 import {
   StatusBadge,

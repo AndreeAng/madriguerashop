@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import {
   Star,
   Clock,
@@ -47,6 +48,10 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
 
   // 1. Load store with template + hours + plan (via cached helper)
   const storeData = await getStorefrontData(slug);
+  // `getStorefrontData` ahora devuelve null en vez de llamar `notFound()`
+  // internamente — eso restaura el status 404 real (importante para SEO,
+  // sino Google podría indexar slugs inexistentes como páginas válidas).
+  if (!storeData) notFound();
 
   // Tracking de visita (fire-and-forget, no bloquea el render)
   void trackPageView({ storeId: storeData.id, path: `/${slug}` });

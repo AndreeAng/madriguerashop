@@ -19,6 +19,7 @@ import { generateEmailVerificationToken } from "@/lib/auth/email-verification-to
 import { appUrl } from "@/lib/email/client";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 // ============== Constantes de producto ==============
 //
@@ -56,7 +57,7 @@ const registerSchema = z.object({
   // Owner
   ownerName: z.string().trim().min(2, "Ingresa tu nombre completo").max(80),
   ownerIdentifier: z.string().trim().min(1, "Email o teléfono del responsable"),
-  password: z.string().min(8, "Mínimo 8 caracteres").max(128),
+  password: z.string().min(8, "Mínimo 8 caracteres").max(MAX_PASSWORD_LENGTH),
   // Aceptación de términos: el checkbox del form envía "on" cuando está
   // marcado. Sin este check el registro queda expuesto legalmente —
   // /terminos y /privacidad ya existen pero nada en server-side fuerza la

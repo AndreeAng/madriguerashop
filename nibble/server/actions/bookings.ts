@@ -11,6 +11,7 @@ import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/ra
 import { normalizePhoneBO, PHONE_BO_RE } from "@/lib/auth/identifiers";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { buildWhatsAppUrl } from "@/lib/utils";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
 export type CreateBookingState = {
   ok?: { trackingToken: string; whatsappUrl: string };
@@ -261,7 +262,7 @@ export async function confirmBookingAction(
   const parsed = ownerActionSchema.safeParse({
     bookingId: formData.get("bookingId"),
   });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const updated = await db.booking.updateMany({
     where: {
@@ -296,7 +297,7 @@ export async function cancelBookingAction(
     bookingId: formData.get("bookingId"),
     cancelReason: (formData.get("cancelReason") as string) ?? "",
   });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const updated = await db.booking.updateMany({
     where: {
@@ -329,7 +330,7 @@ export async function markBookingCompletedAction(
 ): Promise<{ error?: string }> {
   const { storeId, userId } = await requireStoreOwnerIds();
   const id = String(formData.get("bookingId") ?? "");
-  if (!id) return { error: "Datos inválidos" };
+  if (!id) return { error: INVALID_INPUT_ERROR };
 
   const updated = await db.booking.updateMany({
     where: { id, storeId, status: BookingStatus.CONFIRMED },
@@ -360,7 +361,7 @@ export async function markBookingNoShowAction(
 ): Promise<{ error?: string }> {
   const { storeId, userId } = await requireStoreOwnerIds();
   const id = String(formData.get("bookingId") ?? "");
-  if (!id) return { error: "Datos inválidos" };
+  if (!id) return { error: INVALID_INPUT_ERROR };
 
   const updated = await db.booking.updateMany({
     where: { id, storeId, status: BookingStatus.CONFIRMED },

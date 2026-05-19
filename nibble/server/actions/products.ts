@@ -9,7 +9,7 @@ import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { audit } from "@/lib/audit/log";
-import type { ActionState } from "./store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 
 // ============== Schemas ==============
 

@@ -14,7 +14,7 @@ import {
 } from "@/lib/email/templates/order";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
-import type { ActionState } from "./store-settings";
+import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
 
 /**
  * Helpers de stock + Customer counters.
@@ -212,7 +212,7 @@ export async function changeOrderStatusAction(
     reason: (formData.get("reason") as string) || undefined,
   });
   if (!parsed.success) {
-    return { error: "Datos inválidos" };
+    return { error: INVALID_INPUT_ERROR };
   }
   const { orderId, toStatus, reason } = parsed.data;
 
@@ -345,7 +345,7 @@ export async function verifyPaymentAction(
   // Verificar pagos es decisión del owner (impacta inventario y métricas).
   const { storeId, userId } = await requireOwnerOnlyIds();
   const parsed = verifyPaymentSchema.safeParse({ orderId: formData.get("orderId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const order = await db.order.findFirst({
     where: { id: parsed.data.orderId, storeId },

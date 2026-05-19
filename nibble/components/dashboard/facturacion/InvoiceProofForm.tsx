@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { uploadInvoiceProofAction } from "@/server/actions/invoices";
 import { ImageUploadField } from "@/components/dashboard/shared/ImageUploadField";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 

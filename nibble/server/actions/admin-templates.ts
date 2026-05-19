@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
-import type { ActionState } from "./store-settings";
+import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
 
 const TEMPLATE_ERROR_MSG = "Sólo el super admin puede gestionar plantillas.";
 
@@ -138,7 +138,7 @@ export async function deleteTemplateAction(
   if ("error" in admin) return { error: admin.error };
 
   const parsed = idSchema.safeParse({ id: formData.get("id") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const tpl = await db.template.findUnique({
     where: { id: parsed.data.id },
@@ -189,7 +189,7 @@ export async function reassignStoresToTemplateAction(
     fromTemplateId: formData.get("fromTemplateId"),
     toTemplateId: formData.get("toTemplateId"),
   });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
   if (parsed.data.fromTemplateId === parsed.data.toTemplateId) {
     return { error: "Las plantillas son iguales — no hay nada que reasignar." };
   }

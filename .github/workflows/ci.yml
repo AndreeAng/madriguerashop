@@ -308,25 +308,11 @@ jobs:
       run:
         working-directory: nibble
 
-    # Postgres real: `next build` intenta prerender páginas server-component
-    # (ej. /admin, /dashboard/*) que tocan Prisma. Sin DB, falla con
-    # `Can't reach database server at localhost:5432`. La alternativa
-    # correcta a largo plazo es marcar esas páginas `force-dynamic`, pero
-    # por ahora damos acceso a una DB vacía durante el build.
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nibble_ci
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
+    # NOTA: este job NO necesita postgres. Antes lo tenía como workaround
+    # porque `next build` intentaba prerender páginas /admin y /dashboard
+    # que tocan Prisma. Una vez que los layouts marcaron esos subtrees
+    # como `export const dynamic = "force-dynamic"`, Next ya no prerendea
+    # esas rutas en build — así que la conexión DB no se ejerce en build.
 
     env:
       # Misma duplicación que en test-e2e — `${{ env.* }}` no es válido aquí.
@@ -355,12 +341,6 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run db:generate
-
-      - name: Apply migrations to build DB
-        # Build necesita schema completo para que las queries de prerender
-        # no caigan en "table does not exist". No seedeamos datos — basta
-        # con tablas vacías; Next prerendea con resultados vacíos.
-        run: npx prisma migrate deploy
 
       - name: Cache Next build
         # Misma key que test-e2e: si E2E ya buildeó este mismo sha, este job

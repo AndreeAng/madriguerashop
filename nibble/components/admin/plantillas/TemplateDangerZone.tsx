@@ -8,7 +8,7 @@ import {
   deleteTemplateAction,
   reassignStoresToTemplateAction,
 } from "@/server/actions/admin-templates";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { useDoneOnce } from "@/hooks/useDoneOnce";
 
 const initial: ActionState = {};

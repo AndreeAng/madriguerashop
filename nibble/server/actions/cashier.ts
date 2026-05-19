@@ -16,6 +16,8 @@ import { appUrl } from "@/lib/email/client";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 // ============== Tipos ==============
 
@@ -30,7 +32,7 @@ export type InviteCashierState = {
 const inviteSchema = z.object({
   name: z.string().trim().min(2, "Mínimo 2 caracteres").max(80),
   identifier: z.string().trim().min(1, "Email o teléfono requerido").max(120),
-  password: z.string().min(8, "Mínimo 8 caracteres").max(128),
+  password: z.string().min(8, "Mínimo 8 caracteres").max(MAX_PASSWORD_LENGTH),
 });
 
 // ============== Invitar cashier ==============
@@ -139,7 +141,7 @@ export async function toggleCashierAction(
     userId: formData.get("userId"),
     action: formData.get("action"),
   });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   // Pertenencia: el cashier debe ser de la misma tienda que el caller.
   // Sin esto un owner podría tocar cashiers de otra tienda manipulando el
