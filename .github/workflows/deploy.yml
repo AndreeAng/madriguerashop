@@ -91,13 +91,20 @@ jobs:
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
 
+      # Las commands `vercel *` corren desde el REPO ROOT (no desde nibble/).
+      # El proyecto Vercel tiene `rootDirectory: nibble` configurado, así que
+      # el CLI agrega `nibble/` por sí solo. Si las corremos desde `nibble/`
+      # con el default working-directory del job, el CLI computa
+      # `nibble/nibble/` y falla con ENOENT en package.json.
       - name: Pull Vercel project metadata
+        working-directory: .
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build for Vercel
+        working-directory: .
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -105,6 +112,7 @@ jobs:
 
       - name: Deploy
         id: deploy
+        working-directory: .
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
