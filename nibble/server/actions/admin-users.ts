@@ -13,7 +13,7 @@ import { sendEmailBackground } from "@/lib/email/send";
 import { passwordResetEmail } from "@/lib/email/templates/password-reset";
 import { appUrl } from "@/lib/email/client";
 import { audit } from "@/lib/audit/log";
-import type { ActionState } from "./store-settings";
+import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
 
 const TOKEN_TTL_MS = 1000 * 60 * 60; // 1 hora — igual que el flow normal
 const USER_ERROR_MSG = "Sólo el super admin puede gestionar usuarios.";
@@ -30,7 +30,7 @@ export async function suspendUserAction(
   if ("error" in admin) return { error: admin.error };
 
   const parsed = idSchema.safeParse({ userId: formData.get("userId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   if (parsed.data.userId === admin.id) {
     return { error: "No puedes suspender tu propia cuenta." };
@@ -74,7 +74,7 @@ export async function reactivateUserAction(
   if ("error" in admin) return { error: admin.error };
 
   const parsed = idSchema.safeParse({ userId: formData.get("userId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const target = await db.user.findUnique({
     where: { id: parsed.data.userId },
@@ -107,7 +107,7 @@ export async function sendPasswordResetForUserAction(
   if ("error" in admin) return { error: admin.error };
 
   const parsed = idSchema.safeParse({ userId: formData.get("userId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const target = await db.user.findUnique({
     where: { id: parsed.data.userId },

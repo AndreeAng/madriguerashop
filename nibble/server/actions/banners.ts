@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
 export type BannerFormState = {
   ok?: true;
@@ -192,7 +193,7 @@ export async function deleteBannerAction(
   const { storeId, userId: actorId } = await requireOwnerOnlyIds();
 
   const parsed = deleteSchema.safeParse({ id: formData.get("id") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   // Banner no tiene refs históricos (no se asocia a pedidos como
   // DeliveryZone), así que hard-delete es seguro.

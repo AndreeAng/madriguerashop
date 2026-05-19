@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { X } from "lucide-react";
 import { customerCancelOrderAction } from "@/server/actions/order-management";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 

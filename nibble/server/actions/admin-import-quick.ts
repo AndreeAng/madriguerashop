@@ -6,6 +6,7 @@ import { requireSuperAdmin } from "@/lib/auth/session";
 import { PHONE_BO_RE } from "@/lib/auth/identifiers";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { importQuickStore } from "@/lib/import/quick/importer";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 export type ImportQuickState = {
   ok?: true;
@@ -50,7 +51,7 @@ const schema = z.object({
     ),
   ownerName: z.string().trim().min(2).max(80),
   ownerIdentifier: z.string().trim().min(3).max(120),
-  ownerPassword: z.string().min(8).max(128),
+  ownerPassword: z.string().min(8).max(MAX_PASSWORD_LENGTH),
 });
 
 /**

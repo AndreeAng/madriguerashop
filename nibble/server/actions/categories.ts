@@ -9,7 +9,7 @@ import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { audit } from "@/lib/audit/log";
-import type { ActionState } from "./store-settings";
+import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
 
 // ============== Schemas ==============
 
@@ -19,11 +19,26 @@ const upsertSchema = z.object({
   slug: z.string().trim().optional(),
   description: z.string().trim().max(280).optional(),
   parentId: z.string().nullable().optional(),
+  // imageUrl: solo paths relativos (/uploads/... vía nuestro endpoint de
+  // upload) o https:// hacia hosts whitelisted en next.config.ts. Antes
+  // aceptaba CUALQUIER https://, lo que permitía:
+  //   1) SSRF latente si en el futuro alguien hace fetch server-side
+  //      del imageUrl (ej. para generar thumbnails)
+  //   2) Errors 500 en runtime cuando next/image rechaza un host no
+  //      listado en `remotePatterns`
+  //   3) Phishing — un atacante con acceso de owner mete URLs externas
+  //      como "imagen" de categoría
   imageUrl: z
     .string()
     .trim()
     .max(2048)
-    .refine((v) => v === "" || /^https?:\/\//.test(v), "URL inválida")
+    .refine(
+      (v) =>
+        v === "" ||
+        v.startsWith("/uploads/") ||
+        v.startsWith("/api/uploads/"),
+      "Sube la imagen desde el botón — sólo se aceptan rutas internas",
+    )
     .optional(),
 });
 
@@ -224,7 +239,7 @@ export async function reorderCategoriesAction(input: {
 }): Promise<ActionState> {
   const { storeId, userId } = await requireOwnerOnlyIds();
   const parsed = reorderSchema.safeParse(input);
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   // Validar que todas las IDs son de esta tienda
   const found = await db.category.findMany({

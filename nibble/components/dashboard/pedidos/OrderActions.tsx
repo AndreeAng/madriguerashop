@@ -10,7 +10,7 @@ import {
   rejectPaymentAction,
 } from "@/server/actions/order-management";
 import { STATUS_FLOW } from "@/lib/orders/status";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 
 const TRANSITION_LABELS: Partial<Record<OrderStatus, { label: string; icon: typeof Check }>> = {
   CONFIRMED: { label: "Confirmar", icon: Check },

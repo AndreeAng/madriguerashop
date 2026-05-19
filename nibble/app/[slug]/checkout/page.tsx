@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ChevronLeft } from "lucide-react";
 import { db } from "@/lib/db";
 import { getStorefrontData, getStoreBySlug } from "@/lib/tenant/resolve";
@@ -31,6 +31,7 @@ export default async function CheckoutPage({
 }) {
   const { slug } = await params;
   const storeData = await getStorefrontData(slug);
+  if (!storeData) notFound();
   const store = toStoreView(storeData, { hours: storeData.storeHours });
 
   const cart = await getCartSnapshot(slug);

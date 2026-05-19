@@ -2,10 +2,8 @@
 
 import { useActionState } from "react";
 import type { StoreHours } from "@prisma/client";
-import {
-  updateHoursAction,
-  type ActionState,
-} from "@/server/actions/store-settings";
+import { updateHoursAction } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { SectionShell, StatusBadge } from "./SectionShell";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 

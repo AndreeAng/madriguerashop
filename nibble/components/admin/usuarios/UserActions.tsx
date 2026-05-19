@@ -10,7 +10,7 @@ import {
   sendPasswordResetForUserAction,
   changeUserRoleAction,
 } from "@/server/actions/admin-users";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 import { useDoneOnce } from "@/hooks/useDoneOnce";
 
 const initial: ActionState = {};

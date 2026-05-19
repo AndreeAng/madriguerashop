@@ -10,6 +10,7 @@ import {
   parseBoliviaDate,
   parseBoliviaDateTime,
 } from "@/lib/booking/timezone";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
 export type BlockFormState = {
   ok?: true;
@@ -117,7 +118,7 @@ export async function deleteBookingBlockAction(
 ): Promise<{ error?: string }> {
   const { storeId, userId } = await requireStoreOwnerIds();
   const id = String(formData.get("id") ?? "");
-  if (!id) return { error: "Datos inválidos" };
+  if (!id) return { error: INVALID_INPUT_ERROR };
 
   const deleted = await db.bookingBlock.deleteMany({
     where: { id, storeId },

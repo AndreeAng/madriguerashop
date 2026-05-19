@@ -98,6 +98,7 @@ export default async function OrderTrackingPage({
   ]);
 
   if (!order || order.store.slug !== slug) notFound();
+  if (!storeData) notFound();
 
   const store = toStoreView(storeData, { hours: storeData.storeHours });
 

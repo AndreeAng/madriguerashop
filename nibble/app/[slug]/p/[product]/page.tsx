@@ -76,6 +76,7 @@ export default async function ProductDetailPage({
   const { slug, product: productSlug } = await params;
 
   const storeData = await getStorefrontData(slug);
+  if (!storeData) notFound();
 
   const productRaw = await db.product.findFirst({
     where: { storeId: storeData.id, slug: productSlug, isActive: true },

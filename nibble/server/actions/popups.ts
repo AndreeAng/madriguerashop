@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
 export type PopupFormState = {
   ok?: true;
@@ -192,7 +193,7 @@ export async function deletePopupAction(
 ): Promise<{ error?: string }> {
   const { storeId, userId: actorId } = await requireOwnerOnlyIds();
   const id = String(formData.get("id") ?? "");
-  if (!id) return { error: "Datos inválidos" };
+  if (!id) return { error: INVALID_INPUT_ERROR };
 
   const deleted = await db.popup.deleteMany({ where: { id, storeId } });
   if (deleted.count === 0) return { error: "Popup no encontrado" };

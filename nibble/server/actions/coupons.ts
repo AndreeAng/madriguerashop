@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
 export type CouponFormState = {
   ok?: true;
@@ -217,7 +218,7 @@ export async function deleteCouponAction(
 ): Promise<{ error?: string }> {
   const { storeId, userId: actorId } = await requireOwnerOnlyIds();
   const id = String(formData.get("id") ?? "");
-  if (!id) return { error: "Datos inválidos" };
+  if (!id) return { error: INVALID_INPUT_ERROR };
 
   // Cupón con usos: soft-delete (isActive=false) para preservar el
   // historial de pedidos que lo aplicaron. Sin esto, un pedido con cupón

@@ -7,7 +7,7 @@ import {
   verifyInvoicePaymentAction,
   cancelInvoiceAction,
 } from "@/server/actions/invoices";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 
 function PendingButton({
   children,

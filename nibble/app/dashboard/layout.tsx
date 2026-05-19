@@ -5,6 +5,12 @@ import { readImpersonatedStoreId } from "@/lib/auth/impersonation";
 import { DashboardSidebar } from "@/components/dashboard/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 
+// El subtree /dashboard/* es autenticado (store-owner / cashier) y
+// muestra datos en tiempo real del merchant — no es prerendereable.
+// Declarado explícitamente para que el build no intente generar HTML
+// estático y caiga con errors de Prisma cuando la DB no está disponible.
+export const dynamic = "force-dynamic";
+
 /**
  * Layout compartido del dashboard del merchant. Antes cada page repetía
  * el wrapper `<div className="flex min-h-screen">` + `<DashboardSidebar>`

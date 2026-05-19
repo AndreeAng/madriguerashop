@@ -8,7 +8,7 @@ import {
   acknowledgeAlertAction,
   resolveAlertAction,
 } from "@/server/actions/admin-alerts";
-import type { ActionState } from "@/server/actions/store-settings";
+import type { ActionState } from "@/lib/validation/actionState";
 
 const initial: ActionState = {};
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
-import type { ActionState } from "./store-settings";
+import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
 
 const ALERT_ERROR_MSG = "Sólo el super admin puede gestionar alertas.";
 
@@ -19,7 +19,7 @@ export async function acknowledgeAlertAction(
   if ("error" in admin) return { error: admin.error };
 
   const parsed = idSchema.safeParse({ alertId: formData.get("alertId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const alert = await db.alert.findUnique({
     where: { id: parsed.data.alertId },
@@ -58,7 +58,7 @@ export async function resolveAlertAction(
   if ("error" in admin) return { error: admin.error };
 
   const parsed = idSchema.safeParse({ alertId: formData.get("alertId") });
-  if (!parsed.success) return { error: "Datos inválidos" };
+  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
   const alert = await db.alert.findUnique({
     where: { id: parsed.data.alertId },

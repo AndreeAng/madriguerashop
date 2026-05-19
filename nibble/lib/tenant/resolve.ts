@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
-import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import type { Store, StoreStatus } from "@prisma/client";
+
+const BLOCKED_STATUSES: StoreStatus[] = ["SUSPENDED", "CANCELLED"];
 
 /**
  * Resuelve una tienda por slug. Cacheado por request (React `cache`)
@@ -17,23 +18,29 @@ export const getStoreBySlug = cache(async (slug: string): Promise<Store | null> 
 
 /**
  * Resuelve y valida que la tienda esté visible al público.
- * Lanza 404 si: no existe, está suspendida o cancelada.
- * Permite ACTIVE y PAST_DUE (la suspendida y cancelada se bloquean).
+ * Devuelve `null` si: no existe, está suspendida o cancelada.
+ * Permite ACTIVE y PAST_DUE.
+ *
+ * IMPORTANTE: el caller debe llamar `notFound()` si devuelve null. Antes
+ * esta función llamaba `notFound()` internamente, pero Next 15 tiene un
+ * quirk: `notFound()` dentro de un `cache()` wrapper no propaga el status
+ * 404 correctamente — el not-found.tsx renderea OK pero el response queda
+ * en 200 (mal para SEO; Google podría indexar slugs inexistentes como
+ * páginas válidas). Mover `notFound()` al caller restaura el 404 real.
  */
-export const getPublicStoreBySlug = cache(async (slug: string): Promise<Store> => {
+export const getPublicStoreBySlug = cache(async (slug: string): Promise<Store | null> => {
   const store = await getStoreBySlug(slug);
-
-  if (!store) notFound();
-
-  const blockedStatuses: StoreStatus[] = ["SUSPENDED", "CANCELLED"];
-  if (blockedStatuses.includes(store.status)) notFound();
-
+  if (!store) return null;
+  if (BLOCKED_STATUSES.includes(store.status)) return null;
   return store;
 });
 
 /**
  * Versión que devuelve la store con relaciones útiles para el storefront
  * (template, hours). Solo para páginas server-rendered.
+ *
+ * Mismo contrato que `getPublicStoreBySlug`: devuelve `null` si no
+ * existe o está bloqueada. El caller maneja `notFound()`.
  */
 export const getStorefrontData = cache(async (slug: string) => {
   const store = await db.store.findUnique({
@@ -44,12 +51,8 @@ export const getStorefrontData = cache(async (slug: string) => {
       plan: true,
     },
   });
-
-  if (!store) notFound();
-
-  const blockedStatuses: StoreStatus[] = ["SUSPENDED", "CANCELLED"];
-  if (blockedStatuses.includes(store.status)) notFound();
-
+  if (!store) return null;
+  if (BLOCKED_STATUSES.includes(store.status)) return null;
   return store;
 });
 
