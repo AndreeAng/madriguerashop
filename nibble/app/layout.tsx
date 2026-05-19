@@ -23,7 +23,10 @@ export const metadata: Metadata = {
   title: "Madriguera Shop — Tu tienda virtual lista en 5 minutos",
   description:
     "El SaaS de tienda virtual hecho para Bolivia. Cobra por QR, recibe pedidos por WhatsApp, opera todo desde un panel.",
-  metadataBase: new URL(process.env.APP_URL ?? "https://madrigueras.shop"),
+  // `||` (no `??`) para que un APP_URL="" (env existe pero string vacío)
+  // también caiga al default. Sin esto, `new URL("")` rompe el build de
+  // Vercel al "Collecting page data" del /_not-found.
+  metadataBase: new URL(process.env.APP_URL || "https://madrigueras.shop"),
   applicationName: "Madriguera Shop",
   appleWebApp: {
     capable: true,
