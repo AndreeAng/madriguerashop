@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 // CSS de Leaflet: cargado global porque los mapas pueden aparecer en
@@ -58,11 +59,22 @@ export const viewport: Viewport = {
 // CSP pueda prohibir scripts inline sin excepción — un XSS futuro no
 // puede inyectar `<script>` y ejecutarse.
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  // El nonce viene del middleware (lib/middleware.ts → x-nonce header).
+  // Lo pasamos explícito al <script> custom porque con CSP `strict-dynamic`
+  // el browser solo confía en scripts con nonce o cargados por uno.
+  // Fallback "": en dev sin middleware activo, el script falla silenciosa
+  // — el unregister-sw es defensa contra SW residual, no crítico.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="es-BO" className={`${inter.variable} ${fraunces.variable}`}>
       <head>
-        <script src="/unregister-sw.js" defer />
+        <script src="/unregister-sw.js" defer nonce={nonce} />
       </head>
       <body>{children}</body>
     </html>
