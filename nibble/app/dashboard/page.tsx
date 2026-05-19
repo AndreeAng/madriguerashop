@@ -5,8 +5,6 @@ import {
   Wallet,
   Users,
   AlertTriangle,
-  ArrowUpRight,
-  ArrowDownRight,
   ChevronRight,
   Package,
 } from "lucide-react";
@@ -15,6 +13,7 @@ import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { PlanLimitsBanner } from "@/components/dashboard/PlanLimitsBanner";
+import { KpiCardCompact } from "@/components/shared/KpiCardCompact";
 import {
   checkOrderLimitThisMonth,
   checkProductLimit,
@@ -178,25 +177,25 @@ export default async function DashboardHome() {
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-4">
-            <KpiCard
+            <KpiCardCompact
               icon={ShoppingBag}
               label="Pedidos hoy"
               value={String(todayCount)}
               delta={pctChange(todayCount, yesterdayCount)}
             />
-            <KpiCard
+            <KpiCardCompact
               icon={Wallet}
               label="Ventas hoy"
               value={formatBob(todaySales)}
               delta={pctChange(todaySales, yesterdaySales)}
             />
-            <KpiCard
+            <KpiCardCompact
               icon={TrendingUp}
               label="Ticket promedio"
               value={formatBob(todayAvg)}
               delta={pctChange(Math.round(todayAvg), Math.round(yesterdayAvg))}
             />
-            <KpiCard
+            <KpiCardCompact
               icon={Users}
               label="Clientes nuevos"
               value={String(todayCustomers)}
@@ -372,46 +371,3 @@ export default async function DashboardHome() {
   );
 }
 
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  delta,
-}: {
-  icon: typeof TrendingUp;
-  label: string;
-  value: string;
-  delta: number;
-}) {
-  const positive = delta >= 0;
-  const noChange = delta === 0;
-  return (
-    <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-[color:var(--bg)] text-[color:var(--color-amber-600)]">
-          <Icon className="size-4" />
-        </div>
-        {!noChange && (
-          <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              positive
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {positive ? (
-              <ArrowUpRight className="size-3" />
-            ) : (
-              <ArrowDownRight className="size-3" />
-            )}
-            {Math.abs(delta)}%
-          </span>
-        )}
-      </div>
-      <div className="mt-4">
-        <p className="text-xs text-[color:var(--muted)]">{label}</p>
-        <p className="font-display mt-1 text-2xl num-tabular">{value}</p>
-      </div>
-    </div>
-  );
-}
