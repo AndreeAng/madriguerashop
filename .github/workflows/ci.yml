@@ -402,7 +402,60 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
   # ============================================================
-  # 7) ci-success — marca agregada para branch protection
+  # 7) test-integration — tests contra Postgres real (branch de Neon)
+  # ============================================================
+  # Valida invariantes que requieren DB real (ej. row-lock del cupón en
+  # `tests/integration/coupon-toctou.test.ts`). Corre serial (un test a
+  # la vez por branch) porque los tests comparten state en la DB.
+  #
+  # Requiere el secret `TEST_DATABASE_URL` apuntando a una branch de Neon
+  # dedicada para tests. Si no está configurado, el job falla con un
+  # mensaje claro del setup file. Para skipear sin error, comentar este
+  # job entero en el `needs` del agregado.
+  test-integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint, test-unit]
+    # Serializar los runs — si dos PRs hitean este job simultáneo, podrían
+    # interferir con la data del test (los fixtures usan `Date.now()` para
+    # evitar colisiones, pero la branch es compartida).
+    concurrency:
+      group: test-integration-${{ github.ref }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: nibble
+    env:
+      TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: nibble/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci --include=dev --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Apply migrations to test branch (idempotente)
+        # Garantiza que la branch test tenga schema actualizado. Si ya está
+        # al día, es no-op. Si hay migrations nuevas en este PR, las aplica
+        # antes de correr los tests.
+        env:
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+        run: npx prisma migrate deploy
+
+      - name: Run integration tests
+        run: npm run test:integration
+
+  # ============================================================
+  # 8) ci-success — marca agregada para branch protection
   # ============================================================
   ci-success:
     name: CI Success
@@ -414,6 +467,7 @@ jobs:
       - migrations-validate
       - build
       - audit
+      - test-integration
     # `!cancelled()` permite que el agregado corra cuando algún job falló
     # (para reportar el fallo a branch protection) pero NO cuando el workflow
     # entero fue cancelado por el usuario o por concurrency. Con `always()`
@@ -427,7 +481,8 @@ jobs:
              || "${{ needs.test-e2e.result }}" != "success" \
              || "${{ needs.migrations-validate.result }}" != "success" \
              || "${{ needs.build.result }}" != "success" \
-             || "${{ needs.audit.result }}" != "success" ]]; then
+             || "${{ needs.audit.result }}" != "success" \
+             || "${{ needs.test-integration.result }}" != "success" ]]; then
             echo "✗ Uno o más jobs fallaron"
             exit 1
           fi
