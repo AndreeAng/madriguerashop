@@ -1,17 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  TrendingUp,
-  Wallet,
-  Users,
-  ShoppingBag,
-  ArrowUpRight,
-  ArrowDownRight,
-} from "lucide-react";
+import { TrendingUp, Wallet, Users, ShoppingBag } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { formatBob } from "@/lib/utils";
 import { verticalLabel } from "@/lib/saas/verticals";
+import { KpiCard } from "@/components/shared/KpiCard";
 
 export const metadata = { title: "Analytics · Admin" };
 export const dynamic = "force-dynamic";
@@ -333,52 +327,6 @@ export default async function AdminAnalyticsPage() {
 
 // ============== Card primitives ==============
 
-function KpiCard({
-  icon,
-  label,
-  value,
-  hint,
-  delta,
-  tone,
-}: {
-  icon: ReactNode;
-  label: string;
-  value: string;
-  hint?: string;
-  delta?: number | null;
-  tone: "amber" | "leaf" | "sky" | "violet";
-}) {
-  const toneClass: Record<typeof tone, string> = {
-    amber: "bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]",
-    leaf: "bg-[color:var(--color-leaf-500)]/10 text-[color:var(--color-leaf-600)]",
-    sky: "bg-sky-100 text-sky-700",
-    violet: "bg-violet-100 text-violet-700",
-  };
-  return (
-    <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-      <div className="flex items-start justify-between">
-        <div className={`grid size-10 place-items-center rounded-xl ${toneClass[tone]}`}>
-          {icon}
-        </div>
-        {delta !== undefined && delta !== null && (
-          <span
-            className={`inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              delta >= 0
-                ? "bg-emerald-100 text-emerald-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {delta >= 0 ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-            {(delta * 100).toFixed(1)}%
-          </span>
-        )}
-      </div>
-      <p className="mt-4 text-xs uppercase tracking-widest text-[color:var(--muted)]">{label}</p>
-      <p className="font-display mt-1 text-2xl num-tabular">{value}</p>
-      {hint && <p className="mt-1 text-xs text-[color:var(--muted)]">{hint}</p>}
-    </div>
-  );
-}
 
 function ChartCard({
   title,

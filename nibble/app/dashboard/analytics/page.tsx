@@ -1,11 +1,8 @@
 import Link from "next/link";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Clock,
   Eye,
   MapPin,
-  Minus,
   Package,
   PackageX,
   Repeat,
@@ -19,6 +16,7 @@ import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MapDensity } from "@/components/shared/MapsClient";
+import { KpiCard } from "@/components/shared/KpiCard";
 import { formatBob, formatBobAmount } from "@/lib/utils";
 
 export const metadata = { title: "Analytics · Madriguera Shop" };
@@ -350,25 +348,33 @@ export default async function AnalyticsPage({
           <RangeTabs current={rangeKey} />
         </div>
 
-        {/* KPIs principales */}
+        {/* KPIs principales — `pctDelta` devuelve integer-percent (ya × 100)
+            y null cuando no hay período comparable. `showNoComparable` muestra
+            badge "sin comparable" en vez de dejar hueco. */}
         <section className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             icon={<Wallet className="size-4" />}
             label="Ingresos"
             value={formatBob(currentRevenue)}
             delta={pctDelta(currentRevenue, prevRevenue)}
+            deltaFormat="percent"
+            showNoComparable
           />
           <KpiCard
             icon={<ShoppingBag className="size-4" />}
             label="Pedidos"
             value={currentOrders.toLocaleString("es-BO")}
             delta={pctDelta(currentOrders, prevOrders)}
+            deltaFormat="percent"
+            showNoComparable
           />
           <KpiCard
             icon={<Package className="size-4" />}
             label="Ticket promedio"
             value={formatBob(currentAOV)}
             delta={pctDelta(currentAOV, prevAOV)}
+            deltaFormat="percent"
+            showNoComparable
             hint={currentOrders === 0 ? "Sin pedidos en el período" : undefined}
           />
           <KpiCard
@@ -376,6 +382,8 @@ export default async function AnalyticsPage({
             label="Clientes nuevos"
             value={currentNewCustomers.toLocaleString("es-BO")}
             delta={pctDelta(currentNewCustomers, prevNewCustomers)}
+            deltaFormat="percent"
+            showNoComparable
           />
         </section>
 
@@ -762,40 +770,6 @@ function RangeTabs({ current }: { current: string }) {
   );
 }
 
-function KpiCard({
-  icon,
-  label,
-  value,
-  delta,
-  hint,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  delta: number | null;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-      <div className="flex items-center justify-between">
-        <span className="grid size-8 place-items-center rounded-xl bg-[color:var(--card-soft)] text-[color:var(--fg-soft)]">
-          {icon}
-        </span>
-        <DeltaBadge value={delta} />
-      </div>
-      <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
-        {label}
-      </p>
-      <p className="mt-1 font-display text-2xl leading-tight num-tabular">
-        {value}
-      </p>
-      {hint && (
-        <p className="mt-1 text-[11px] text-[color:var(--muted)]">{hint}</p>
-      )}
-    </div>
-  );
-}
-
 function MiniCard({
   icon,
   label,
@@ -828,37 +802,6 @@ function MiniCard({
         <p className="mt-1 text-xs text-[color:var(--muted)]">{sub}</p>
       )}
     </div>
-  );
-}
-
-function DeltaBadge({ value }: { value: number | null }) {
-  if (value === null) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[11px] text-[color:var(--muted)]">
-        <Minus className="size-3" /> sin comparable
-      </span>
-    );
-  }
-  const rounded = Math.round(value * 10) / 10;
-  if (rounded === 0) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[11px] text-[color:var(--muted)]">
-        <Minus className="size-3" /> 0%
-      </span>
-    );
-  }
-  const up = rounded > 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-        up
-          ? "bg-emerald-100 text-emerald-700"
-          : "bg-rose-100 text-rose-700"
-      }`}
-    >
-      {up ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-      {Math.abs(rounded)}%
-    </span>
   );
 }
 

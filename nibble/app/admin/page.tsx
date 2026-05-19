@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { formatBob } from "@/lib/utils";
+import { KpiCardCompact } from "@/components/shared/KpiCardCompact";
 
 export const metadata = { title: "Inicio · Admin" };
 
@@ -152,7 +153,7 @@ export default async function AdminHome() {
           )}
 
           <div className="mt-6 grid gap-3 md:grid-cols-4">
-            <KpiCard
+            <KpiCardCompact
               icon={StoreIcon}
               label="Tiendas activas"
               value={String(activeStoreCount)}
@@ -163,19 +164,19 @@ export default async function AdminHome() {
                 con montos altos puede perder dígitos (Number max safe int
                 es 2^53; Decimal(10,2) en BOB no llega cerca pero el cast
                 es innecesariamente lossy). */}
-            <KpiCard
+            <KpiCardCompact
               icon={Wallet}
               label="Cobrado este mes"
               value={formatBob(invoicePaidThisMonth._sum.amount ?? 0)}
               hint={`${formatBob(invoicePendingTotal._sum.amount ?? 0)} pendiente`}
             />
-            <KpiCard
+            <KpiCardCompact
               icon={ShoppingBag}
               label="Pedidos del mes (red)"
               value={String(gmvThisMonth._count._all ?? 0)}
               hint={`GMV: ${formatBob(gmvThisMonth._sum.total ?? 0)}`}
             />
-            <KpiCard
+            <KpiCardCompact
               icon={TrendingUp}
               label="Facturas abiertas"
               value={String(awaitingInvoicesCount)}
@@ -279,29 +280,3 @@ export default async function AdminHome() {
   );
 }
 
-function KpiCard({
-  icon: Icon,
-  label,
-  value,
-  hint,
-}: {
-  icon: typeof TrendingUp;
-  label: string;
-  value: string;
-  hint?: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-      <div className="flex items-center justify-between">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-[color:var(--bg)] text-[color:var(--color-amber-600)]">
-          <Icon className="size-4" />
-        </div>
-      </div>
-      <div className="mt-4">
-        <p className="text-xs text-[color:var(--muted)]">{label}</p>
-        <p className="font-display mt-1 text-2xl num-tabular">{value}</p>
-        {hint && <p className="mt-1 text-[11px] text-[color:var(--muted)]">{hint}</p>}
-      </div>
-    </div>
-  );
-}
