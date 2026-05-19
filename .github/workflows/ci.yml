@@ -47,7 +47,11 @@ jobs:
           cache-dependency-path: nibble/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        # `--include=dev` fuerza la instalación de devDependencies aunque el
+        # job tenga `NODE_ENV=production` (npm las skipea cuando lee esa env
+        # var). Sin esto, jobs como `build` y `test-e2e` no instalaban
+        # TypeScript y Next.js fallaba a cargar `next.config.ts`.
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Generate Prisma client
         run: npm run db:generate
@@ -89,7 +93,11 @@ jobs:
           cache-dependency-path: nibble/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        # `--include=dev` fuerza la instalación de devDependencies aunque el
+        # job tenga `NODE_ENV=production` (npm las skipea cuando lee esa env
+        # var). Sin esto, jobs como `build` y `test-e2e` no instalaban
+        # TypeScript y Next.js fallaba a cargar `next.config.ts`.
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Generate Prisma client
         run: npm run db:generate
@@ -136,7 +144,11 @@ jobs:
           cache-dependency-path: nibble/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        # `--include=dev` fuerza la instalación de devDependencies aunque el
+        # job tenga `NODE_ENV=production` (npm las skipea cuando lee esa env
+        # var). Sin esto, jobs como `build` y `test-e2e` no instalaban
+        # TypeScript y Next.js fallaba a cargar `next.config.ts`.
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Apply migrations to empty DB
         # `migrate deploy` aplica todas las migrations en orden — falla si
@@ -217,7 +229,11 @@ jobs:
           cache-dependency-path: nibble/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        # `--include=dev` fuerza la instalación de devDependencies aunque el
+        # job tenga `NODE_ENV=production` (npm las skipea cuando lee esa env
+        # var). Sin esto, jobs como `build` y `test-e2e` no instalaban
+        # TypeScript y Next.js fallaba a cargar `next.config.ts`.
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Generate Prisma client
         run: npm run db:generate
@@ -311,7 +327,11 @@ jobs:
           cache-dependency-path: nibble/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        # `--include=dev` fuerza la instalación de devDependencies aunque el
+        # job tenga `NODE_ENV=production` (npm las skipea cuando lee esa env
+        # var). Sin esto, jobs como `build` y `test-e2e` no instalaban
+        # TypeScript y Next.js fallaba a cargar `next.config.ts`.
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Generate Prisma client
         run: npm run db:generate
@@ -364,7 +384,11 @@ jobs:
           cache-dependency-path: nibble/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --no-audit --no-fund
+        # `--include=dev` fuerza la instalación de devDependencies aunque el
+        # job tenga `NODE_ENV=production` (npm las skipea cuando lee esa env
+        # var). Sin esto, jobs como `build` y `test-e2e` no instalaban
+        # TypeScript y Next.js fallaba a cargar `next.config.ts`.
+        run: npm ci --include=dev --no-audit --no-fund
 
       - name: Audit (high+)
         # `--omit=dev` ignora vulnerabilidades en devDeps (tooling); las prod
