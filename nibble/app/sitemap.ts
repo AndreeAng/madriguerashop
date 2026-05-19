@@ -14,7 +14,9 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 function appUrl(): string {
-  return (process.env.APP_URL ?? "https://madrigueras.shop").replace(/\/$/, "");
+  // `||` para que un APP_URL="" caiga al default — `??` lo dejaría vacío
+  // y el sitemap se llenaría con URLs relativas inválidas.
+  return (process.env.APP_URL || "https://madrigueras.shop").replace(/\/$/, "");
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

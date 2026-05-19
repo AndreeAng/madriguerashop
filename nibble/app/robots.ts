@@ -1,7 +1,9 @@
 import type { MetadataRoute } from "next";
 
 function appUrl(): string {
-  return (process.env.APP_URL ?? "https://madrigueras.shop").replace(/\/$/, "");
+  // `||` (no `??`) — un APP_URL="" debe caer al default. Sin esto el build
+  // de Vercel rompe al construir URLs absolutas con string vacío.
+  return (process.env.APP_URL || "https://madrigueras.shop").replace(/\/$/, "");
 }
 
 export default function robots(): MetadataRoute.Robots {

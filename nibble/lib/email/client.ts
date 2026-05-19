@@ -46,7 +46,8 @@ export function mailFrom(): string {
 }
 
 export function appHostname(): string {
-  const url = process.env.APP_URL ?? "http://localhost:3000";
+  // `||` para que APP_URL="" no quede como string vacío.
+  const url = process.env.APP_URL || "http://localhost:3000";
   try {
     return new URL(url).hostname;
   } catch {
@@ -55,5 +56,5 @@ export function appHostname(): string {
 }
 
 export function appUrl(): string {
-  return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  return (process.env.APP_URL || "http://localhost:3000").replace(/\/$/, "");
 }
