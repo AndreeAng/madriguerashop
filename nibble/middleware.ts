@@ -17,14 +17,90 @@ const SESSION_COOKIE = "mv_session";
 const VISITOR_TTL_S = 60 * 60 * 24 * 180; // 6 meses
 const SESSION_TTL_S = 60 * 30; // 30 min sliding
 
+// ============== CSP con nonce por request ==============
+//
+// El CSP estricto bloquea scripts inline a menos que tengan el nonce
+// generado por request. Sin esto teníamos `'unsafe-inline'` en script-src,
+// lo que dejaba la puerta abierta a XSS reflejado.
+//
+// Cómo funciona:
+//   1. Generamos un nonce fresh por request (crypto.randomUUID en Edge).
+//   2. Lo inyectamos en CSP: `script-src 'self' 'nonce-XXX' 'strict-dynamic'`.
+//   3. Lo seteamos en `x-nonce` request header → Next lo lee y lo aplica
+//      automáticamente a sus inline scripts (hidratación, RSC chunks).
+//   4. Para scripts custom (ej. `<script src="/unregister-sw.js" />` en
+//      RootLayout), el layout lee el nonce via `headers()` y lo pasa
+//      explícito al `<script>` tag.
+//
+// `'strict-dynamic'`: si un script con nonce carga otros scripts (ej.
+// webpack chunks de Next), esos heredan el trust del padre — sin esto
+// los chunks dinámicos fallarían a cargar bajo CSP estricto.
+//
+// `style-src` se mantiene con `'unsafe-inline'` porque Tailwind v4 y
+// next/font inyectan CSS inline. Migrar style a nonces requiere
+// refactor mayor — fuera de scope.
+
+function imgSrcSources(): string {
+  const sources = ["'self'", "data:", "blob:"];
+  if (process.env.PUBLIC_UPLOADS_URL) {
+    try {
+      const u = new URL(process.env.PUBLIC_UPLOADS_URL);
+      sources.push(`${u.protocol}//${u.host}`);
+    } catch {
+      // ignored — URL mal formateada
+    }
+  }
+  if (process.env.NODE_ENV !== "production") {
+    sources.push("https://images.unsplash.com", "https://picsum.photos");
+  }
+  return sources.join(" ");
+}
+
+function buildCsp(nonce: string): string {
+  const directives: Record<string, string> = {
+    "default-src": "'self'",
+    "script-src": `'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "font-src": "'self' https://fonts.gstatic.com data:",
+    "img-src": imgSrcSources(),
+    "connect-src": "'self'",
+    "frame-ancestors": "'none'",
+    "base-uri": "'self'",
+    "form-action": "'self'",
+    "object-src": "'none'",
+  };
+  const parts = Object.entries(directives).map(([k, v]) => `${k} ${v}`);
+  if (process.env.NODE_ENV === "production") {
+    parts.push("upgrade-insecure-requests");
+  }
+  return parts.join("; ");
+}
+
 export default auth((req) => {
   // El callback `authorized` en auth.ts ya maneja la redirección.
   // Si no autorizado en /admin o /dashboard, NextAuth redirige a /login automáticamente.
 
+  // CSP nonce por request — debe generarse ANTES del NextResponse para
+  // poder pasarlo via x-nonce a Next.
+  const nonce = crypto.randomUUID().replace(/-/g, "");
+  const csp = buildCsp(nonce);
+
+  // Inyectar nonce en request headers — Next lo lee internamente y lo
+  // aplica a sus scripts. Server components también pueden leerlo via
+  // `headers().get("x-nonce")` para scripts custom.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  const res = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+
+  // CSP en response headers — esto es lo que el browser realmente lee.
+  res.headers.set("Content-Security-Policy", csp);
+
   // Bootstrap de cookies de analytics. Antes esto vivía en `trackPageView`
   // (Server Component) y fallaba silenciosamente — Next.js 15 no permite
   // `cookies().set()` en RSC. Acá en middleware sí podemos escribir.
-  const res = NextResponse.next();
   const cookies = req.cookies;
 
   if (!cookies.get(VISITOR_COOKIE)?.value) {
