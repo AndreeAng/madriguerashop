@@ -38,7 +38,7 @@ jobs:
       run:
         working-directory: nibble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -84,7 +84,7 @@ jobs:
       run:
         working-directory: nibble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -135,7 +135,7 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nibble_ci
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -220,7 +220,7 @@ jobs:
       SEED_DEMO_OWNER_PASSWORD: ci-demo-password-not-real
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -324,7 +324,7 @@ jobs:
       NODE_ENV: production
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -381,7 +381,7 @@ jobs:
       run:
         working-directory: nibble
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
@@ -429,7 +429,7 @@ jobs:
     env:
       TEST_DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: actions/setup-node@v4
         with:
