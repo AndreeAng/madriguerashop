@@ -20,7 +20,7 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "ci": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "prepare": "cd .. && husky"
+    "prepare": "node scripts/prepare.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
