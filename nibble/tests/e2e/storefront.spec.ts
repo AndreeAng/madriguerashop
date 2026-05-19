@@ -44,8 +44,13 @@ test.describe("Storefront público", () => {
     // pero a veces devuelve 200 en lugar de 404. TODO(seo): refactorizar
     // `getStorefrontData` para retornar `null` y llamar `notFound()` en
     // cada page caller — eso restaura el 404 real (importante para SEO).
+    //
+    // Usamos getByRole para el h1 específico (no getByText) porque el
+    // not-found.tsx tiene DOS strings que matchean el regex (el `<p>` con
+    // "Tienda no encontrada" y el `<h1>` con "Esta tienda no está
+    // disponible") — Playwright strict mode rechaza locators ambiguos.
     await expect(
-      page.getByText(/no está disponible|no encontrada/i),
+      page.getByRole("heading", { name: /no está disponible/i }),
     ).toBeVisible();
   });
 });
