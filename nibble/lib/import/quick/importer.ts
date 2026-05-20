@@ -4,14 +4,13 @@ import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import { normalizeIdentifier, normalizePhoneBO } from "@/lib/auth/identifiers";
 import { slugify, validateSlug } from "@/lib/validation/slug";
-import { saveImage, type ImageKind } from "@/lib/storage/upload";
+import { saveImage, saveImageRaw, type ImageKind } from "@/lib/storage/upload";
 import { audit } from "@/lib/audit/log";
 import {
   fetchQuickCatalog,
   fetchQuickStoreData,
   fetchCategoryProducts,
   fetchImageBuffer,
-  bufferToFile,
   type QuickProduct,
 } from "./client";
 
@@ -167,21 +166,30 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     return { storeId: store.id };
   });
 
-  // 4. Branding: descargar logo, banner, favicon, persistir URLs
+  // 4. Branding: descargar logo, banner, favicon EN PARALELO.
+  //    Para branding sí usamos `saveImage` (con sharp) porque son 3 imágenes
+  //    que se ven mucho — vale la calidad. Para productos abajo usamos
+  //    `saveImageRaw` para no quemar 30s de CPU en sharp con 90+ imágenes.
   let imagesDownloaded = 0;
-  const brandingUpdates: Record<string, string> = {};
-  for (const [field, kind, url] of [
-    ["logoUrl", "logo", branding.logo],
-    ["bannerUrl", "banner", branding.banner],
-    ["faviconUrl", "favicon", branding.favicon],
-  ] as const) {
-    if (!url) continue;
-    const result = await downloadAndSave(url, storeId, kind);
+  type BrandingField = "logoUrl" | "bannerUrl" | "faviconUrl";
+  const brandingSpecs: Array<{ field: BrandingField; kind: ImageKind; url: string }> = [];
+  if (branding.logo) brandingSpecs.push({ field: "logoUrl", kind: "logo", url: branding.logo });
+  if (branding.banner) brandingSpecs.push({ field: "bannerUrl", kind: "banner", url: branding.banner });
+  if (branding.favicon) brandingSpecs.push({ field: "faviconUrl", kind: "favicon", url: branding.favicon });
+
+  const brandingResults = await Promise.all(
+    brandingSpecs.map(async (spec) => ({
+      spec,
+      result: await downloadAndSaveBranding(spec.url, storeId, spec.kind),
+    })),
+  );
+  const brandingUpdates: Partial<Record<BrandingField, string>> = {};
+  for (const { spec, result } of brandingResults) {
     if (result.ok) {
-      brandingUpdates[field] = result.url;
+      brandingUpdates[spec.field] = result.url;
       imagesDownloaded++;
     } else {
-      warnings.push(`No pude descargar ${field} desde ${url}: ${result.error}`);
+      warnings.push(`No pude descargar ${spec.field} desde ${spec.url}: ${result.error}`);
     }
   }
   if (Object.keys(brandingUpdates).length > 0) {
@@ -258,15 +266,18 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     }
   }
 
-  // 7. Crear productos + descargar imágenes EN PARALELO (batches de 8).
+  // 7. Productos: preparar slugs únicos, descargar imágenes (pool de
+  //    workers) y hacer BULK INSERT.
   //
-  // Antes era 100% secuencial: 90 imágenes × ~400ms = 36s — al borde del
-  // timeout de la función. Con concurrency=8 baja a ~5s manteniendo
-  // educación con el origen (no spawneamos 90 sockets simultáneos).
-  //
-  // Las imágenes se descargan PRIMERO (en paralelo), después los productos
-  // se crean SECUENCIALMENTE en DB (las writes a Postgres ya son rápidas y
-  // serializar evita conflictos de slug en categorías compartidas).
+  // Historial de iteraciones:
+  //   - V1 secuencial: 90 imágenes × ~400ms = 36s — al borde del timeout.
+  //   - V2 batches de 8: cada batch espera al MÁS LENTO (Promise.all),
+  //     una imagen de 8s bloqueaba el batch entero → peor caso ~96s con
+  //     92 imágenes contra Hobby (60s max). 504 garantizado.
+  //   - V3 (esta) pool de workers + saveImageRaw (sin sharp) + bulk
+  //     insert: siempre N en vuelo, sin barrera entre batches; sin
+  //     re-encoding por imagen; 1 INSERT en lugar de 92 — debería bajar
+  //     el tiempo total de ~60s a ~15-25s en una tienda de 90+ productos.
   type PreparedProduct = {
     quickProduct: QuickProduct;
     categoryQuickId: number;
@@ -299,62 +310,79 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     });
   }
 
-  // Descargar todas las imágenes en paralelo controlado.
+  // Descargar TODAS las imágenes en paralelo con pool de workers.
+  // Concurrencia 12: balance entre saturar la red sin disparar rate-limit
+  // de Quick.com.bo ni del runner serverless (Vercel impone ~100 conexiones
+  // outbound concurrentes).
   const imageResults = new Map<number, string>(); // quickProductId → savedUrl
-  await processInBatches(
-    prepared.filter((p) => p.quickProduct.banner),
-    8,
-    async (p) => {
-      const url = p.quickProduct.banner!;
-      const result = await downloadAndSave(url, storeId, "product");
-      if (result.ok) {
-        imageResults.set(p.quickProduct.id, result.url);
-        imagesDownloaded++;
-      } else {
-        warnings.push(
-          `Imagen de "${p.quickProduct.name}" no descargó: ${result.error}`,
-        );
-      }
-    },
-  );
+  const productsWithImages = prepared.filter((p) => p.quickProduct.banner);
+  await processWithWorkers(productsWithImages, 12, async (p) => {
+    const url = p.quickProduct.banner!;
+    const result = await downloadAndSaveRaw(url, storeId, "product");
+    if (result.ok) {
+      imageResults.set(p.quickProduct.id, result.url);
+      imagesDownloaded++;
+    } else {
+      warnings.push(
+        `Imagen de "${p.quickProduct.name}" no descargó: ${result.error}`,
+      );
+    }
+  });
 
-  // Crear los productos en DB (las URLs de imagen ya están listas).
-  let productsCreated = 0;
-  for (const { quickProduct: product, categoryQuickId, slug } of prepared) {
-    const categoryId = categoryIdMap.get(categoryQuickId) ?? null;
-    const cleanDescription = stripHtml(product.description ?? "");
+  // Bulk INSERT productos en una sola query. `createManyAndReturn` está
+  // disponible en Prisma 5.14+ y devuelve los IDs auto-generados — vital
+  // para insertar las ProductImage relacionadas después.
+  const productCreateData = prepared.map((p) => {
+    const cleanDescription = stripHtml(p.quickProduct.description ?? "");
     const shortDescription =
       cleanDescription.length > 280
         ? cleanDescription.slice(0, 277) + "..."
         : cleanDescription;
-    const savedImageUrl = imageResults.get(product.id) ?? null;
+    return {
+      storeId,
+      categoryId: categoryIdMap.get(p.categoryQuickId) ?? null,
+      name: p.quickProduct.name.slice(0, 120),
+      slug: p.slug,
+      sku: p.quickProduct.code || null,
+      description: cleanDescription || null,
+      shortDescription: shortDescription || null,
+      basePrice: new Prisma.Decimal(p.quickProduct.price),
+      comparePrice:
+        p.quickProduct.special_price && p.quickProduct.special_price > 0
+          ? new Prisma.Decimal(p.quickProduct.special_price)
+          : null,
+      manageStock: false,
+      isActive: true,
+    };
+  });
 
-    await db.product.create({
-      data: {
-        storeId,
-        categoryId,
-        name: product.name.slice(0, 120),
-        slug,
-        sku: product.code || null,
-        description: cleanDescription || null,
-        shortDescription: shortDescription || null,
-        basePrice: new Prisma.Decimal(product.price),
-        comparePrice:
-          product.special_price && product.special_price > 0
-            ? new Prisma.Decimal(product.special_price)
-            : null,
-        manageStock: false,
-        isActive: true,
-        ...(savedImageUrl
-          ? {
-              images: {
-                create: { url: savedImageUrl, sortOrder: 0 },
-              },
-            }
-          : {}),
-      },
-    });
-    productsCreated++;
+  // 1 query para los 90+ productos en lugar de 92 INSERTs secuenciales.
+  // En Neon ahorra ~5-9s solo en network roundtrips.
+  const createdProducts = await db.product.createManyAndReturn({
+    data: productCreateData,
+    select: { id: true, slug: true },
+  });
+  const productsCreated = createdProducts.length;
+
+  // Mapear los IDs creados a los quick IDs por orden de inserción
+  // (createManyAndReturn preserva el orden en Postgres). Después
+  // bulk-insertamos las ProductImage.
+  const productImageData: Array<{ productId: string; url: string; sortOrder: number }> = [];
+  for (let i = 0; i < prepared.length; i++) {
+    const prep = prepared[i];
+    const created = createdProducts[i];
+    if (!prep || !created) continue; // imposible si createManyAndReturn respeta el orden
+    const savedUrl = imageResults.get(prep.quickProduct.id);
+    if (savedUrl) {
+      productImageData.push({
+        productId: created.id,
+        url: savedUrl,
+        sortOrder: 0,
+      });
+    }
+  }
+  if (productImageData.length > 0) {
+    await db.productImage.createMany({ data: productImageData });
   }
 
   await audit({
@@ -389,7 +417,12 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
  */
 type DownloadResult = { ok: true; url: string } | { ok: false; error: string };
 
-async function downloadAndSave(
+/**
+ * Branding (logo/banner/favicon): pasa por `saveImage` que SÍ aplica sharp
+ * (resize al maxWidth del kind + conversión a WebP/PNG según el tipo).
+ * Son sólo 3 imágenes — el costo de CPU vale la calidad consistente.
+ */
+async function downloadAndSaveBranding(
   url: string,
   storeId: string,
   kind: ImageKind,
@@ -397,12 +430,11 @@ async function downloadAndSave(
   const result = await fetchImageBuffer(url);
   if (!result.ok) return { ok: false, error: result.error };
   try {
-    // El MIME real lo devuelve fetchImageBuffer del response header. Sharp
-    // re-detecta con magic bytes igual, pero el constructor de File
-    // requiere `type` por contrato.
     const extension = result.mime.split("/")[1]?.split(";")[0] ?? "jpg";
     const filename = `imported-${Date.now()}.${extension}`;
-    const file = bufferToFile(result.buffer, filename, result.mime);
+    // Node 20+ tiene File global. Buffer es Uint8Array compatible con BlobPart.
+    const bytes = new Uint8Array(result.buffer);
+    const file = new File([bytes], filename, { type: result.mime });
     const { url: savedUrl } = await saveImage(file, storeId, kind);
     return { ok: true, url: savedUrl };
   } catch (err) {
@@ -412,21 +444,62 @@ async function downloadAndSave(
 }
 
 /**
- * Ejecuta `fn` sobre cada item en batches concurrentes de tamaño `size`.
- * Procesa un batch, espera a que termine, pasa al siguiente. Útil para
- * descargar N imágenes sin spawnear N sockets simultáneos (el origen
- * podría rate-limitar y los runners de Vercel tienen límite de conexiones
- * outbound).
+ * Productos (90+ por tienda): pasa por `saveImageRaw` que NO usa sharp.
+ * Quick.com.bo ya sirve imágenes optimizadas para web — re-encodearlas
+ * gastaría ~30s de CPU acumulados y nos tira contra el timeout de
+ * Vercel Hobby. El owner puede re-optimizar después si quiere.
  */
-async function processInBatches<T>(
+async function downloadAndSaveRaw(
+  url: string,
+  storeId: string,
+  kind: ImageKind,
+): Promise<DownloadResult> {
+  const result = await fetchImageBuffer(url);
+  if (!result.ok) return { ok: false, error: result.error };
+  try {
+    const { url: savedUrl } = await saveImageRaw(
+      result.buffer,
+      result.mime,
+      storeId,
+      kind,
+    );
+    return { ok: true, url: savedUrl };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `saveImageRaw falló: ${msg}` };
+  }
+}
+
+/**
+ * Pool de N workers que consumen una queue compartida. Cada worker
+ * procesa `fn(item)`; cuando termina, toma el siguiente item disponible
+ * hasta que la queue se vacía.
+ *
+ * Comparado con `processInBatches` (que usa Promise.all por batch): el
+ * pool nunca espera al "más lento" antes de avanzar. Si una request tarda
+ * 8s, los otros workers siguen procesando — la latencia del worst-case no
+ * se amplifica al batch entero. Importante cuando tenés imágenes con
+ * latencias variables (CDN cache miss, hotlink protection, redirects).
+ */
+async function processWithWorkers<T>(
   items: T[],
-  size: number,
+  concurrency: number,
   fn: (item: T) => Promise<void>,
 ): Promise<void> {
-  for (let i = 0; i < items.length; i += size) {
-    const batch = items.slice(i, i + size);
-    await Promise.all(batch.map(fn));
-  }
+  let cursor = 0;
+  const workers = Array.from(
+    { length: Math.min(concurrency, items.length) },
+    async () => {
+      while (cursor < items.length) {
+        // `cursor++` es atómico en JS single-thread — no necesita lock.
+        const idx = cursor++;
+        const item = items[idx];
+        if (item === undefined) break; // guard formal; idx < length lo asegura
+        await fn(item);
+      }
+    },
+  );
+  await Promise.all(workers);
 }
 
 function stripHtml(html: string): string {
