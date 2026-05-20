@@ -5,6 +5,7 @@ import { Role } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { AdminAssignOwnerForm } from "@/components/admin/tiendas/AdminAssignOwnerForm";
+import { AdminStoreDangerZone } from "@/components/admin/tiendas/AdminStoreDangerZone";
 import { adminEnterStoreAction } from "@/server/actions/admin-stores";
 import { verticalLabel } from "@/lib/saas/verticals";
 import { formatBob } from "@/lib/utils";
@@ -36,7 +37,15 @@ export default async function AdminStoreDetailPage({
         },
       },
       _count: {
-        select: { products: true, categories: true, orders: true },
+        // `customers` y `invoices` se usan en la zona de peligro para el
+        // breakdown de "qué se va a borrar".
+        select: {
+          products: true,
+          categories: true,
+          orders: true,
+          customers: true,
+          invoices: true,
+        },
       },
     },
   });
@@ -177,6 +186,18 @@ export default async function AdminStoreDetailPage({
               </>
             )}
           </section>
+
+          <AdminStoreDangerZone
+            storeId={store.id}
+            slug={store.slug}
+            status={store.status}
+            counts={{
+              orders: store._count.orders,
+              products: store._count.products,
+              customers: store._count.customers,
+              invoices: store._count.invoices,
+            }}
+          />
     </main>
   );
 }

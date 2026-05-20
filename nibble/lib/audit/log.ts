@@ -74,7 +74,12 @@ export type AuditAction =
   | "saas.user_role_changed"
   | "saas.user_password_reset_sent"
   | "saas.alert_acknowledged"
-  | "saas.alert_resolved";
+  | "saas.alert_resolved"
+  // Lifecycle de tiendas (acciones manuales del super admin desde
+  // /admin/tiendas/[id], distintas del flujo automático de billing).
+  | "saas.store_suspended"
+  | "saas.store_reactivated"
+  | "saas.store_deleted";
 
 /**
  * Registra una entrada de auditoría. Nunca falla la operación principal:

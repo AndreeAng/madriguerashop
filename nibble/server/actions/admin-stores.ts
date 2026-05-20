@@ -1,5 +1,7 @@
 "use server";
 
+import path from "node:path";
+import { rm } from "node:fs/promises";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -10,6 +12,7 @@ import {
   BillingCycle,
   StoreVertical,
 } from "@prisma/client";
+import { del, list, type ListBlobResult } from "@vercel/blob";
 import { db } from "@/lib/db";
 import { hashPassword } from "@/lib/auth/password";
 import {
@@ -26,6 +29,7 @@ import {
   readImpersonatedStoreId,
   setImpersonatedStore,
 } from "@/lib/auth/impersonation";
+import { proofUploadDir } from "@/lib/storage/upload";
 import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 // ============== Tipos ==============
@@ -663,4 +667,323 @@ export async function adminCreateStoreAndRedirect(
     if (store) redirect(`/admin/tiendas/${store.id}`);
   }
   return result;
+}
+
+// ============== Suspender / Reactivar tienda ==============
+//
+// Override manual del super admin. Para flujo automático por mora ver
+// `lib/billing/syncStoreStatuses.ts` (cron que mueve PAST_DUE→SUSPENDED al
+// vencer el grace period). Esta action es para casos OOB: cliente pidió
+// pausa, fraude detectado, reactivar tras pago manual, etc.
+//
+// Transiciones permitidas:
+//   ACTIVE | PAST_DUE | TRIAL   → SUSPENDED
+//   SUSPENDED                    → ACTIVE (vuelve a flujo normal)
+//   CANCELLED                    → ningún cambio (usar delete)
+
+export type AdminToggleStoreStatusState = {
+  ok?: true;
+  error?: string;
+  fieldErrors?: Partial<Record<"reason", string>>;
+};
+
+const toggleStatusSchema = z.object({
+  storeId: z.string().min(1),
+  action: z.enum(["suspend", "reactivate"]),
+  // Razón opcional al suspender — queda en audit log para soporte.
+  // Al reactivar no se pide.
+  reason: z.string().trim().max(280).optional().default(""),
+});
+
+export async function adminToggleStoreStatusAction(
+  _prev: AdminToggleStoreStatusState,
+  formData: FormData,
+): Promise<AdminToggleStoreStatusState> {
+  const guard = await requireSuperAdminOrFail();
+  if ("error" in guard) return { error: guard.error };
+
+  const parsed = toggleStatusSchema.safeParse({
+    storeId: formData.get("storeId"),
+    action: formData.get("action"),
+    reason: formData.get("reason") ?? "",
+  });
+  if (!parsed.success) {
+    return {
+      fieldErrors: zodIssuesToFieldErrors<"reason">(parsed.error),
+    };
+  }
+  const { storeId, action, reason } = parsed.data;
+
+  const store = await db.store.findUnique({
+    where: { id: storeId },
+    select: { id: true, slug: true, status: true },
+  });
+  if (!store) return { error: "Tienda no encontrada" };
+
+  if (action === "suspend") {
+    if (store.status === StoreStatus.SUSPENDED) {
+      return { error: "La tienda ya está suspendida." };
+    }
+    if (store.status === StoreStatus.CANCELLED) {
+      return { error: "Tienda cancelada — usá eliminar en su lugar." };
+    }
+    if (!reason) {
+      return { fieldErrors: { reason: "Escribí la razón de la suspensión." } };
+    }
+
+    await db.store.update({
+      where: { id: storeId },
+      data: { status: StoreStatus.SUSPENDED },
+    });
+
+    await audit({
+      action: "saas.store_suspended",
+      actorId: guard.id,
+      target: storeId,
+      metadata: {
+        slug: store.slug,
+        previousStatus: store.status,
+        reason,
+        manualOverride: true,
+      },
+    });
+  } else {
+    if (store.status === StoreStatus.ACTIVE) {
+      return { error: "La tienda ya está activa." };
+    }
+    if (store.status === StoreStatus.CANCELLED) {
+      return { error: "Tienda cancelada — no se puede reactivar." };
+    }
+
+    await db.store.update({
+      where: { id: storeId },
+      data: { status: StoreStatus.ACTIVE },
+    });
+
+    await audit({
+      action: "saas.store_reactivated",
+      actorId: guard.id,
+      target: storeId,
+      metadata: {
+        slug: store.slug,
+        previousStatus: store.status,
+        manualOverride: true,
+      },
+    });
+  }
+
+  // Storefront + listing públicos refrescan. El dashboard del owner
+  // también, porque ahí mostramos el badge de estado.
+  revalidatePath(`/admin/tiendas/${storeId}`);
+  revalidatePath("/admin/tiendas");
+  revalidatePath("/tiendas");
+  revalidatePath(`/${store.slug}`);
+  return { ok: true };
+}
+
+// ============== Eliminar tienda (HARD DELETE) ==============
+//
+// Destructivo e irreversible. Borra la tienda + TODOS sus datos relacionados
+// + sus imágenes en Vercel Blob (o filesystem en dev).
+//
+// Lo que se elimina:
+//   - Orders + items, events, payments, couponUsages (cascade vía Order)
+//   - Invoices (FK Restrict, deleteMany manual)
+//   - StoreOrderCounter (sin FK relation declarada, deleteMany manual)
+//   - Vía cascade del Store.delete:
+//     products, categories, productImages, productAvailability, hours,
+//     coupons, banners, popups, deliveryZones, customers, pageViews
+//   - User STORE_OWNER queda con storeId=null (SetNull) — los deshabilitamos
+//     antes para evitar ventana de login válido.
+//   - Imágenes en Blob bajo `uploads/<storeId>/` y `proof/<storeId>/`
+//   - Audit logs quedan con storeId=null (SetNull) — preservamos para
+//     trazabilidad histórica del super admin.
+//
+// Para confirmar, el admin tiene que escribir el slug EXACTO en el form.
+
+export type AdminDeleteStoreState = {
+  ok?: true;
+  error?: string;
+  fieldErrors?: Partial<Record<"confirmSlug", string>>;
+};
+
+const deleteStoreSchema = z.object({
+  storeId: z.string().min(1),
+  confirmSlug: z.string().trim().min(1),
+});
+
+/**
+ * Borra todos los blobs bajo dos prefijos del storeId. Best-effort:
+ * loguea errores pero no falla la operación principal — si la DB ya borró
+ * los registros, no podemos "rollback" el delete. Mejor dejar blobs
+ * huérfanos (que luego un cron puede limpiar) que dejar la tienda
+ * a medio-borrar.
+ *
+ * En dev sin BLOB_READ_WRITE_TOKEN: usa fs.rm sobre los directorios locales.
+ */
+async function purgeStorageForStore(storeId: string): Promise<{
+  deletedCount: number;
+  errors: string[];
+}> {
+  const errors: string[] = [];
+  let deletedCount = 0;
+
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    for (const prefix of [`uploads/${storeId}/`, `proof/${storeId}/`]) {
+      // `list()` pagina implícitamente — para tiendas grandes podríamos
+      // tener cientos de blobs. Iteramos con cursor hasta vaciar el prefix.
+      let cursor: string | undefined = undefined;
+      do {
+        try {
+          // Anotación explícita: sin esto TS no puede inferir `result`
+          // por la recursión cursor→result.cursor→cursor del do-while.
+          const result: ListBlobResult = await list({ prefix, cursor, limit: 1000 });
+          if (result.blobs.length > 0) {
+            await del(result.blobs.map((b) => b.url));
+            deletedCount += result.blobs.length;
+          }
+          cursor = result.hasMore ? result.cursor : undefined;
+        } catch (err) {
+          errors.push(`blob ${prefix}: ${(err as Error).message}`);
+          cursor = undefined; // abortar el prefix con error
+        }
+      } while (cursor);
+    }
+  } else {
+    // Filesystem fallback (dev local). Borrar los dos directorios.
+    const publicDir = path.join(
+      process.env.UPLOAD_DIR || path.join(process.cwd(), "public", "uploads"),
+      storeId,
+    );
+    const privateDir = path.join(proofUploadDir(), storeId);
+    for (const dir of [publicDir, privateDir]) {
+      try {
+        await rm(dir, { recursive: true, force: true });
+      } catch (err) {
+        errors.push(`fs ${dir}: ${(err as Error).message}`);
+      }
+    }
+  }
+
+  return { deletedCount, errors };
+}
+
+export async function adminDeleteStoreAction(
+  _prev: AdminDeleteStoreState,
+  formData: FormData,
+): Promise<AdminDeleteStoreState> {
+  const guard = await requireSuperAdminOrFail();
+  if ("error" in guard) return { error: guard.error };
+
+  const parsed = deleteStoreSchema.safeParse({
+    storeId: formData.get("storeId"),
+    confirmSlug: formData.get("confirmSlug"),
+  });
+  if (!parsed.success) {
+    return {
+      fieldErrors: { confirmSlug: "Confirmación inválida." },
+    };
+  }
+  const { storeId, confirmSlug } = parsed.data;
+
+  const store = await db.store.findUnique({
+    where: { id: storeId },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      status: true,
+      _count: {
+        select: {
+          orders: true,
+          products: true,
+          customers: true,
+          invoices: true,
+        },
+      },
+    },
+  });
+  if (!store) return { error: "Tienda no encontrada" };
+
+  // Confirmación: el slug típeado debe matchear EXACTO (case-sensitive). Es
+  // el patrón GitHub/Linear — fuerza al admin a leer + escribir el nombre,
+  // imposible borrar "por accidente" al confundir un dropdown.
+  if (confirmSlug !== store.slug) {
+    return {
+      fieldErrors: {
+        confirmSlug: `Escribí "${store.slug}" exacto para confirmar.`,
+      },
+    };
+  }
+
+  // Snapshot para audit log antes de borrar la DB.
+  const snapshot = {
+    slug: store.slug,
+    name: store.name,
+    status: store.status,
+    orderCount: store._count.orders,
+    productCount: store._count.products,
+    customerCount: store._count.customers,
+    invoiceCount: store._count.invoices,
+  };
+
+  try {
+    await db.$transaction(async (tx) => {
+      // 1. Deshabilitar owners ANTES de tocar la store — evita ventana en
+      //    la que un owner pueda loguear con storeId nullified pero todavía
+      //    activo. Después del cascade SetNull quedan con storeId=null e
+      //    isActive=false, lo que el guard de sesión rechaza limpio.
+      await tx.user.updateMany({
+        where: { storeId, role: Role.STORE_OWNER, isActive: true },
+        data: { isActive: false },
+      });
+
+      // 2. Tablas con FK Restrict → deleteMany manual previo al store.delete.
+      //    Order.deleteMany ya cascade-borra OrderItem, OrderEvent, Payment,
+      //    CouponUsage (todos tienen onDelete: Cascade vs Order).
+      await tx.order.deleteMany({ where: { storeId } });
+      await tx.invoice.deleteMany({ where: { storeId } });
+
+      // 3. Counter por tienda sin FK relation declarada — borrarlo a mano.
+      await tx.storeOrderCounter.deleteMany({ where: { storeId } });
+
+      // 4. Store delete → cascade del resto (products, categories,
+      //    productImages, storeHours, coupons, banners, popups,
+      //    deliveryZones, customers, pageViews).
+      await tx.store.delete({ where: { id: storeId } });
+    });
+  } catch (err) {
+    // Si el delete falla, la DB queda intacta y el admin puede reintentar.
+    // No tocamos blobs todavía — solo después del commit exitoso.
+    const message = err instanceof Error ? err.message : String(err);
+    return { error: `No pudimos eliminar la tienda: ${message}` };
+  }
+
+  // Post-tx: cleanup de storage. Best-effort — si falla loguea pero no
+  // revierte el delete (sería imposible recrear toda la DB de la tienda).
+  const storage = await purgeStorageForStore(storeId);
+
+  // Limpiar cookie de impersonation si el admin estaba "configurando" la
+  // tienda recién borrada. Sin esto, su próximo /dashboard reventaría
+  // intentando resolver una store que ya no existe.
+  const impersonating = await readImpersonatedStoreId();
+  if (impersonating === storeId) {
+    await clearImpersonatedStore();
+  }
+
+  await audit({
+    action: "saas.store_deleted",
+    actorId: guard.id,
+    target: storeId,
+    metadata: {
+      ...snapshot,
+      blobsDeleted: storage.deletedCount,
+      storageErrors: storage.errors,
+    },
+  });
+
+  revalidatePath("/admin/tiendas");
+  revalidatePath("/tiendas");
+  // El detail page no existe más — redirigimos al listado.
+  redirect("/admin/tiendas");
 }
