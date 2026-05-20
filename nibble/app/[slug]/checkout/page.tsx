@@ -8,6 +8,7 @@ import { getCartSnapshot } from "@/server/actions/cart";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { CheckoutForm } from "@/components/storefront/CheckoutForm";
 import { readCircleShape } from "@/lib/delivery/geometry";
+import { storefrontCopy } from "@/lib/storefront/copy";
 
 // Página privada (carrito personal). No queremos que Google la indexe ni que
 // se comparta con preview.
@@ -18,8 +19,9 @@ export async function generateMetadata({
 }) {
   const { slug } = await params;
   const store = await getStoreBySlug(slug);
+  const noun = store ? storefrontCopy(store.vertical).orderSingular : "pedido";
   return {
-    title: store ? `Finalizar pedido · ${store.name}` : "Finalizar pedido",
+    title: store ? `Finalizar ${noun} · ${store.name}` : `Finalizar ${noun}`,
     robots: { index: false, follow: false },
   };
 }

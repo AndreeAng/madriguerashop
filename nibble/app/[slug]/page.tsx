@@ -24,6 +24,7 @@ import { StorefrontBanner } from "@/components/storefront/StorefrontBanner";
 import { StorefrontPopup } from "@/components/storefront/StorefrontPopup";
 import { ClosedStoreNotice } from "@/components/storefront/ClosedStoreNotice";
 import { formatBob } from "@/lib/utils";
+import { storefrontCopy } from "@/lib/storefront/copy";
 
 export async function generateMetadata({
   params,
@@ -161,6 +162,9 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
     .filter((p) => p.isFeatured)
     .slice(0, 3)
     .map((p) => toProductView(p, slug, now));
+
+  // Copy por vertical (cart label en el bottom bar mobile).
+  const copy = storefrontCopy(store.vertical);
 
   return (
     <div style={{ ["--store-primary" as string]: store.primaryColor }}>
@@ -417,7 +421,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
               <span className="grid size-7 place-items-center rounded-full bg-[color:var(--color-amber-500)] text-[12px] font-bold num-tabular text-[color:var(--color-bark-900)]">
                 {cartCount}
               </span>
-              Tu pedido
+              {copy.cartLabel}
             </span>
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
               <span className="num-tabular">{formatBob(cartSubtotal)}</span>

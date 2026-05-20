@@ -11,6 +11,7 @@ import { formatBob } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ErrorAlert } from "@/components/ui/Alert";
+import { useDashboardCopy } from "@/lib/dashboard/copy-context";
 
 type Row = {
   id: string;
@@ -27,6 +28,7 @@ type Row = {
 };
 
 export function ProductsTable({ rows }: { rows: Row[] }) {
+  const copy = useDashboardCopy();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
@@ -58,13 +60,13 @@ export function ProductsTable({ rows }: { rows: Row[] }) {
     return (
       <EmptyState
         className="border-solid"
-        description="Todavía no tienes productos. Crea el primero para que aparezca en tu storefront."
+        description={`Todavía no tienes ${copy.productsLabel.toLowerCase()}. Crea el primero para que aparezca en tu storefront.`}
         action={
           <Link
             href="/dashboard/productos/nuevo"
             className="inline-flex items-center gap-1.5 rounded-xl bg-[color:var(--color-bark-900)] px-4 py-2 text-sm font-medium text-white"
           >
-            + Crear producto
+            + Crear {copy.productSingular}
           </Link>
         }
       />
@@ -79,7 +81,7 @@ export function ProductsTable({ rows }: { rows: Row[] }) {
         <table className="w-full text-sm">
           <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
             <tr>
-              <th className="px-5 py-3 text-left font-medium">Producto</th>
+              <th className="px-5 py-3 text-left font-medium">{copy.productSingular.charAt(0).toUpperCase() + copy.productSingular.slice(1)}</th>
               <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
                 Categoría
               </th>
