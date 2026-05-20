@@ -176,12 +176,12 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     ["faviconUrl", "favicon", branding.favicon],
   ] as const) {
     if (!url) continue;
-    const saved = await downloadAndSave(url, storeId, kind);
-    if (saved) {
-      brandingUpdates[field] = saved;
+    const result = await downloadAndSave(url, storeId, kind);
+    if (result.ok) {
+      brandingUpdates[field] = result.url;
       imagesDownloaded++;
     } else {
-      warnings.push(`No pude descargar ${field} desde ${url}`);
+      warnings.push(`No pude descargar ${field} desde ${url}: ${result.error}`);
     }
   }
   if (Object.keys(brandingUpdates).length > 0) {
@@ -258,17 +258,29 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     }
   }
 
-  // 7. Crear productos + descargar imágenes
-  let productsCreated = 0;
+  // 7. Crear productos + descargar imágenes EN PARALELO (batches de 8).
+  //
+  // Antes era 100% secuencial: 90 imágenes × ~400ms = 36s — al borde del
+  // timeout de la función. Con concurrency=8 baja a ~5s manteniendo
+  // educación con el origen (no spawneamos 90 sockets simultáneos).
+  //
+  // Las imágenes se descargan PRIMERO (en paralelo), después los productos
+  // se crean SECUENCIALMENTE en DB (las writes a Postgres ya son rápidas y
+  // serializar evita conflictos de slug en categorías compartidas).
+  type PreparedProduct = {
+    quickProduct: QuickProduct;
+    categoryQuickId: number;
+    slug: string;
+  };
+  const prepared: PreparedProduct[] = [];
   const usedProductSlugs = new Set<string>();
   for (const { product, categoryQuickId } of productsByQuickId.values()) {
     // `validateSlug` impone MAX_LEN=32 (pensado para slugs de tienda).
-    // Para productos nombres como "DEMON SLAYER KIMETSU NO YAIBA TEES" se
-    // pasan; truncamos a 30 chars + sufijo numérico si hubo colisión.
-    // El último char no puede ser guión (constraint del regex), así que
-    // recortamos los guiones colgantes.
+    // Truncamos a 30 chars + sufijo numérico si hubo colisión. El último
+    // char no puede ser guión (constraint del regex), así que recortamos.
     const fullSlug = slugify(product.name || `producto-${product.id}`);
-    const baseSlug = fullSlug.slice(0, 30).replace(/-+$/, "") || `producto-${product.id}`;
+    const baseSlug =
+      fullSlug.slice(0, 30).replace(/-+$/, "") || `producto-${product.id}`;
     let candidate = baseSlug;
     let suffix = 1;
     while (usedProductSlugs.has(candidate)) {
@@ -280,27 +292,49 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
       continue;
     }
     usedProductSlugs.add(slugCheck2.value);
+    prepared.push({
+      quickProduct: product,
+      categoryQuickId,
+      slug: slugCheck2.value,
+    });
+  }
 
+  // Descargar todas las imágenes en paralelo controlado.
+  const imageResults = new Map<number, string>(); // quickProductId → savedUrl
+  await processInBatches(
+    prepared.filter((p) => p.quickProduct.banner),
+    8,
+    async (p) => {
+      const url = p.quickProduct.banner!;
+      const result = await downloadAndSave(url, storeId, "product");
+      if (result.ok) {
+        imageResults.set(p.quickProduct.id, result.url);
+        imagesDownloaded++;
+      } else {
+        warnings.push(
+          `Imagen de "${p.quickProduct.name}" no descargó: ${result.error}`,
+        );
+      }
+    },
+  );
+
+  // Crear los productos en DB (las URLs de imagen ya están listas).
+  let productsCreated = 0;
+  for (const { quickProduct: product, categoryQuickId, slug } of prepared) {
     const categoryId = categoryIdMap.get(categoryQuickId) ?? null;
     const cleanDescription = stripHtml(product.description ?? "");
     const shortDescription =
       cleanDescription.length > 280
         ? cleanDescription.slice(0, 277) + "..."
         : cleanDescription;
-
-    let savedImageUrl: string | null = null;
-    if (product.banner) {
-      savedImageUrl = await downloadAndSave(product.banner, storeId, "product");
-      if (savedImageUrl) imagesDownloaded++;
-      else warnings.push(`Imagen de "${product.name}" no descargó`);
-    }
+    const savedImageUrl = imageResults.get(product.id) ?? null;
 
     await db.product.create({
       data: {
         storeId,
         categoryId,
         name: product.name.slice(0, 120),
-        slug: slugCheck2.value,
+        slug,
         sku: product.code || null,
         description: cleanDescription || null,
         shortDescription: shortDescription || null,
@@ -349,38 +383,50 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
 
 // ============== Helpers ==============
 
+/**
+ * Descarga + guarda imagen. Discriminated union para que el caller
+ * pueda reportar el error específico al usuario (timeout? 403? bad mime?).
+ */
+type DownloadResult = { ok: true; url: string } | { ok: false; error: string };
+
 async function downloadAndSave(
   url: string,
   storeId: string,
   kind: ImageKind,
-): Promise<string | null> {
-  const buffer = await fetchImageBuffer(url);
-  if (!buffer) return null;
+): Promise<DownloadResult> {
+  const result = await fetchImageBuffer(url);
+  if (!result.ok) return { ok: false, error: result.error };
   try {
-    // Inferir MIME del primer byte (saveImage lo re-detecta igual con magic
-    // bytes, pero el constructor de File requiere `type` por contrato).
-    const mime = inferMime(buffer);
-    const filename = `imported-${Date.now()}.${mime.split("/")[1]}`;
-    const file = bufferToFile(buffer, filename, mime);
+    // El MIME real lo devuelve fetchImageBuffer del response header. Sharp
+    // re-detecta con magic bytes igual, pero el constructor de File
+    // requiere `type` por contrato.
+    const extension = result.mime.split("/")[1]?.split(";")[0] ?? "jpg";
+    const filename = `imported-${Date.now()}.${extension}`;
+    const file = bufferToFile(result.buffer, filename, result.mime);
     const { url: savedUrl } = await saveImage(file, storeId, kind);
-    return savedUrl;
+    return { ok: true, url: savedUrl };
   } catch (err) {
-    console.error(`[quick-import] save image failed`, { url, error: err });
-    return null;
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: `saveImage falló: ${msg}` };
   }
 }
 
-function inferMime(buffer: Buffer): string {
-  if (buffer[0] === 0xff && buffer[1] === 0xd8) return "image/jpeg";
-  if (buffer[0] === 0x89 && buffer[1] === 0x50) return "image/png";
-  if (
-    buffer[0] === 0x52 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x46
-  )
-    return "image/webp";
-  return "image/jpeg"; // fallback razonable; saveImage rechazará si es basura
+/**
+ * Ejecuta `fn` sobre cada item en batches concurrentes de tamaño `size`.
+ * Procesa un batch, espera a que termine, pasa al siguiente. Útil para
+ * descargar N imágenes sin spawnear N sockets simultáneos (el origen
+ * podría rate-limitar y los runners de Vercel tienen límite de conexiones
+ * outbound).
+ */
+async function processInBatches<T>(
+  items: T[],
+  size: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  for (let i = 0; i < items.length; i += size) {
+    const batch = items.slice(i, i + size);
+    await Promise.all(batch.map(fn));
+  }
 }
 
 function stripHtml(html: string): string {

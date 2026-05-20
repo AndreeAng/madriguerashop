@@ -18,10 +18,18 @@ import "server-only";
  */
 
 const BASE = "https://cat.quick.com.bo";
-const USER_AGENT = "Madriguera-Importer/1.0 (+https://madrigueras.shop)";
+// UA browser-like — un UA tipo "MadrigueraImporter/1.0" lo loguea Quick
+// como bot y bajo carga puede empezar a rate-limitarnos o devolver 403.
+// Con UA de Chrome real recibimos el mismo trato que cualquier visitor.
+const USER_AGENT =
+  "Mozilla/5.0 (compatible; MadrigueraBot/1.0; +https://madrigueras.shop)";
 
 // Pausa entre requests para no martillar el origen. 200ms = ~5 req/s.
 const REQUEST_DELAY_MS = 200;
+
+// Timeout por imagen — algunos hosts tardan en responder. Sin esto, una
+// imagen colgada bloqueaba todo el batch hasta el timeout de la función.
+const IMAGE_FETCH_TIMEOUT_MS = 8000;
 
 async function delay(ms: number) {
   await new Promise((r) => setTimeout(r, ms));
@@ -188,23 +196,60 @@ export async function fetchCategoryProducts(
 }
 
 /**
+ * Resultado discriminado de descargar una imagen. Antes esta función
+ * devolvía `Buffer | null` y tragaba el error con `catch {}` — los
+ * warnings del importer decían "no descargó" sin más contexto, haciendo
+ * imposible diagnosticar (timeout? 403? content-type bad? DNS?).
+ */
+export type ImageFetchResult =
+  | { ok: true; buffer: Buffer; mime: string }
+  | { ok: false; error: string };
+
+/**
  * Descarga la imagen como Buffer. La pasamos a `saveImage` envuelta en
  * un `File` (Node 20+ tiene File nativo) para reusar el pipeline de
  * sharp + WebP del upload normal.
+ *
+ * Headers `Referer` + `Accept`: algunos hosts implementan hotlink
+ * protection o esperan que el cliente declare qué tipo de respuesta
+ * quiere — los agregamos para parecer browser real bajo todo escenario.
  */
-export async function fetchImageBuffer(url: string): Promise<Buffer | null> {
+export async function fetchImageBuffer(url: string): Promise<ImageFetchResult> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), IMAGE_FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": USER_AGENT },
+      headers: {
+        "User-Agent": USER_AGENT,
+        Accept: "image/png,image/jpeg,image/webp,image/*;q=0.8,*/*;q=0.5",
+        Referer: `${BASE}/`,
+      },
       cache: "no-store",
+      signal: controller.signal,
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      return { ok: false, error: `HTTP ${res.status} ${res.statusText}` };
+    }
     const ct = res.headers.get("content-type") ?? "";
-    if (!ct.startsWith("image/")) return null;
+    if (!ct.startsWith("image/")) {
+      return {
+        ok: false,
+        error: `content-type no es imagen (recibido "${ct.slice(0, 40)}")`,
+      };
+    }
     const arr = await res.arrayBuffer();
-    return Buffer.from(arr);
-  } catch {
-    return null;
+    if (arr.byteLength === 0) {
+      return { ok: false, error: "respuesta vacía (0 bytes)" };
+    }
+    return { ok: true, buffer: Buffer.from(arr), mime: ct };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("aborted")) {
+      return { ok: false, error: `timeout (>${IMAGE_FETCH_TIMEOUT_MS / 1000}s)` };
+    }
+    return { ok: false, error: `fetch falló: ${msg}` };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
