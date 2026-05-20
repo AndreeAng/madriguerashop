@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Inter, Fraunces } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 // CSS de Leaflet: cargado global porque los mapas pueden aparecer en
 // varias rutas (checkout, detalle de pedido, analytics). El bundle es
@@ -88,6 +89,14 @@ export default async function RootLayout({
           Saltar al contenido
         </a>
         {children}
+        {/* Vercel Speed Insights: RUM (Real User Monitoring) que captura
+            Core Web Vitals (LCP, CLS, INP, FCP, TTFB) directamente del
+            navegador del cliente. Sin esto, las métricas de performance
+            que vemos en el dashboard de Vercel son sintéticas (Lighthouse
+            corriendo en US-East), no reflejan la latencia real de
+            usuarios bolivianos. Habilitar el feature "Speed Insights" en
+            el proyecto de Vercel para que aparezca data. */}
+        <SpeedInsights />
       </body>
     </html>
   );
