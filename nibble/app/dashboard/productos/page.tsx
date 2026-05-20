@@ -7,9 +7,13 @@ import { ProductsTable } from "@/components/dashboard/productos/ProductsTable";
 import { Pagination } from "@/components/ui/Pagination";
 import { dashboardCopy } from "@/lib/dashboard/copy";
 
-export const metadata = {
-  title: "Productos · Madriguera Shop",
-};
+/** Dinámico por vertical: "Productos"/"Platos"/"Servicios"/"Artículos".
+ * `requireOwnerOnly` está cacheado por request — no duplica la query. */
+export async function generateMetadata() {
+  const { store } = await requireOwnerOnly();
+  const copy = dashboardCopy(store.vertical);
+  return { title: `${copy.productsLabel} · Madriguera Shop` };
+}
 
 const PAGE_SIZE = 50;
 

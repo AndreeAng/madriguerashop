@@ -186,7 +186,7 @@ export function CheckoutForm({
 
       <main className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
-          <h1 className="font-display text-3xl">Finalizar pedido</h1>
+          <h1 className="font-display text-3xl">Finalizar {copy.orderSingular}</h1>
 
           {state.error && (
             <p
@@ -343,7 +343,7 @@ export function CheckoutForm({
               </div>
             ) : (
               <p className="rounded-xl bg-[color:var(--bg)] p-4 text-sm text-[color:var(--muted)]">
-                Tu pedido va a estar listo para recoger en el local.
+                {copy.cartLabel} va a estar listo para recoger en el local.
               </p>
             )}
           </Section>
@@ -363,6 +363,7 @@ export function CheckoutForm({
               hoursByDay={hoursByDay}
               deliveryMethod={deliveryMethod}
               error={fe.scheduledFor}
+              cartLabel={copy.cartLabel}
             />
           </Section>
 
@@ -482,7 +483,7 @@ export function CheckoutForm({
             </div>
           )}
           <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-            <h3 className="font-semibold">Tu pedido</h3>
+            <h3 className="font-semibold">{copy.cartLabel}</h3>
             <ul className="mt-4 divide-y divide-[color:var(--line)]">
               {cart.items.map((line) => (
                 <li key={line.id} className="flex gap-3 py-3">
@@ -766,12 +767,16 @@ function SchedulePicker({
   hoursByDay,
   deliveryMethod,
   error,
+  cartLabel,
 }: {
   isOpenNow: boolean;
   nextOpeningLabel: string | null;
   hoursByDay: HoursDay[];
   deliveryMethod: "delivery" | "pickup";
   error?: string;
+  /** "Tu pedido"/"Tu solicitud" según vertical — para la frase
+   * "{cartLabel} queda agendado para…". */
+  cartLabel: string;
 }) {
   const [mode, setMode] = useState<"asap" | "scheduled">(
     isOpenNow ? "asap" : "scheduled",
@@ -886,7 +891,7 @@ function SchedulePicker({
           />
           {pickedLabel && (
             <p className="mt-1.5 text-xs text-[color:var(--muted)]">
-              Tu pedido queda agendado para{" "}
+              {cartLabel} queda agendado para{" "}
               <strong className="text-[color:var(--fg)]">{pickedLabel}</strong>.
             </p>
           )}

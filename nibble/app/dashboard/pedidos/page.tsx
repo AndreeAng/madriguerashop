@@ -13,9 +13,18 @@ import { dashboardCopy } from "@/lib/dashboard/copy";
 
 const PAGE_SIZE = 50;
 
-export const metadata = {
-  title: "Pedidos · Madriguera Shop",
-};
+/**
+ * Metadata dinámica: el title del tab varía por vertical ("Pedidos" para
+ * restaurante, "Solicitudes" para servicios). `requireStoreOwner` está
+ * cacheado por request via React `cache`, así que llamarlo desde
+ * `generateMetadata` no agrega una segunda query a la DB — comparte la
+ * misma fetch que el render del page.
+ */
+export async function generateMetadata() {
+  const { store } = await requireStoreOwner();
+  const copy = dashboardCopy(store.vertical);
+  return { title: `${copy.ordersLabel} · Madriguera Shop` };
+}
 
 const FILTER_TABS: { key: "all" | "active" | "awaiting" | "delivered" | "cancelled"; label: string }[] = [
   { key: "active", label: "Activos" },
@@ -184,7 +193,7 @@ export default async function OrdersPage({
               <EmptyState
                 className="border-solid"
                 icon={<ShoppingBag className="size-8" />}
-                description="No hay pedidos para mostrar."
+                description={`No hay ${copy.ordersLabel.toLowerCase()} para mostrar.`}
               />
             ) : (
               <ul className="space-y-2">
@@ -258,7 +267,7 @@ export default async function OrdersPage({
             page={page}
             totalPages={totalPages}
             total={total}
-            itemLabel="pedido"
+            itemLabel={copy.orderSingular}
             buildPageHref={buildPageHref}
           />
       </main>

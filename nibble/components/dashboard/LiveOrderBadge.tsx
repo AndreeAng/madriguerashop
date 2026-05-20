@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { useDashboardCopy } from "@/lib/dashboard/copy-context";
 
 /**
  * Badge "tienes pedidos nuevos" en el header del dashboard.
@@ -62,6 +63,7 @@ export function LiveOrderBadge({
   initialActive: number;
   initialAwaiting: number;
 }) {
+  const copy = useDashboardCopy();
   const [meta, setMeta] = useState<Meta>({
     activeCount: initialActive,
     awaitingCount: initialAwaiting,
@@ -138,8 +140,8 @@ export function LiveOrderBadge({
       href="/dashboard/pedidos"
       aria-label={
         total > 0
-          ? `${total} pedido${total === 1 ? "" : "s"} por atender`
-          : "Pedidos"
+          ? `${total} ${total === 1 ? copy.orderSingular : copy.ordersLabel.toLowerCase()} por atender`
+          : copy.ordersLabel
       }
       onClick={() => {
         if (meta.latestOrderId) {

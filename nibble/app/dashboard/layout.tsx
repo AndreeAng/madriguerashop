@@ -4,6 +4,8 @@ import { requireStoreOwner } from "@/lib/auth/session";
 import { readImpersonatedStoreId } from "@/lib/auth/impersonation";
 import { DashboardSidebar } from "@/components/dashboard/Sidebar";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
+import { dashboardCopy } from "@/lib/dashboard/copy";
+import { DashboardCopyProvider } from "@/lib/dashboard/copy-context";
 
 // El subtree /dashboard/* es autenticado (store-owner / cashier) y
 // muestra datos en tiempo real del merchant — no es prerendereable.
@@ -34,29 +36,32 @@ export default async function DashboardLayout({
   const impersonatedId = await readImpersonatedStoreId();
   const isImpersonating =
     user.role === Role.SUPER_ADMIN && impersonatedId === store.id;
+  const copy = dashboardCopy(store.vertical);
 
   return (
-    <div className="flex min-h-screen">
-      <DashboardSidebar
-        store={{
-          name: store.name,
-          slug: store.slug,
-          primaryColor: store.primaryColor,
-          logoUrl: store.logoUrl,
-          vertical: store.vertical,
-        }}
-        // `requireStoreOwner` ya garantiza que role ∈ {STORE_OWNER, CASHIER,
-        // SUPER_ADMIN} (cualquier otra cosa redirige). El tipo crudo es
-        // `string` porque el shape del session viene de NextAuth; el cast
-        // sólo refleja el invariante que la función ya validó.
-        userRole={user.role as "STORE_OWNER" | "CASHIER" | "SUPER_ADMIN"}
-      />
-      <div className="flex-1">
-        {isImpersonating && (
-          <ImpersonationBanner storeName={store.name} />
-        )}
-        {children}
+    <DashboardCopyProvider copy={copy}>
+      <div className="flex min-h-screen">
+        <DashboardSidebar
+          store={{
+            name: store.name,
+            slug: store.slug,
+            primaryColor: store.primaryColor,
+            logoUrl: store.logoUrl,
+            vertical: store.vertical,
+          }}
+          // `requireStoreOwner` ya garantiza que role ∈ {STORE_OWNER, CASHIER,
+          // SUPER_ADMIN} (cualquier otra cosa redirige). El tipo crudo es
+          // `string` porque el shape del session viene de NextAuth; el cast
+          // sólo refleja el invariante que la función ya validó.
+          userRole={user.role as "STORE_OWNER" | "CASHIER" | "SUPER_ADMIN"}
+        />
+        <div className="flex-1">
+          {isImpersonating && (
+            <ImpersonationBanner storeName={store.name} />
+          )}
+          {children}
+        </div>
       </div>
-    </div>
+    </DashboardCopyProvider>
   );
 }

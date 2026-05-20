@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Clock, MapPin, Sparkles } from "lucide-react";
 import { getStorefrontData, getStoreBySlug } from "@/lib/tenant/resolve";
 import { toStoreView } from "@/lib/storefront/adapter";
+import { storefrontCopy } from "@/lib/storefront/copy";
 import { getCartSnapshot } from "@/server/actions/cart";
 import { trackPageView } from "@/lib/analytics/track";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
@@ -69,7 +70,11 @@ export default async function AboutPage({
                 <Sparkles className="size-4 text-[color:var(--color-amber-500)]" />
                 <span className="font-medium">
                   {store.ordersThisMonth}{" "}
-                  {store.ordersThisMonth === 1 ? "pedido" : "pedidos"} este mes
+                  {(() => {
+                    const c = storefrontCopy(store.vertical);
+                    return store.ordersThisMonth === 1 ? c.orderSingular : c.orderPlural;
+                  })()}{" "}
+                  este mes
                 </span>
               </div>
               <p className="mt-1 text-xs text-[color:var(--muted)]">

@@ -16,6 +16,11 @@ import { WhatsAppContactLink } from "@/components/storefront/WhatsAppContactLink
 import { CustomerCancelOrder } from "@/components/storefront/CustomerCancelOrder";
 import { MapView } from "@/components/shared/MapsClient";
 import { formatBob, formatDateLong, formatWaPhone } from "@/lib/utils";
+import { storefrontCopy } from "@/lib/storefront/copy";
+
+function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 import {
   TRACKING_STEPS,
   STATUS_LABELS,
@@ -110,11 +115,14 @@ export default async function OrderTrackingPage({
   const deliveryFee = order.deliveryFee != null ? Number(order.deliveryFee) : null;
   const total = Number(order.total);
 
+  // Copy del estado se cierne sobre el sustantivo "pedido/solicitud" del
+  // vertical de la tienda.
+  const copy = storefrontCopy(store.vertical);
   const headerCopy = isCancelled
-    ? "Tu pedido fue cancelado"
+    ? `${capitalize(copy.cartLabel)} fue cancelado`
     : order.status === "DELIVERED"
-      ? "¡Pedido entregado!"
-      : "Estamos preparando tu pedido";
+      ? `¡${capitalize(copy.orderSingular)} entregado!`
+      : `Estamos preparando ${copy.cartLabel.toLowerCase()}`;
 
   const phoneOnly = formatWaPhone(order.store.whatsappPhone);
 

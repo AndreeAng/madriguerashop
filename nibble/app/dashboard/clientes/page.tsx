@@ -5,6 +5,7 @@ import { requireStoreOwner } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { formatBob, formatWaPhone } from "@/lib/utils";
 import { Pagination } from "@/components/ui/Pagination";
+import { dashboardCopy } from "@/lib/dashboard/copy";
 
 export const metadata = { title: "Clientes · Madriguera Shop" };
 
@@ -16,6 +17,7 @@ export default async function ClientesPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { store } = await requireStoreOwner();
+  const copy = dashboardCopy(store.vertical);
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const page = Math.max(1, Number(sp.page) || 1);
@@ -119,12 +121,12 @@ export default async function ClientesPage({
                     <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
                       Teléfono
                     </th>
-                    <th className="px-3 py-3 text-right font-medium">Pedidos</th>
+                    <th className="px-3 py-3 text-right font-medium">{copy.ordersLabel}</th>
                     <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       Total gastado
                     </th>
                     <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
-                      Último pedido
+                      Último {copy.orderSingular}
                     </th>
                     <th className="px-3 py-3 text-right font-medium">Acción</th>
                   </tr>
