@@ -395,6 +395,7 @@ export default async function OrderTrackingPage({
                       {ev.createdAt.toLocaleString("es-BO", {
                         dateStyle: "short",
                         timeStyle: "short",
+                        timeZone: "America/La_Paz",
                       })}
                       {ev.byUserName ? ` · ${ev.byUserName}` : ""}
                     </p>

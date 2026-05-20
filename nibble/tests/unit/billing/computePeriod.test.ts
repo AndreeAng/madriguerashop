@@ -87,18 +87,33 @@ describe("computePeriod (MONTHLY)", () => {
     expect(periodEnd.toISOString()).toBe("2027-01-15T04:00:00.000Z");
   });
 
-  it("período en mes con 31 días → mes con 30 días", () => {
-    // 31-ene → 28-feb (no 31-feb que no existe). Date.UTC normaliza
-    // mes overflow, así que termina en 03-mar. Es comportamiento conocido
-    // de la aritmética de meses con Date — documentado.
+  it("período en mes con 31 días → último día del mes con 28/30/31", () => {
+    // 31-ene + 1 mes: el día 31 no existe en febrero → clamp al último día
+    // del mes destino (28 en año no-bisiesto). Sin clamp, `Date.UTC`
+    // overflow ponía el cierre del período en 3-mar, dejando al cliente
+    // con un ciclo de ~25 días y desfasando permanentemente el día
+    // contractual de facturación.
     const anchor = new Date("2026-01-31T04:00:00Z");
     const store = makeStore({
       nextInvoiceAt: anchor,
       billingCycle: BillingCycle.MONTHLY,
     });
     const { periodEnd } = computePeriod(store, new Date());
-    // 2026 no es bisiesto → feb tiene 28 → 31+28 = mar-03
-    expect(periodEnd.toISOString()).toBe("2026-03-03T04:00:00.000Z");
+    // 2026 no es bisiesto → feb termina el 28.
+    expect(periodEnd.toISOString()).toBe("2026-02-28T04:00:00.000Z");
+  });
+
+  it("período cruzando enero (mes 11 → 0)", () => {
+    // 31-dic + 1 mes = 31-ene. Verifica el wrap del año explícito (b.month
+    // === 11 ⇒ targetYear + 1, targetMonth = 0), sin clamp porque enero
+    // tiene 31 días.
+    const anchor = new Date("2026-12-31T04:00:00Z");
+    const store = makeStore({
+      nextInvoiceAt: anchor,
+      billingCycle: BillingCycle.MONTHLY,
+    });
+    const { periodEnd } = computePeriod(store, new Date());
+    expect(periodEnd.toISOString()).toBe("2027-01-31T04:00:00.000Z");
   });
 });
 
@@ -119,14 +134,15 @@ describe("computePeriod (YEARLY)", () => {
   });
 
   it("año bisiesto: 29-feb → 28-feb del año siguiente (no bisiesto)", () => {
-    // 2028 es bisiesto, 2029 no. 29-feb-2028 + 1 año → Date.UTC(2029, 1, 29)
-    // normaliza a 01-mar-2029. Documentar el comportamiento.
+    // 2028 es bisiesto, 2029 no. 29-feb-2028 + 1 año: el día 29 no existe
+    // en feb-2029 → clamp al 28. Sin clamp, `Date.UTC` ponía el cierre en
+    // 1-mar-2029, mismo problema que el overflow mensual.
     const anchor = new Date("2028-02-29T04:00:00Z");
     const store = makeStore({
       nextInvoiceAt: anchor,
       billingCycle: BillingCycle.YEARLY,
     });
     const { periodEnd } = computePeriod(store, new Date());
-    expect(periodEnd.toISOString()).toBe("2029-03-01T04:00:00.000Z");
+    expect(periodEnd.toISOString()).toBe("2029-02-28T04:00:00.000Z");
   });
 });

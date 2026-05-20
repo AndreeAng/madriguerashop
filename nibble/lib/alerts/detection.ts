@@ -123,6 +123,11 @@ async function detectProofReuse(): Promise<AlertCandidate[]> {
 
   const out: AlertCandidate[] = [];
   for (const r of invoiceRows) {
+    // `description` se muestra en el panel de admin y queda persistido en DB —
+    // por eso usamos hash en lugar de la URL cruda. La URL completa va en
+    // `data.proofUrl` (JSON), accesible para click-through pero no expuesta
+    // en la columna de texto del listado.
+    const proofRef = hashUrl(r.proofUrl);
     out.push({
       type: "PROOF_REUSED" as const,
       severity: r.storeIds.length > 1 ? "CRITICAL" : "HIGH",
@@ -131,15 +136,16 @@ async function detectProofReuse(): Promise<AlertCandidate[]> {
           ? "Comprobante reusado entre tiendas distintas (factura SaaS)"
           : "Comprobante reusado en varias facturas (misma tienda)",
       description:
-        `El mismo comprobante (${r.proofUrl}) aparece en ${Number(r.count)} ` +
+        `El mismo comprobante (hash ${proofRef}) aparece en ${Number(r.count)} ` +
         `factura${Number(r.count) === 1 ? "" : "s"} del SaaS, ` +
         `${r.storeIds.length} tienda${r.storeIds.length === 1 ? "" : "s"} diferente${r.storeIds.length === 1 ? "" : "s"}.`,
       data: { proofUrl: r.proofUrl, invoiceIds: r.invoiceIds, storeIds: r.storeIds },
       storeId: r.storeIds.length === 1 ? r.storeIds[0] : null,
-      dedupeKey: `proof_reused:invoice:${hashUrl(r.proofUrl)}`,
+      dedupeKey: `proof_reused:invoice:${proofRef}`,
     });
   }
   for (const r of orderRows) {
+    const proofRef = hashUrl(r.proofUrl);
     out.push({
       type: "PROOF_REUSED" as const,
       severity: r.storeIds.length > 1 ? "HIGH" : "MEDIUM",
@@ -148,12 +154,12 @@ async function detectProofReuse(): Promise<AlertCandidate[]> {
           ? "Comprobante reusado entre tiendas distintas (pedidos)"
           : "Comprobante reusado en varios pedidos (misma tienda)",
       description:
-        `El mismo comprobante (${r.proofUrl}) aparece en ${Number(r.count)} ` +
+        `El mismo comprobante (hash ${proofRef}) aparece en ${Number(r.count)} ` +
         `pedido${Number(r.count) === 1 ? "" : "s"}, ` +
         `${r.storeIds.length} tienda${r.storeIds.length === 1 ? "" : "s"}.`,
       data: { proofUrl: r.proofUrl, orderIds: r.invoiceIds, storeIds: r.storeIds },
       storeId: r.storeIds.length === 1 ? r.storeIds[0] : null,
-      dedupeKey: `proof_reused:order:${hashUrl(r.proofUrl)}`,
+      dedupeKey: `proof_reused:order:${proofRef}`,
     });
   }
   return out;
