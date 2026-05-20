@@ -4,6 +4,12 @@ import { ImportQuickForm } from "@/components/admin/importar/ImportQuickForm";
 
 export const metadata = { title: "Importar de Quick · Admin" };
 
+// La server action del import descarga ~90 imágenes desde quick.com.bo +
+// 90 inserts a Postgres. Con paralelismo de 8 imágenes a la vez tarda
+// ~5-15s típico, pero el default de 10s era insuficiente para tiendas
+// grandes. 60s es el máximo en Hobby plan de Vercel y nos da headroom.
+export const maxDuration = 60;
+
 export default async function AdminImportPage() {
   await requireSuperAdmin();
 
