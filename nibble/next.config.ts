@@ -31,6 +31,18 @@ function buildRemotePatterns(): NonNullable<
     }
   }
 
+  // Vercel Blob: cuando hay token, `saveImage` guarda en Blob y devuelve
+  // URLs `https://<id>.public.blob.vercel-storage.com/...`. Sin este
+  // patrón, `next/image` rechazaría la URL con "hostname not configured".
+  // El wildcard `**.public.blob.vercel-storage.com` cubre cualquier project
+  // store-id (no necesitamos hardcodear el ID por proyecto).
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    patterns.push({
+      protocol: "https",
+      hostname: "**.public.blob.vercel-storage.com",
+    });
+  }
+
   // Placeholders del seed (Unsplash/Picsum) sólo en dev. En producción no
   // deberían aparecer URLs así — si aparecen es bug del seed que se debe
   // corregir, no algo que la app deba "soportar" sirviendo.

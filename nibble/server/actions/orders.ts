@@ -52,6 +52,28 @@ export type CreateOrderState = {
 // La regex `PHONE_BO_RE` vive en `lib/auth/identifiers.ts` — fuente única.
 const phoneRefiner = (v: string) => PHONE_BO_RE.test(v.replace(/[\s-]/g, ""));
 
+/**
+ * Acepta una URL de comprobante si vino de nuestro propio sistema de upload:
+ *   - Modo filesystem (dev): path bajo `/api/uploads/proof/`.
+ *   - Modo Vercel Blob (prod): URL absoluta del bucket de Madriguera con
+ *     prefix `/proof/`. El hostname del bucket es estable por proyecto
+ *     (`*.public.blob.vercel-storage.com`), y el path `/proof/` es nuestro
+ *     namespace — un atacante no puede inyectar una URL externa que matchee.
+ */
+function isAcceptedProofUrl(v: string): boolean {
+  if (v.startsWith("/api/uploads/proof/")) return true;
+  try {
+    const u = new URL(v);
+    return (
+      u.protocol === "https:" &&
+      u.hostname.endsWith(".public.blob.vercel-storage.com") &&
+      u.pathname.startsWith("/proof/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 const createOrderSchema = z
   .object({
     storeSlug: z.string().min(1),
@@ -101,14 +123,13 @@ const createOrderSchema = z
       .trim()
       .max(2048)
       // El comprobante DEBE haber sido subido vía nuestro endpoint
-      // /api/upload/proof, que lo guarda en private-uploads y devuelve una
-      // URL bajo /api/uploads/proof/. Si el cliente envía una URL externa,
-      // la rechazamos — sería un vector para que un atacante haga que el
-      // merchant vea como "comprobante" una imagen que controla.
-      .refine(
-        (v) => v === "" || v.startsWith("/api/uploads/proof/"),
-        "Comprobante inválido — subilo de nuevo.",
-      ),
+      // /api/upload/proof, que devuelve:
+      //   - Modo Blob (prod):  https://<id>.public.blob.vercel-storage.com/proof/...
+      //   - Modo filesystem (dev): /api/uploads/proof/...
+      // Cualquier otra URL la rechazamos — sería un vector para que un
+      // atacante haga que el merchant vea como "comprobante" una imagen
+      // que él controla.
+      .refine((v) => v === "" || isAcceptedProofUrl(v), "Comprobante inválido — subilo de nuevo."),
 
     customerNotes: z.string().trim().max(500),
     couponCode: z.string().trim().max(40),

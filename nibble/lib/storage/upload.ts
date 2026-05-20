@@ -3,17 +3,26 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
+import { put } from "@vercel/blob";
 
 /**
- * Almacenamiento de imágenes — versión local filesystem.
+ * Almacenamiento de imágenes — dual-mode (Vercel Blob vs filesystem).
  *
- * Por defecto guarda en `public/uploads/<storeId>/<uuid>.webp` y devuelve
- * `/uploads/<storeId>/<uuid>.webp` (Next.js sirve `public/` automáticamente).
+ * Vercel serverless tiene filesystem read-only excepto `/tmp` (que además se
+ * pierde entre invocaciones). Cualquier `writeFile` en `public/uploads/` o
+ * `private-uploads/` falla con `ENOENT: mkdir '/var/task/...'`. Por eso en
+ * producción guardamos en Vercel Blob (CDN-backed object storage).
  *
- * Producción: setear UPLOAD_DIR + PUBLIC_UPLOADS_URL para guardar en disco
- * fuera del repo (ej. /var/www/uploads montado por nginx).
+ * Modo se elige por presencia de `BLOB_READ_WRITE_TOKEN`:
+ *   - Token presente  → Vercel Blob (URL pública servida desde edge CDN).
+ *   - Token ausente   → filesystem local (dev sin configurar Blob).
  *
- * Roadmap: migrar a S3/R2 implementando el mismo `saveImage` con otra estrategia.
+ * Para comprobantes de pago (`kind: "proof"`) en modo Blob: los guardamos
+ * con `access: "public"` pero el path incluye un UUID aleatorio que actúa
+ * como token unguessable (~122 bits de entropía). Solo quien obtuvo la URL
+ * vía el flujo autenticado (customer ↔ admin) la conoce. No es defensa
+ * contra exfiltración deliberada de URLs — para eso habría que migrar a
+ * Blob privado (beta) o S3 con signed URLs. Para MVP es aceptable.
  */
 
 export type ImageKind = "logo" | "banner" | "favicon" | "product" | "qr" | "category" | "proof";
@@ -42,6 +51,10 @@ const MAGIC_BYTES = {
   webp: [0x52, 0x49, 0x46, 0x46], // "RIFF" header — WebP completo necesita "WEBP" en bytes 8-11
 };
 
+// Activamos Vercel Blob cuando hay token. En dev sin token, fallback a fs.
+// (No usamos `useXxx` como nombre porque ESLint cree que es un React Hook.)
+const isBlobMode = (): boolean => Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+
 function uploadDir(): string {
   return process.env.UPLOAD_DIR || path.join(process.cwd(), "public", "uploads");
 }
@@ -51,12 +64,12 @@ function publicBaseUrl(): string {
 }
 
 /**
- * Directorio para comprobantes de pago. SIEMPRE fuera de `public/` para
- * que Next.js / nginx no los sirvan directamente. Se sirven por el route
- * handler `/api/uploads/proof/[...path]` con auth.
+ * Directorio para comprobantes de pago en modo filesystem. SIEMPRE fuera de
+ * `public/` para que Next.js / nginx no los sirvan directamente. Se sirven
+ * por el route handler `/api/uploads/proof/[...path]` con auth.
  *
- * Default: `<cwd>/private-uploads/proof`. En producción se puede mover a
- * un volumen separado con `PROOF_UPLOAD_DIR`.
+ * En modo Blob este directorio no se usa — los proofs viven en Blob con un
+ * path que incluye UUID unguessable.
  */
 export function proofUploadDir(): string {
   return (
@@ -110,7 +123,7 @@ export class UploadError extends Error {
 
 /**
  * Guarda una imagen subida. Valida tamaño + magic bytes, optimiza con sharp,
- * convierte a WebP, escribe a disco y devuelve la URL pública.
+ * convierte a WebP/PNG y delega el storage según `isBlobMode()`.
  *
  * @param file - Web File (vienen de FormData en route handlers / server actions)
  * @param ownerId - prefijo de directorio (típicamente storeId)
@@ -160,7 +173,7 @@ export async function saveImage(
     .webp({ quality: limits.quality });
 
   // Para favicons preferimos PNG (mejor compatibilidad de browsers)
-  let outputExt = "webp";
+  let outputExt: "webp" | "png" = "webp";
   if (kind === "favicon") {
     pipeline = sharp(buffer, { failOn: "error" })
       .rotate()
@@ -185,15 +198,43 @@ export async function saveImage(
     throw new UploadError("bad_content", "ownerId inválido");
   }
 
-  // 6. Escribir a disco. Los comprobantes (`proof`) van a un directorio
-  // PRIVADO y se sirven por route handler con auth. El resto son públicos
-  // y los sirve Next.js / nginx directamente.
   const id = crypto.randomUUID();
   const filename = `${id}.${outputExt}`;
-
   const isPrivate = kind === "proof";
+  // Path lógico: comparten estructura ambos modos para uniformidad.
+  //   public:  uploads/<ownerId>/[kind-subdir]/<uuid>.ext
+  //   private: proof/<ownerId>/<uuid>.ext
+  const segments = isPrivate
+    ? [ownerId]
+    : KIND_SUBDIR[kind]
+      ? [ownerId, KIND_SUBDIR[kind]!]
+      : [ownerId];
+
+  const contentType = outputExt === "png" ? "image/png" : "image/webp";
+
+  if (isBlobMode()) {
+    // Vercel Blob: clave global en el bucket, URL devuelta apunta a CDN edge.
+    const blobKey = (isPrivate ? ["proof", ...segments, filename] : ["uploads", ...segments, filename]).join("/");
+    try {
+      const result = await put(blobKey, output, {
+        access: "public",
+        contentType,
+        // Sin sufijo aleatorio — ya garantizamos unicidad con `crypto.randomUUID()`
+        // en el filename. Si activáramos `addRandomSuffix` Blob agregaría OTRO
+        // sufijo encima, lo cual ensucia la URL sin ganancia.
+        addRandomSuffix: false,
+      });
+      return { url: result.url, bytes: output.length };
+    } catch (err) {
+      throw new UploadError(
+        "io_error",
+        `Error guardando la imagen en Blob: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  // Fallback filesystem (dev local). NO funciona en Vercel serverless.
   const baseDir = isPrivate ? proofUploadDir() : uploadDir();
-  const segments = isPrivate ? [ownerId] : KIND_SUBDIR[kind] ? [ownerId, KIND_SUBDIR[kind]!] : [ownerId];
   const dir = path.join(baseDir, ...segments);
   const filePath = path.join(dir, filename);
 
@@ -207,8 +248,6 @@ export async function saveImage(
     );
   }
 
-  // URL devuelta: pública para todo menos proof. Los proof van por el route
-  // handler autenticado.
   const urlPath = isPrivate
     ? ["/api/uploads/proof", ...segments, filename].join("/")
     : [publicBaseUrl().replace(/\/$/, ""), ...segments, filename].join("/");

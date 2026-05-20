@@ -20,21 +20,41 @@ import {
 
 // ============== Owner: subir comprobante ==============
 
+/**
+ * Mismo predicate que `createOrderAction` para proof URLs. Acepta:
+ *   - Modo filesystem (dev): /api/uploads/proof/...
+ *   - Modo Vercel Blob (prod): https://<id>.public.blob.vercel-storage.com/proof/...
+ *
+ * Mantenemos esta función duplicada en lugar de extraerla a `lib/` para
+ * evitar acoplamiento entre orders.ts e invoices.ts — ambas server actions
+ * son independientes y la duplicación es trivial.
+ */
+function isAcceptedProofUrl(v: string): boolean {
+  if (v.startsWith("/api/uploads/proof/")) return true;
+  try {
+    const u = new URL(v);
+    return (
+      u.protocol === "https:" &&
+      u.hostname.endsWith(".public.blob.vercel-storage.com") &&
+      u.pathname.startsWith("/proof/")
+    );
+  } catch {
+    return false;
+  }
+}
+
 const uploadProofSchema = z.object({
   invoiceId: z.string().min(1),
-  // Restringir a paths internos del upload endpoint (mismo patrón que
-  // `createOrderAction`). Sin esto, un owner podía mandar una URL externa
-  // apuntando a contenido controlado por él que dijera "pagué BOB X",
-  // y el super-admin verificaba la factura basándose en evidencia falsa.
+  // Restringir a URLs internas del upload endpoint. Sin esto, un owner
+  // podía mandar una URL externa apuntando a contenido controlado por él
+  // que dijera "pagué BOB X", y el super-admin verificaba la factura
+  // basándose en evidencia falsa.
   proofUrl: z
     .string()
     .trim()
     .min(1, "Sube el comprobante antes de enviar")
     .max(2048)
-    .refine(
-      (v) => v.startsWith("/api/uploads/proof/"),
-      "Comprobante inválido. Subilo de nuevo desde el botón.",
-    ),
+    .refine(isAcceptedProofUrl, "Comprobante inválido. Subilo de nuevo desde el botón."),
 });
 
 export async function uploadInvoiceProofAction(
