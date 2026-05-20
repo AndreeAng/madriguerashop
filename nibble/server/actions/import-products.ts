@@ -55,7 +55,7 @@ export async function importProductsAction(
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
-    return { error: "Subí un archivo CSV." };
+    return { error: "Sube un archivo CSV." };
   }
   if (file.size > 2 * 1024 * 1024) {
     return { error: "El archivo es muy grande (máx 2MB)." };

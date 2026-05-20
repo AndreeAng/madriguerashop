@@ -76,7 +76,19 @@ export default async function RootLayout({
       <head>
         <script src="/unregister-sw.js" defer nonce={nonce} />
       </head>
-      <body>{children}</body>
+      <body>
+        {/* WCAG 2.4.1: Skip link al inicio del body. Permite a usuarios
+            de teclado y screen reader saltar la nav repetida (header
+            sticky del storefront, sidebar del dashboard). Visible solo
+            al recibir foco via Tab — invisible para usuarios normales. */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[200] focus:rounded-lg focus:bg-[color:var(--card)] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-float focus:outline focus:outline-2 focus:outline-[color:var(--color-amber-500)]"
+        >
+          Saltar al contenido
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

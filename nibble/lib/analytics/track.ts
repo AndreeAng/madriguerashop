@@ -1,7 +1,8 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
-import crypto from "node:crypto";
 import { db } from "@/lib/db";
+import { pickFirstIp } from "@/lib/security/rateLimit";
+import { hashIp } from "@/lib/crypto/hashIp";
 
 /**
  * Tracking de PageView en server-side. Diseñado para invocarse desde
@@ -37,6 +38,23 @@ const BOT_PATTERNS = [
   /telegrambot/i,
   /headlesschrome/i, // Playwright en CI
   /puppeteer/i,
+  // LLMs crawlers (alto tráfico en 2025-2026 sobre catálogos públicos)
+  /gptbot/i,
+  /chatgpt-user/i,
+  /claudebot/i,
+  /anthropic-ai/i,
+  /perplexitybot/i,
+  /youbot/i,
+  // SEO/marketing crawlers
+  /ahrefsbot/i,
+  /semrushbot/i,
+  /mj12bot/i,
+  /dotbot/i,
+  /petalbot/i,
+  // Otros agregadores
+  /applebot/i,
+  /bytespider/i, // TikTok
+  /amazonbot/i,
 ];
 
 function isBot(userAgent: string | null): boolean {
@@ -50,32 +68,15 @@ function truncateUserAgent(ua: string | null): string | null {
   return ua.length > 256 ? ua.slice(0, 256) : ua;
 }
 
-/**
- * Hashea la IP con SHA-256 + salt rotada diariamente. Esto:
- *  1. Cumple GDPR/LOPD: la IP cruda es PII, el hash no permite re-identificación
- *     individual una vez rotada la salt.
- *  2. Permite contar visitantes únicos por día (la salt es estable durante 24h).
- *  3. Resiste rainbow tables — la salt no es predecible para un atacante externo.
- *
- * La salt deriva de AUTH_SECRET + la fecha UTC. Si AUTH_SECRET cambia, los
- * hashes históricos quedan huérfanos — aceptable (las IPs viejas pierden
- * comparabilidad cross-deploy).
- */
-function hashIp(ip: string | null): string | null {
-  if (!ip) return null;
-  const secret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "dev";
-  const day = new Date().toISOString().slice(0, 10);
-  return crypto
-    .createHash("sha256")
-    .update(`${secret}:${day}:${ip}`)
-    .digest("base64")
-    .slice(0, 22); // 22 chars base64 ≈ 132 bits, suficiente
-}
+// `hashIp` vive en `lib/crypto/hashIp` para que audit y analytics usen
+// la misma implementación y la rotación de salt diaria sea consistente.
 
 async function readCookie(name: string): Promise<string | null> {
   const store = await cookies();
   return store.get(name)?.value ?? null;
 }
+
+const CONSENT_COOKIE = "mv_consent";
 
 export async function trackPageView(opts: {
   storeId: string;
@@ -83,13 +84,22 @@ export async function trackPageView(opts: {
   productId?: string | null;
 }): Promise<void> {
   try {
+    // No trackeamos si el visitante no aceptó cookies analíticas. La
+    // política de privacidad declara que solo trackeamos con consentimiento.
+    // El banner `<CookieConsent>` setea `mv_consent="yes"` cuando acepta.
+    const consent = await readCookie(CONSENT_COOKIE);
+    if (consent !== "yes") return;
+
     const h = await headers();
     const userAgent = h.get("user-agent");
     if (isBot(userAgent)) return;
 
     const referrer = h.get("referer");
-    const fwd = h.get("x-forwarded-for");
-    const ip = fwd?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? null;
+    // Validar el header con `pickFirstIp` evita garbage (XSS payloads en
+    // x-forwarded-for) en la columna `PageView.ip` hasheada.
+    const ip =
+      pickFirstIp(h.get("x-forwarded-for")) ??
+      pickFirstIp(h.get("x-real-ip"));
 
     // El middleware ya bootstrappeó estas cookies. Si por algún motivo
     // faltan (request que no pasó por middleware), generamos un token

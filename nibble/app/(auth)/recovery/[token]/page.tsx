@@ -30,7 +30,7 @@ export default async function ResetPasswordPage({
         <div className="mx-auto w-full max-w-sm">
           <h1 className="font-display text-4xl">Nueva contraseña</h1>
           <p className="mt-2 text-[color:var(--muted)]">
-            Elegí una contraseña fuerte. Mínimo 8 caracteres.
+            Elige una contraseña fuerte. Mínimo 8 caracteres.
           </p>
           <ResetPasswordForm token={token} />
         </div>

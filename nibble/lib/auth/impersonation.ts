@@ -27,7 +27,12 @@ export async function setImpersonatedStore(storeId: string): Promise<void> {
   const c = await cookies();
   c.set(COOKIE_NAME, storeId, {
     httpOnly: true,
-    sameSite: "lax",
+    // `strict` (no `lax`) porque ninguna acción de impersonación debe
+    // dispararse desde una navegación cross-site: el admin entra/sale
+    // siempre desde el panel `/admin/tiendas`. `lax` permitía que un
+    // top-level navigation (link malicioso) llevara la cookie a una
+    // action sensible — `strict` lo bloquea.
+    sameSite: "strict",
     path: "/",
     secure: process.env.NODE_ENV === "production",
     maxAge: IMPERSONATION_MAX_AGE_S,

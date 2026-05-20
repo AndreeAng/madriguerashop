@@ -1,5 +1,5 @@
 import "server-only";
-import { renderEmail, escapeHtml } from "../layout";
+import { renderEmail, escapeHtml, safeSubjectField } from "../layout";
 import { appUrl } from "../client";
 import { formatBob } from "@/lib/utils";
 import type { SendInput } from "../send";
@@ -11,7 +11,10 @@ export function invoiceIssuedEmail(opts: {
   amount: number;
   dueDate: Date;
 }): SendInput {
-  const due = opts.dueDate.toLocaleDateString("es-BO", { dateStyle: "medium" });
+  const due = opts.dueDate.toLocaleDateString("es-BO", {
+    dateStyle: "medium",
+    timeZone: "America/La_Paz",
+  });
 
   const body = `
     <p>Hola ${escapeHtml(opts.storeName)},</p>
@@ -27,7 +30,7 @@ export function invoiceIssuedEmail(opts: {
 
   return {
     to: opts.to,
-    subject: `Factura ${opts.invoiceNumber} · ${formatBob(opts.amount)} — Madriguera Shop`,
+    subject: `Factura ${safeSubjectField(opts.invoiceNumber, 40)} · ${formatBob(opts.amount)} — Madriguera Shop`,
     html: renderEmail({
       title: `Factura ${opts.invoiceNumber}`,
       body,
@@ -56,7 +59,7 @@ export function invoicePaidEmail(opts: {
 
   return {
     to: opts.to,
-    subject: `Pago confirmado · ${opts.invoiceNumber} — Madriguera Shop`,
+    subject: `Pago confirmado · ${safeSubjectField(opts.invoiceNumber, 40)} — Madriguera Shop`,
     html: renderEmail({
       title: "Recibimos tu pago",
       body,

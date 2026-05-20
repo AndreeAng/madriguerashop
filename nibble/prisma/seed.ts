@@ -1122,7 +1122,7 @@ const demoStores: DemoStoreSpec[] = [
     },
     banner: {
       title: "Tortas para tus celebraciones",
-      subtitle: "Encargá con 24h de anticipación y elegí decoración personalizada.",
+      subtitle: "Encarga con 24h de anticipación y elige decoración personalizada.",
       imageUrl:
         "https://images.unsplash.com/photo-1535254973040-607b474cb50d?w=1600&q=80",
       linkUrl: "/migas-de-casa#cat-tortas",
@@ -1346,7 +1346,7 @@ const demoStores: DemoStoreSpec[] = [
     },
     banner: {
       title: "Delivery gratis arriba de Bs 80",
-      subtitle: "Pedí hasta las 8pm y te llegan los productos ese mismo día.",
+      subtitle: "Pide hasta las 8pm y te llegan los productos ese mismo día.",
       imageUrl:
         "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=1600&q=80",
     },

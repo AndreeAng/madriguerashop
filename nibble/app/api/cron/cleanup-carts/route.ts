@@ -20,10 +20,18 @@ import { db } from "@/lib/db";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
+const CRON_SECRET_MIN_LENGTH = 32;
+
 function authorized(request: Request): boolean {
   const expected = process.env.CRON_SECRET;
   if (!expected) {
     return process.env.NODE_ENV === "development" && !process.env.CI;
+  }
+  if (expected.length < CRON_SECRET_MIN_LENGTH) {
+    console.error(
+      `[cron:cleanup-carts] CRON_SECRET too short (${expected.length} chars, min ${CRON_SECRET_MIN_LENGTH}).`,
+    );
+    return false;
   }
   const header = request.headers.get("authorization") ?? "";
   const match = header.match(/^Bearer\s+(.+)$/i);
@@ -41,16 +49,31 @@ export async function GET(request: Request) {
   const now = new Date();
   // `deleteMany` con cascade vía Prisma: el schema declara `onDelete: Cascade`
   // de CartItem.cart, así que los items se borran junto al cart padre.
-  const result = await db.cart.deleteMany({
-    where: { expiresAt: { lt: now } },
-  });
-
-  const payload = {
-    ranAt: now.toISOString(),
-    cartsDeleted: result.count,
-  };
-  console.log("[cleanup-carts-cron]", JSON.stringify(payload));
-  return NextResponse.json(payload);
+  //
+  // Envolvemos en try/catch para que un error transitorio de DB (timeout,
+  // connection refused) devuelva un 500 estructurado y quede visible en
+  // Sentry, en vez de explotar como 500 genérico del Next runtime que se
+  // pierde sin contexto. El cron de Vercel reintenta automáticamente al
+  // día siguiente, así que un fallo aislado no es crítico.
+  try {
+    const result = await db.cart.deleteMany({
+      where: { expiresAt: { lt: now } },
+    });
+    const payload = {
+      ranAt: now.toISOString(),
+      cartsDeleted: result.count,
+    };
+    console.log("[cleanup-carts-cron]", JSON.stringify(payload));
+    return NextResponse.json(payload);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[cleanup-carts-cron] failed", { message });
+    return NextResponse.json(
+      { error: "cleanup_failed", ranAt: now.toISOString(), message },
+      { status: 500 },
+    );
+  }
 }
 
-export const POST = GET;
+// Vercel Cron solo dispara GET; no exportamos POST para no abrir una
+// superficie extra de invocación cross-site sin Origin check.

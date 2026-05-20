@@ -39,6 +39,14 @@ export default [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      // `@typescript-eslint/no-floating-promises` requiere type-aware
+      // linting (parserOptions.project apuntando a tsconfig). Habilitarlo
+      // implica reconfigurar el flat config con `languageOptions` extra y
+      // duplica el tiempo de lint (parse del tsconfig en cada archivo).
+      // Por ahora confiamos en `tsc --noEmit` del CI para detectar
+      // promesas mal manejadas vía type errors (e.g. asignar Promise a un
+      // tipo no-Promise). Si se activa después, hacerlo en su propio
+      // PR con benchmarks de performance.
     },
   },
 ];

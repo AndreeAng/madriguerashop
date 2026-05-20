@@ -94,6 +94,20 @@ export function CheckoutForm({
   const [proofUrl, setProofUrl] = useState<string>("");
   const [uploadingProof, setUploadingProof] = useState(false);
   const [proofError, setProofError] = useState<string | null>(null);
+  // Guard contra doble-submit. `useActionState.isPending` tiene una ventana
+  // de ~1 frame entre el click y el re-render donde el botón no está aún
+  // disabled — un doble-clic rápido (touchscreens con jitter) pasa dos
+  // submissions distintos y el server crea dos pedidos. Este flag se
+  // setea synchronously al onSubmit y solo se libera cuando el server
+  // devuelve error (estado terminal de éxito hace redirect, no rehidrata).
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    // Si el server devolvió un error/fieldErrors, el form rehidrata —
+    // liberamos el guard para que el cliente pueda corregir y reenviar.
+    if (state.error || state.fieldErrors) {
+      setSubmitting(false);
+    }
+  }, [state.error, state.fieldErrors]);
 
   // Detección automática de zona desde el pin. Si TODAS las zonas tienen
   // shape, asumimos modo "mapa-first" y ocultamos el select. Si hay
@@ -170,7 +184,11 @@ export function CheckoutForm({
   }
 
   return (
-    <form action={action} noValidate>
+    <form
+      action={action}
+      onSubmit={() => setSubmitting(true)}
+      noValidate
+    >
       <input type="hidden" name="storeSlug" value={slug} />
       <input type="hidden" name="deliveryMethod" value={deliveryMethod} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
@@ -184,7 +202,11 @@ export function CheckoutForm({
         value={autoDetectedZone?.id ?? zoneId}
       />
 
-      <main className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_360px]">
+      {/* `<div>` (no `<main>`) porque este componente vive DENTRO de un
+          `<form>` y el modelo de contenido de form no permite landmarks
+          como main. WCAG 1.3.1 + HTML spec. El `<main>` real está en el
+          layout del storefront. */}
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <h1 className="font-display text-3xl">Finalizar {copy.orderSingular}</h1>
 
@@ -205,6 +227,7 @@ export function CheckoutForm({
                 name="customerName"
                 placeholder="Carla Mendoza"
                 error={fe.customerName}
+                required
               />
               <PhoneInputBO
                 label="Teléfono"
@@ -271,7 +294,7 @@ export function CheckoutForm({
                     {autoDetectedZone && (
                       <p className="mt-1 text-xs text-[color:var(--muted)]">
                         Detectamos tu zona desde el mapa. Si quieres cambiarla
-                        manualmente, quitá el pin.
+                        manualmente, quita el pin.
                       </p>
                     )}
                   </label>
@@ -283,6 +306,7 @@ export function CheckoutForm({
                     name="deliveryAddress"
                     placeholder="Av. América Este 1234"
                     error={fe.deliveryAddress}
+                    required
                   />
                   <Field
                     label="Referencia (opcional)"
@@ -415,6 +439,14 @@ export function CheckoutForm({
                 <div>
                   <p className="text-sm font-semibold">
                     Escanea el QR para pagar {formatBob(previewTotal)}
+                    {" "}
+                    <span className="font-normal text-[color:var(--muted)]">
+                      (sin cupón aún)
+                    </span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+                    Si aplicas un cupón abajo, el total final se calcula al
+                    confirmar.
                   </p>
                   <p className="mt-1 text-xs text-[color:var(--muted)]">
                     {store.qrInstructions ??
@@ -530,14 +562,18 @@ export function CheckoutForm({
               </div>
             </div>
 
-            <CheckoutSubmit paymentMethod={paymentMethod} proofUrl={proofUrl} />
+            <CheckoutSubmit
+              paymentMethod={paymentMethod}
+              proofUrl={proofUrl}
+              submitting={submitting}
+            />
 
             <p className="mt-3 text-center text-xs text-[color:var(--muted)]">
               Al confirmar abres WhatsApp con el resumen para {store.name}.
             </p>
           </div>
         </aside>
-      </main>
+      </div>
     </form>
   );
 }
@@ -545,9 +581,11 @@ export function CheckoutForm({
 function CheckoutSubmit({
   paymentMethod,
   proofUrl,
+  submitting,
 }: {
   paymentMethod: string;
   proofUrl: string;
+  submitting: boolean;
 }) {
   const blocked = paymentMethod === "QR_STATIC" && !proofUrl;
   return (
@@ -555,7 +593,7 @@ function CheckoutSubmit({
       shape="pill"
       width="full"
       className="mt-5 py-3.5"
-      disabled={blocked}
+      disabled={blocked || submitting}
       pendingLabel="Creando pedido…"
     >
       <MessageCircle className="size-4" />
@@ -648,6 +686,20 @@ function Section({
   );
 }
 
+// Mapeo de `name` → atributo `autoComplete` estándar HTML. Sin esto, los
+// browsers (especialmente en mobile) no pueden ofrecer las sugerencias
+// almacenadas — el cliente debe tipear todo de nuevo en cada pedido,
+// fricción de conversión. `couponCode` → "off" para no sugerir cupones
+// usados en otros sitios sin contexto.
+const AUTOCOMPLETE_BY_NAME: Record<string, string> = {
+  customerName: "name",
+  customerEmail: "email",
+  customerPhone: "tel",
+  customerNotes: "off",
+  deliveryAddress: "street-address",
+  couponCode: "off",
+};
+
 function Field({
   label,
   name,
@@ -655,6 +707,7 @@ function Field({
   type = "text",
   inputMode,
   error,
+  required,
 }: {
   label: string;
   name: string;
@@ -662,20 +715,39 @@ function Field({
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
   error?: string;
+  required?: boolean;
 }) {
+  // `useId()` evita colisión de ids entre múltiples Field en la misma
+  // página y conecta input ↔ mensaje de error vía `aria-describedby`.
+  // Sin este link el screen reader anuncia "campo inválido" pero no lee
+  // el texto del error al enfocar el campo.
+  const errorId = useId();
   return (
     <label className="block">
-      <span className="text-xs font-medium text-[color:var(--muted)]">{label}</span>
+      <span className="text-xs font-medium text-[color:var(--muted)]">
+        {label}
+        {required && (
+          <span aria-hidden="true" className="ml-0.5 text-[color:var(--color-tomato-500)]">*</span>
+        )}
+      </span>
       <input
         name={name}
         type={type}
         inputMode={inputMode}
+        autoComplete={AUTOCOMPLETE_BY_NAME[name] ?? "on"}
         placeholder={placeholder}
+        required={required}
+        aria-required={required ? true : undefined}
         aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
         className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
       />
       {error && (
-        <p role="alert" className="mt-1.5 text-xs text-[color:var(--color-tomato-600)]">
+        <p
+          id={errorId}
+          role="alert"
+          className="mt-1.5 text-xs text-[color:var(--color-tomato-600)]"
+        >
           {error}
         </p>
       )}
@@ -819,9 +891,15 @@ function SchedulePicker({
     return "";
   }, [isOpenNow, hoursByDay]);
 
-  const minDateTime = toLocalInputValue(new Date(Date.now() + 15 * 60 * 1000));
-  const maxDateTime = toLocalInputValue(
-    new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+  // Lazy init en useState: si computamos en el body del render, SSR y CSR
+  // ejecutan en milisegundos distintos y React detecta mismatch en los
+  // atributos `min`/`max` del input. Lazy se evalúa exactamente UNA vez al
+  // montar (CSR) — el server no renderiza este client component.
+  const [minDateTime] = useState(() =>
+    toLocalInputValue(new Date(Date.now() + 15 * 60 * 1000)),
+  );
+  const [maxDateTime] = useState(() =>
+    toLocalInputValue(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000)),
   );
 
   const [picked, setPicked] = useState(defaultDateTime);
@@ -847,7 +925,7 @@ function SchedulePicker({
     return `${day} ${dd}/${mm} a las ${hh}:${min}`;
   }, [picked]);
 
-  const verb = deliveryMethod === "delivery" ? "te llegue" : "lo recogés";
+  const verb = deliveryMethod === "delivery" ? "te llegue" : "lo recoges";
 
   return (
     <div className="space-y-3">

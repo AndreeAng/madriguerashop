@@ -189,15 +189,15 @@ export default async function AuditoriaPage({
               <table className="w-full text-sm">
                 <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-medium">Cuándo</th>
-                    <th className="px-3 py-3 text-left font-medium">Acción</th>
-                    <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
+                    <th scope="col" className="px-5 py-3 text-left font-medium">Cuándo</th>
+                    <th scope="col" className="px-3 py-3 text-left font-medium">Acción</th>
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium md:table-cell">
                       Actor
                     </th>
-                    <th className="hidden px-3 py-3 text-left font-medium lg:table-cell">
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium lg:table-cell">
                       Target
                     </th>
-                    <th className="hidden px-3 py-3 text-left font-medium lg:table-cell">
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium lg:table-cell">
                       IP
                     </th>
                   </tr>

@@ -5,6 +5,7 @@ import authConfig from "./auth.config";
 import { db } from "@/lib/db";
 import { verifyPassword } from "@/lib/auth/password";
 import { normalizeIdentifier } from "@/lib/auth/identifiers";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 import type { Role } from "@prisma/client";
 
 // Augmentamos el tipo de session/user para incluir role + storeId
@@ -52,9 +53,13 @@ declare module "@auth/core/jwt" {
 // solo en lecturas RSC, donde 60s de exposición es aceptable.
 const JWT_REVALIDATE_MS = 60_000;
 
+// `MAX_PASSWORD_LENGTH` evita un DoS por hash: bcrypt sobre un payload de
+// 10 MB consume CPU significativo antes de truncar a 72 bytes. Sin el cap
+// un atacante puede agotar el worker pool del runtime serverless con
+// payloads largos antes de que el rate limit por IP los frene.
 const credentialsSchema = z.object({
-  username: z.string().min(1, "Email o teléfono requerido"),
-  password: z.string().min(1, "Contraseña requerida"),
+  username: z.string().min(1, "Email o teléfono requerido").max(120),
+  password: z.string().min(1, "Contraseña requerida").max(MAX_PASSWORD_LENGTH),
 });
 
 // NextAuth v5 lee AUTH_SECRET por defecto, pero la beta acepta NEXTAUTH_SECRET

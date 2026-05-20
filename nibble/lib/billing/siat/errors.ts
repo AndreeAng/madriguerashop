@@ -12,25 +12,27 @@ import "server-only";
 export const SIAT_ERROR_MESSAGES: Record<number, string> = {
   // Éxito
   908: "Factura validada exitosamente.",
-  909: "Factura observada — revisá los warnings.",
+  909: "Factura observada — revisa los warnings.",
 
   // Errores de auth/sesión
-  900: "Token inválido. Pedí al merchant un nuevo token delegado.",
-  901: "CUIS inválido o expirado. Reiniciá el sistema.",
-  902: "CUFD inválido o expirado. Refrescá el CUFD del día.",
+  900: "Token inválido. Pide al merchant un nuevo token delegado.",
+  901: "CUIS inválido o expirado. Reinicia el sistema.",
+  902: "CUFD inválido o expirado. Refresca el CUFD del día.",
   903: "Token delegado expirado. El merchant debe renovarlo.",
-  904: "CUFD del día expirado o no existe. Solicitá uno nuevo.",
+  904: "CUFD del día expirado o no existe. Solicita uno nuevo.",
 
   // Errores de XML
-  905: "XML mal formado. Bug nuestro — revisá el builder.",
+  905: "XML mal formado. Bug nuestro — revisa el builder.",
   906: "Código de actividad económica no corresponde al NIT.",
   907: "Tipo de factura inválido.",
 
   // Errores de datos
-  910: "NIT del emisor no autorizado para esta modalidad.",
+  // Código 910 según catálogo SIN: "Recepción rechazada" (rechazo general
+  // del envío). NIT no autorizado para la modalidad corresponde a 913.
+  910: "Recepción rechazada por el SIN. Revisa `mensajesList` para el detalle del rechazo.",
   911: "Fuera del rango temporal permitido.",
   912: "Punto de venta no autorizado.",
-  913: "Sucursal no autorizada.",
+  913: "NIT del emisor no autorizado para esta sucursal/modalidad.",
 
   // Errores de campos (típicos)
   //
@@ -39,8 +41,8 @@ export const SIAT_ERROR_MESSAGES: Record<number, string> = {
   // mapping acá es el caso más frecuente observado en sandbox: documento
   // del cliente inválido. Para el resto, el caller debe inspeccionar
   // mensajesList y mostrar el texto que vino del SIN.
-  970: "Validación de campos rechazada — revisá `mensajesList` (típicamente: documento del cliente inválido; usá '0' para consumidor final).",
-  971: "Item sin código SIN. Mapeá los productos antes de emitir.",
+  970: "Validación de campos rechazada — revisa `mensajesList` (típicamente: documento del cliente inválido; usa '0' para consumidor final).",
+  971: "Item sin código SIN. Mapea los productos antes de emitir.",
   972: "Cantidad de items excede el límite (250 por factura).",
   980: "Monto total no coincide con suma de items.",
 };
@@ -48,7 +50,7 @@ export const SIAT_ERROR_MESSAGES: Record<number, string> = {
 export function describeSiatError(codigo: number): string {
   return (
     SIAT_ERROR_MESSAGES[codigo] ??
-    `Código SIAT ${codigo} no documentado. Revisá la respuesta completa.`
+    `Código SIAT ${codigo} no documentado. Revisa la respuesta completa.`
   );
 }
 

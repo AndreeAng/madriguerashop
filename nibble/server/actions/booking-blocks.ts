@@ -16,6 +16,11 @@ export type BlockFormState = {
   ok?: true;
   error?: string;
   fieldErrors?: Partial<Record<"startsAt" | "endsAt" | "reason", string>>;
+  /** Warning soft: el bloqueo se creó, pero hay reservas existentes en el
+   *  rango que el owner debe gestionar manualmente (cancelar y avisar al
+   *  cliente). No bloqueamos la creación porque a veces el owner usa el
+   *  bloqueo precisamente para "cerrar" un día con reservas conocidas. */
+  conflictingBookings?: number;
 };
 
 const createSchema = z.object({
@@ -83,6 +88,19 @@ export async function createBookingBlockAction(
     };
   }
 
+  // Buscar reservas activas que caigan dentro del rango — el bloqueo
+  // impide nuevas reservas pero las existentes quedan "huérfanas" si no
+  // las gestiona el owner. Contamos y devolvemos el número para que la
+  // UI le pida confirmar/cancelar esas reservas manualmente.
+  const conflictingBookings = await db.booking.count({
+    where: {
+      storeId,
+      status: { in: ["PENDING", "CONFIRMED"] },
+      startsAt: { lt: endsAt },
+      endsAt: { gt: startsAt },
+    },
+  });
+
   const block = await db.bookingBlock.create({
     data: {
       storeId,
@@ -106,11 +124,15 @@ export async function createBookingBlockAction(
       startsAt: startsAt.toISOString(),
       endsAt: endsAt.toISOString(),
       reason: data.reason || null,
+      conflictingBookings,
     },
   });
 
   revalidatePath("/dashboard/reservas");
-  return { ok: true };
+  return {
+    ok: true,
+    ...(conflictingBookings > 0 ? { conflictingBookings } : {}),
+  };
 }
 
 export async function deleteBookingBlockAction(

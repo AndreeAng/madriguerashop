@@ -261,13 +261,13 @@ export default async function AdminAnalyticsPage() {
                 <table className="mt-3 w-full text-sm">
                   <thead className="text-xs uppercase text-[color:var(--muted)]">
                     <tr>
-                      <th className="px-2 py-2 text-left font-medium">#</th>
-                      <th className="px-2 py-2 text-left font-medium">Tienda</th>
+                      <th scope="col" className="px-2 py-2 text-left font-medium">#</th>
+                      <th scope="col" className="px-2 py-2 text-left font-medium">Tienda</th>
                       <th className="hidden px-2 py-2 text-left font-medium md:table-cell">
                         Vertical
                       </th>
-                      <th className="px-2 py-2 text-right font-medium">Pedidos</th>
-                      <th className="px-2 py-2 text-right font-medium">GMV</th>
+                      <th scope="col" className="px-2 py-2 text-right font-medium">Pedidos</th>
+                      <th scope="col" className="px-2 py-2 text-right font-medium">GMV</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[color:var(--line)]">

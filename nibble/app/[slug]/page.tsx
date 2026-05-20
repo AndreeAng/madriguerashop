@@ -38,7 +38,7 @@ export async function generateMetadata({
   if (!store) return {};
   return {
     title: store.metaTitle ?? `${store.name}${store.city ? ` · ${store.city}` : ""}`,
-    description: store.metaDescription ?? store.description ?? `Pedí en línea de ${store.name}.`,
+    description: store.metaDescription ?? store.description ?? `Pide en línea en ${store.name}.`,
     openGraph: store.ogImageUrl ? { images: [store.ogImageUrl] } : undefined,
     alternates: { canonical: `/${slug}` },
   };
@@ -327,41 +327,45 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                   value={store.city}
                   hint={store.addressText ?? "Bolivia"}
                 />
-                <Detail
-                  icon={<MessageCircle className="size-4" />}
-                  label="Contacto"
-                  value={store.whatsapp}
-                  hint="WhatsApp"
-                />
+                {store.whatsapp && (
+                  <Detail
+                    icon={<MessageCircle className="size-4" />}
+                    label="Contacto"
+                    value={store.whatsapp}
+                    hint="WhatsApp"
+                  />
+                )}
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-3xl bg-[color:var(--color-leaf-600)] p-6 text-white shadow-soft">
-              <div
-                aria-hidden
-                className="absolute -right-8 -top-8 size-40 rounded-full bg-[color:var(--color-leaf-400)]/30 blur-2xl"
-              />
-              <div className="relative">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] backdrop-blur">
-                  <MessageCircle className="size-3" /> Atención directa
-                </span>
-                <h3 className="font-display mt-3 text-2xl leading-tight">
-                  ¿Dudas? Te respondemos en menos de 5 min
-                </h3>
-                <p className="mt-1.5 text-sm text-white/85">
-                  Escríbenos al WhatsApp y resolvemos en el momento.
-                </p>
-                <a
-                  href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-[color:var(--color-leaf-600)] transition hover:scale-[1.03] active:scale-95"
-                >
-                  <Phone className="size-4" />
-                  <span className="num-tabular">{store.whatsapp}</span>
-                </a>
+            {store.whatsapp && (
+              <div className="relative overflow-hidden rounded-3xl bg-[color:var(--color-leaf-600)] p-6 text-white shadow-soft">
+                <div
+                  aria-hidden
+                  className="absolute -right-8 -top-8 size-40 rounded-full bg-[color:var(--color-leaf-400)]/30 blur-2xl"
+                />
+                <div className="relative">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] backdrop-blur">
+                    <MessageCircle className="size-3" /> Atención directa
+                  </span>
+                  <h3 className="font-display mt-3 text-2xl leading-tight">
+                    ¿Dudas? Te respondemos en menos de 5 min
+                  </h3>
+                  <p className="mt-1.5 text-sm text-white/85">
+                    Escríbenos al WhatsApp y resolvemos en el momento.
+                  </p>
+                  <a
+                    href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-[color:var(--color-leaf-600)] transition hover:scale-[1.03] active:scale-95"
+                  >
+                    <Phone className="size-4" />
+                    <span className="num-tabular">{store.whatsapp}</span>
+                  </a>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </section>
       </main>
@@ -415,6 +419,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
         >
           <a
             href={`/${store.slug}/checkout`}
+            aria-label={`Ir al checkout. ${copy.cartLabel} con ${cartCount} ${cartCount === 1 ? copy.itemSingular : copy.itemPlural}, total ${formatBob(cartSubtotal)}`}
             className="flex h-14 items-center justify-between rounded-full bg-[color:var(--color-bark-900)] px-5 text-white shadow-float"
           >
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
@@ -434,23 +439,26 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
   );
 }
 
-function EmptyMenu({ storeName, whatsapp }: { storeName: string; whatsapp: string }) {
+function EmptyMenu({ storeName, whatsapp }: { storeName: string; whatsapp: string | null }) {
   return (
     <section className="mx-auto mt-16 max-w-3xl px-4">
       <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-10 text-center">
         <h2 className="font-display text-2xl">Estamos preparando el catálogo</h2>
         <p className="mt-3 text-sm text-[color:var(--muted)]">
-          {storeName} está cargando sus productos. Mientras tanto, puedes escribirnos por WhatsApp y atenderte directo.
+          {storeName} está cargando sus productos.
+          {whatsapp ? " Mientras tanto, puedes escribirnos por WhatsApp y atenderte directo." : ""}
         </p>
-        <a
-          href={`https://wa.me/${whatsapp.replace(/[^\d]/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white"
-        >
-          <MessageCircle className="size-4" />
-          Hablar por WhatsApp
-        </a>
+        {whatsapp && (
+          <a
+            href={`https://wa.me/${whatsapp.replace(/[^\d]/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white"
+          >
+            <MessageCircle className="size-4" />
+            Hablar por WhatsApp
+          </a>
+        )}
       </div>
     </section>
   );

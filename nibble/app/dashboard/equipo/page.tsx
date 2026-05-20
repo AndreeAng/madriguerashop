@@ -8,7 +8,7 @@ export const metadata = { title: "Equipo · Madriguera Shop" };
 
 export default async function TeamPage() {
   // Owner-only: el cashier mismo no debería ver/editar este panel.
-  const { store, user } = await requireOwnerOnly();
+  const { store } = await requireOwnerOnly();
 
   const cashiers = await db.user.findMany({
     where: { storeId: store.id, role: Role.CASHIER },
@@ -44,7 +44,6 @@ export default async function TeamPage() {
 
         <div className="mt-8">
           <TeamClient
-            ownerName={user.id /* no se usa, pero recuerda quién está logueado */}
             cashiers={cashiers.map((c) => ({
               id: c.id,
               fullName: c.fullName,

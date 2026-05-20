@@ -133,7 +133,7 @@ export function RegisterForm() {
             className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-3 text-sm outline-none focus:border-[color:var(--color-amber-400)] focus:ring-2 focus:ring-[color:var(--color-amber-200)]/40"
           >
             <option value="" disabled>
-              Elegí tu rubro
+              Elige tu rubro
             </option>
             {VERTICALS.map((v) => (
               <option key={v.value} value={v.value}>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { StoreView } from "@/lib/storefront/types";
 import { NibbleLogo } from "@/components/shared/Logo";
+import { CookieConsent } from "@/components/storefront/CookieConsent";
 
 export function StorefrontFooter({ store }: { store: StoreView }) {
   return (
@@ -72,10 +73,12 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
             Contacto
           </h4>
           <ul className="mt-4 space-y-3 text-sm text-[color:var(--fg-soft)]">
-            <li className="flex items-center gap-2.5">
-              <Phone className="size-4 text-[color:var(--muted)]" />
-              <span className="num-tabular">{store.whatsapp}</span>
-            </li>
+            {store.whatsapp && (
+              <li className="flex items-center gap-2.5">
+                <Phone className="size-4 text-[color:var(--muted)]" />
+                <span className="num-tabular">{store.whatsapp}</span>
+              </li>
+            )}
             <li className="flex items-center gap-2.5">
               <MapPin className="size-4 text-[color:var(--muted)]" />
               {store.addressText ? `${store.addressText}, ${store.city}` : `${store.city}, Bolivia`}
@@ -129,6 +132,10 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
           </Link>
         </div>
       </div>
+      {/* Banner de consentimiento de cookies analíticas — solo en
+          storefront público (no en /dashboard ni /admin donde el owner
+          ya autorizó tracking implícito al loguearse). */}
+      <CookieConsent />
     </footer>
   );
 }

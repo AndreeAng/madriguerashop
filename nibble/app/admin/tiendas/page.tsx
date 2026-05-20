@@ -169,21 +169,21 @@ export default async function AdminTiendasPage({
               <table className="w-full text-sm">
                 <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-medium">Tienda</th>
-                    <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
+                    <th scope="col" className="px-5 py-3 text-left font-medium">Tienda</th>
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium md:table-cell">
                       Tipo
                     </th>
-                    <th className="px-3 py-3 text-left font-medium">Estado</th>
-                    <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
+                    <th scope="col" className="px-3 py-3 text-left font-medium">Estado</th>
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium md:table-cell">
                       Plan
                     </th>
-                    <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
+                    <th scope="col" className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       Productos
                     </th>
-                    <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
+                    <th scope="col" className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       Pedidos mes
                     </th>
-                    <th className="px-3 py-3 text-right font-medium">Acción</th>
+                    <th scope="col" className="px-3 py-3 text-right font-medium">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[color:var(--line)]">

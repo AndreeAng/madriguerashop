@@ -102,7 +102,7 @@ export default async function PromocionesPage() {
           <h1 className="font-display mt-1 text-3xl">Promociones</h1>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
             Banners, popups y cupones para activar más ventas. Cada uno se
-            usa en momentos distintos — leé la descripción de cada pestaña.
+            usa en momentos distintos — lee la descripción de cada pestaña.
           </p>
         </div>
 

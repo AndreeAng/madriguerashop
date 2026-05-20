@@ -33,9 +33,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/privacidad`, lastModified: now, changeFrequency: "yearly", priority: 0.4 },
   ];
 
-  // Tiendas públicas + sus productos activos
+  // Tiendas públicas + sus productos activos + categorías visibles
   let stores: { slug: string; updatedAt: Date }[] = [];
   let products: { slug: string; storeSlug: string; updatedAt: Date }[] = [];
+  let categories: { slug: string; storeSlug: string }[] = [];
   try {
     stores = await db.store.findMany({
       where: {
@@ -57,6 +58,28 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         take: 5000,
       })
     ).map((p) => ({ slug: p.slug, storeSlug: p.store.slug, updatedAt: p.updatedAt }));
+
+    // Categorías: las páginas `/[slug]/c/[cat]` son landing por categoría —
+    // alto valor de SEO long-tail (ej. "postres en Santa Cruz"). Sin esto,
+    // Google no encuentra estas URLs salvo por crawl interno desde el home.
+    // `Category` no tiene `updatedAt`, así que el sitemap usa `now` como
+    // `lastModified` — aceptable porque las categorías rara vez cambian
+    // y un crawl semanal alcanza.
+    const rawCategories = await db.category.findMany({
+      where: {
+        isVisible: true,
+        store: { isPubliclyListed: true, status: { in: ["ACTIVE", "PAST_DUE"] } },
+      },
+      select: {
+        slug: true,
+        store: { select: { slug: true } },
+      },
+      take: 5000,
+    });
+    categories = rawCategories.map((c) => ({
+      slug: c.slug,
+      storeSlug: c.store.slug,
+    }));
   } catch {
     // Sin DB en build → caemos a sólo estáticas
   }
@@ -89,5 +112,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticPaths, ...storePaths, ...productPaths];
+  const categoryPaths: MetadataRoute.Sitemap = categories.map((c) => ({
+    url: `${base}/${c.storeSlug}/c/${c.slug}`,
+    lastModified: now,
+    changeFrequency: "weekly",
+    priority: 0.7,
+  }));
+
+  return [...staticPaths, ...storePaths, ...categoryPaths, ...productPaths];
 }

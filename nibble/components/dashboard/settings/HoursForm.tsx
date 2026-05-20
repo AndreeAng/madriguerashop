@@ -38,10 +38,10 @@ export function HoursForm({ hours }: { hours: StoreHours[] }) {
           <table className="w-full text-sm">
             <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
               <tr>
-                <th className="px-4 py-2.5 text-left font-medium">Día</th>
-                <th className="px-4 py-2.5 text-left font-medium">Cerrado</th>
-                <th className="px-4 py-2.5 text-left font-medium">Apertura</th>
-                <th className="px-4 py-2.5 text-left font-medium">Cierre</th>
+                <th scope="col" className="px-4 py-2.5 text-left font-medium">Día</th>
+                <th scope="col" className="px-4 py-2.5 text-left font-medium">Cerrado</th>
+                <th scope="col" className="px-4 py-2.5 text-left font-medium">Apertura</th>
+                <th scope="col" className="px-4 py-2.5 text-left font-medium">Cierre</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--line)]">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Clock, Moon, X, CalendarClock } from "lucide-react";
 import type { StoreView } from "@/lib/storefront/types";
@@ -36,6 +36,13 @@ export function ClosedStoreNotice({
   hours: Array<{ dayOfWeek: number; openTime: string; closeTime: string; isClosed: boolean }>;
 }) {
   const [visible, setVisible] = useState(false);
+  // Lazy init: `new Date().getDay()` en el body del render produce
+  // mismatch SSR/CSR cuando el render cruza medianoche. `useState` lazy
+  // se evalúa solo en el primer mount del cliente. DEBE estar arriba del
+  // early return para no romper rules-of-hooks.
+  const [today] = useState(() => new Date().getDay());
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (store.isOpenNow) return;
@@ -47,6 +54,42 @@ export function ClosedStoreNotice({
     return () => clearTimeout(t);
   }, [store.isOpenNow]);
 
+  // Focus trap mínimo: el dialog tiene un Link + dos botones. Sin trap,
+  // Tab escapa al contenido de fondo aunque el overlay esté visible.
+  // Además restauramos foco al elemento que tenía antes de abrir (WCAG 2.4.3).
+  useEffect(() => {
+    if (!visible) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setVisible(false);
+        return;
+      }
+      if (e.key !== "Tab" || !dialog) return;
+      const focusables = dialog.querySelectorAll<HTMLElement>(
+        'a, button, input, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      if (opener && typeof opener.focus === "function") {
+        opener.focus();
+      }
+    };
+  }, [visible]);
+
   if (!visible || store.isOpenNow) return null;
 
   const close = () => {
@@ -55,7 +98,6 @@ export function ClosedStoreNotice({
   };
 
   // Ordenamos los días lunes a domingo (cultura BO). Domingo va último.
-  const today = new Date().getDay();
   const orderedHours = DAY_NAMES_SHORT_ORDER.map((dow) =>
     hours.find((h) => h.dayOfWeek === dow),
   ).filter((h): h is NonNullable<typeof h> => h !== undefined);
@@ -64,11 +106,12 @@ export function ClosedStoreNotice({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="closed-notice-title"
+      aria-labelledby={titleId}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 backdrop-blur-sm sm:items-center"
       onClick={close}
     >
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[color:var(--card)] shadow-2xl"
       >
@@ -92,7 +135,7 @@ export function ClosedStoreNotice({
             <Moon className="size-5" />
           </div>
           <h2
-            id="closed-notice-title"
+            id={titleId}
             className="font-display mt-3 text-2xl text-[color:var(--fg)]"
           >
             {store.name} está cerrado

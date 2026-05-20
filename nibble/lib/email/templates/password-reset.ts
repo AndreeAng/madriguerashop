@@ -27,7 +27,7 @@ export function passwordResetEmail(opts: {
     to: opts.to,
     subject: "Restablece tu contraseña — Madriguera Shop",
     html: renderEmail({
-      title: "Restablecé tu contraseña",
+      title: "Restablece tu contraseña",
       body,
       ctaText: "Crear nueva contraseña",
       ctaUrl: opts.resetUrl,

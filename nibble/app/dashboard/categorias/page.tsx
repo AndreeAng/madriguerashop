@@ -42,7 +42,7 @@ export default async function CategoriesPage() {
             </p>
             <h1 className="font-display mt-1 text-3xl">Categorías</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              Organizá tu menú en grupos. El orden y la visibilidad se reflejan en tu storefront.
+              Organiza tu menú en grupos. El orden y la visibilidad se reflejan en tu storefront.
             </p>
           </div>
         </div>

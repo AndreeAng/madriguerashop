@@ -14,8 +14,11 @@ import crypto from "node:crypto";
  * - Si el atacante intercepta el link, sólo gana confirmar el email — no
  *   da acceso a la cuenta. Bajo blast radius.
  *
- * Payload: `{ uid, exp }`. Codificado base64url. HMAC-SHA256 con
- * `AUTH_SECRET` previene falsificación.
+ * Payload: `{ uid, email, exp }`. Codificado base64url. HMAC-SHA256 con
+ * `AUTH_SECRET` previene falsificación. El `email` queda bindeado al token
+ * para que un link de verificación de `a@x.com` no verifique al usuario
+ * después de que admin cambie su email a `b@y.com` (la víctima clickea
+ * el link viejo y "verifica" un email que ya no controla).
  *
  * Formato del token: `{base64url(payload)}.{base64url(hmac)}`
  */
@@ -44,15 +47,18 @@ function hmac(payload: string): string {
   );
 }
 
-export function generateEmailVerificationToken(userId: string): string {
+export function generateEmailVerificationToken(
+  userId: string,
+  email: string,
+): string {
   const exp = Date.now() + TOKEN_TTL_MS;
-  const payload = b64urlEncode(JSON.stringify({ uid: userId, exp }));
+  const payload = b64urlEncode(JSON.stringify({ uid: userId, email, exp }));
   const sig = hmac(payload);
   return `${payload}.${sig}`;
 }
 
 export type VerifyResult =
-  | { ok: true; userId: string }
+  | { ok: true; userId: string; email: string }
   | { ok: false; reason: "malformed" | "bad_signature" | "expired" };
 
 export function verifyEmailVerificationToken(token: string): VerifyResult {
@@ -69,15 +75,15 @@ export function verifyEmailVerificationToken(token: string): VerifyResult {
     return { ok: false, reason: "bad_signature" };
   }
 
-  let parsed: { uid?: string; exp?: number };
+  let parsed: { uid?: string; email?: string; exp?: number };
   try {
     parsed = JSON.parse(b64urlDecode(payload).toString("utf8"));
   } catch {
     return { ok: false, reason: "malformed" };
   }
-  if (!parsed.uid || typeof parsed.exp !== "number") {
+  if (!parsed.uid || !parsed.email || typeof parsed.exp !== "number") {
     return { ok: false, reason: "malformed" };
   }
   if (parsed.exp < Date.now()) return { ok: false, reason: "expired" };
-  return { ok: true, userId: parsed.uid };
+  return { ok: true, userId: parsed.uid, email: parsed.email };
 }

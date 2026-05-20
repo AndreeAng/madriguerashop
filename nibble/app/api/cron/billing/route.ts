@@ -31,6 +31,8 @@ const CRON_NAME = "billing";
 // runs largos sin falsos positivos pero sin abrir ventana de doble emisión.
 const STALE_LOCK_MINUTES = 6;
 
+const CRON_SECRET_MIN_LENGTH = 32;
+
 function authorized(request: Request): boolean {
   const expected = process.env.CRON_SECRET;
   if (!expected) {
@@ -38,6 +40,16 @@ function authorized(request: Request): boolean {
     // suele correr con NODE_ENV=production igual que prod, así que el check
     // anterior (`!== "production"`) dejaba staging desprotegido.
     return process.env.NODE_ENV === "development" && !process.env.CI;
+  }
+  // Validamos entropía mínima: un secret de pocos caracteres (`abc`, `test`)
+  // pasa todos los demás checks pero es brutalmente bruteforceable. Lo
+  // logueamos como error de configuración y rechazamos para que el operador
+  // se entere antes de que un atacante.
+  if (expected.length < CRON_SECRET_MIN_LENGTH) {
+    console.error(
+      `[cron:billing] CRON_SECRET too short (${expected.length} chars, min ${CRON_SECRET_MIN_LENGTH}). Genera con: openssl rand -base64 32`,
+    );
+    return false;
   }
   const header = request.headers.get("authorization") ?? "";
   const match = header.match(/^Bearer\s+(.+)$/i);

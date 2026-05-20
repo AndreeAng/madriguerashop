@@ -12,45 +12,62 @@ export type SiatMode = "sandbox" | "production";
 const SANDBOX_BASE = "https://pilotosiatservicios.impuestos.gob.bo/v1";
 const PRODUCTION_BASE = "https://siatrest.impuestos.gob.bo/v1";
 
+/**
+ * Lee SIAT_MODE con validación estricta de enum. Un typo en la env var
+ * (ej. `SIAT_MODE=produccion`) silenciosamente caía a "sandbox" antes;
+ * con el log explícito el operador detecta el bug antes de emitir
+ * facturas reales que no llegan al SIN. Default conservador: sandbox.
+ */
 function mode(): SiatMode {
-  return (process.env.SIAT_MODE as SiatMode) || "sandbox";
+  const raw = process.env.SIAT_MODE;
+  if (raw === "production" || raw === "sandbox") return raw;
+  if (raw) {
+    console.error(
+      `[siat] SIAT_MODE="${raw}" no es válido (esperado "production" | "sandbox"). Usando sandbox.`,
+    );
+  }
+  return "sandbox";
 }
 
-export const siatConfig = {
-  mode: mode(),
+/**
+ * Construye el config lazy (cada invocación lee `process.env`). Antes
+ * `siatConfig` era una constante evaluada en import-time, lo que rompía
+ * tests (`vi.stubEnv` post-import no tenía efecto) y bloqueaba cambios
+ * de modo en runtime. Mantenemos un `siatConfig` exportado como Proxy
+ * para compatibilidad con los pocos callers existentes, pero la fuente
+ * de verdad es `getSiatConfig()`.
+ */
+export function getSiatConfig() {
+  const m = mode();
+  const base = m === "sandbox" ? SANDBOX_BASE : PRODUCTION_BASE;
+  const facturacionPath =
+    m === "sandbox" ? "FacturacionPrueba" : "FacturacionElectronica";
+  return {
+    mode: m,
+    sistemaCodigo: process.env.SIAT_SISTEMA_CODIGO || "",
+    endpoints: {
+      facturacion: `${base}/${facturacionPath}?wsdl`,
+      operaciones: `${base}/FacturacionOperaciones?wsdl`,
+      sincronizacion: `${base}/FacturacionSincronizacion?wsdl`,
+      codigos: `${base}/FacturacionCodigos?wsdl`,
+    },
+    cuisTtlMs: 1000 * 60 * 60 * 12, // 12 horas
+    cufdTtlMs: 1000 * 60 * 60 * 23, // refrescar antes que expire
+    defaultModalidad: "COMPUTARIZADA_EN_LINEA" as const,
+  } as const;
+}
 
-  /** Código del sistema asignado por el SIN al certificar. */
-  sistemaCodigo: process.env.SIAT_SISTEMA_CODIGO || "",
-
-  /** URLs WSDL para los servicios. */
-  endpoints: {
-    facturacion:
-      mode() === "sandbox"
-        ? `${SANDBOX_BASE}/FacturacionPrueba?wsdl`
-        : `${PRODUCTION_BASE}/FacturacionElectronica?wsdl`,
-    operaciones:
-      mode() === "sandbox"
-        ? `${SANDBOX_BASE}/FacturacionOperaciones?wsdl`
-        : `${PRODUCTION_BASE}/FacturacionOperaciones?wsdl`,
-    sincronizacion:
-      mode() === "sandbox"
-        ? `${SANDBOX_BASE}/FacturacionSincronizacion?wsdl`
-        : `${PRODUCTION_BASE}/FacturacionSincronizacion?wsdl`,
-    codigos:
-      mode() === "sandbox"
-        ? `${SANDBOX_BASE}/FacturacionCodigos?wsdl`
-        : `${PRODUCTION_BASE}/FacturacionCodigos?wsdl`,
+// Backwards-compat: el `siatConfig` exportado redirige a `getSiatConfig()`
+// vía un getter dinámico. Callers nuevos deben usar `getSiatConfig()`.
+export const siatConfig = new Proxy(
+  {} as ReturnType<typeof getSiatConfig>,
+  {
+    get(_t, prop) {
+      const cfg = getSiatConfig() as unknown as Record<string, unknown>;
+      return cfg[prop as string];
+    },
   },
-
-  /** Tiempo de vida del CUIS en cache (best-effort, el SIN puede expirarlo antes). */
-  cuisTtlMs: 1000 * 60 * 60 * 12, // 12 horas
-
-  /** Tiempo de vida del CUFD. SIN garantiza 24h. */
-  cufdTtlMs: 1000 * 60 * 60 * 23, // refrescar antes que expire
-
-  /** Modalidad por defecto al emitir. Override por Store si fuera necesario. */
-  defaultModalidad: "COMPUTARIZADA_EN_LINEA" as const,
-} as const;
+);
 
 /** Códigos del SIN — los más usados. Verificar contra RND vigente antes de prod. */
 export const SIAT_CODES = {

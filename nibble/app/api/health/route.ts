@@ -40,6 +40,15 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       durationMs: Date.now() - startedAt,
     },
-    { status: allOk ? 200 : 503 },
+    {
+      status: allOk ? 200 : 503,
+      headers: {
+        // Sin no-store, CDNs/proxies pueden cachear el último 200 "ok" y
+        // los monitores de uptime no detectan caídas reales. `revalidate=0`
+        // afecta solo al data cache de Next, no al HTTP cache de la capa
+        // de edge.
+        "Cache-Control": "no-store, max-age=0",
+      },
+    },
   );
 }

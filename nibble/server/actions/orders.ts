@@ -87,7 +87,11 @@ const createOrderSchema = z
       .trim()
       .max(120)
       .refine(
-        (v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+        // Patrón bounded para evitar ReDoS: `[^\s@]+\.[^\s@]+` solapaba
+        // dos cuantificadores con sufijo común (catastrophic backtracking
+        // en inputs como `a@aaaa....!`). Acotamos cada segmento con un
+        // upper bound y enforced exactly-one dot.
+        (v) => v === "" || /^[^\s@]{1,64}@[^\s@]{1,63}\.[^\s@.]{1,63}$/.test(v),
         "Email inválido",
       ),
 
@@ -240,7 +244,12 @@ function buildWhatsAppMessage(opts: {
   lines.push("");
 
   if (opts.customerNotes) {
-    lines.push(`*Notas:* ${opts.customerNotes}`);
+    // Sanitizamos caracteres de markdown de WhatsApp para evitar que un
+    // cliente malicioso inyecte formateo (`*bold*`, `_italic_`, `~strike~`,
+    // `` `code` ``) que altere visualmente el mensaje que recibe el owner —
+    // p.ej. simular un total distinto o esconder texto del pedido real.
+    const safeNotes = opts.customerNotes.replace(/[*_~`]/g, "");
+    lines.push(`*Notas:* ${safeNotes}`);
     lines.push("");
   }
 
@@ -331,13 +340,13 @@ export async function createOrderAction(
     if (!isStoreOpenNow(storeHours, scheduled)) {
       return {
         error:
-          "El horario programado cae fuera del horario de atención. Elegí otro.",
+          "El horario programado cae fuera del horario de atención. Elige otro.",
       };
     }
   } else if (!isStoreOpenNow(storeHours, now)) {
     return {
       error:
-        "La tienda está cerrada ahora. Programá tu pedido eligiendo día y hora dentro del horario de atención.",
+        "La tienda está cerrada ahora. Programa tu pedido eligiendo día y hora dentro del horario de atención.",
     };
   }
 
@@ -395,7 +404,7 @@ export async function createOrderAction(
     const product = productMap.get(item.productId);
     if (!product) {
       return {
-        error: "Uno de los productos del carrito ya no está disponible. Refrescá el carrito.",
+        error: "Uno de los productos del carrito ya no está disponible. Recarga el carrito.",
       };
     }
     if (!product.isActive) {
@@ -403,7 +412,7 @@ export async function createOrderAction(
     }
     if (!isProductAvailableNow(product, now)) {
       return {
-        error: `"${product.name}" no se vende en este horario. Quitalo del carrito o pedilo en su horario.`,
+        error: `"${product.name}" no se vende en este horario. Quítalo del carrito o pídelo en su horario.`,
       };
     }
 
@@ -455,18 +464,27 @@ export async function createOrderAction(
   let deliveryFee: number | null = null;
   let deliveryZoneId: string | null = null;
   if (data.deliveryMethod === "delivery") {
+    const activeZones = await db.deliveryZone.findMany({
+      where: { storeId: store.id, isActive: true },
+      select: { id: true, polygon: true, fee: true },
+    });
+    // "Map-first": TODAS las zonas activas tienen polígono. El UI esconde
+    // el select y solo pide pin en el mapa. En este modo, el `deliveryZoneId`
+    // que llega del FormData NO es confiable — un cliente puede inyectar
+    // el ID de una zona barata vía DevTools y omitir lat/lng. Forzamos
+    // que la fee venga SIEMPRE de la geometría.
+    const mapFirstMode =
+      activeZones.length > 0 && activeZones.every((z) => z.polygon !== null);
+
     // Prioridad de resolución de zona:
     //   1. Si el cliente marcó lat/lng en el mapa → encontramos la zona
     //      (círculo) que cubre ese punto. Ignoramos lo que haya elegido
     //      manualmente — la geometría es la fuente de verdad.
-    //   2. Si no marcó ubicación pero eligió una zona del select → esa.
+    //   2. Si no marcó ubicación pero eligió una zona del select → esa
+    //      (solo si NO es map-first).
     //   3. Si no hay zona ni mapa → fallback a `defaultDeliveryFee`.
     if (data.deliveryLat != null && data.deliveryLng != null) {
       const { findMatchingZone } = await import("@/lib/delivery/geometry");
-      const activeZones = await db.deliveryZone.findMany({
-        where: { storeId: store.id, isActive: true },
-        select: { id: true, polygon: true, fee: true },
-      });
       const matched = findMatchingZone(
         activeZones,
         data.deliveryLat,
@@ -475,11 +493,30 @@ export async function createOrderAction(
       if (matched) {
         deliveryFee = Number(matched.fee);
         deliveryZoneId = matched.id;
+      } else if (mapFirstMode) {
+        // El cliente marcó coords pero cayeron fuera de toda zona activa.
+        // En map-first no aceptamos fallback — el pedido se rechaza
+        // explícitamente para evitar que el cliente "elija" una zona
+        // barata manipulando el ID. Mensaje claro para que coordine
+        // entrega manual por WhatsApp.
+        return {
+          error:
+            "Tu ubicación está fuera de las zonas de delivery. Contacta a la tienda por WhatsApp para coordinar.",
+        };
       }
+    } else if (mapFirstMode) {
+      // En map-first exigimos pin del mapa. Sin lat/lng no hay forma
+      // legítima de saber la fee y no aceptamos `deliveryZoneId` raw.
+      return {
+        error:
+          "Debes marcar tu ubicación en el mapa para calcular el costo de envío.",
+      };
     }
-    // Fallback al select manual si la geometría no encontró nada (o el
-    // cliente nunca marcó el mapa).
-    if (deliveryZoneId === null && data.deliveryZoneId) {
+    // Fallback al select manual SOLO en stores que tienen zonas sin
+    // polígono (modo "legacy" con select). Sin esto, un cliente con
+    // coords vacíos podía elegir cualquier `deliveryZoneId` válido del
+    // store y pagar la fee de esa zona.
+    if (!mapFirstMode && deliveryZoneId === null && data.deliveryZoneId) {
       const zone = await db.deliveryZone.findFirst({
         where: { id: data.deliveryZoneId, storeId: store.id, isActive: true },
       });
@@ -507,7 +544,10 @@ export async function createOrderAction(
     if (!coupon || !coupon.isActive) {
       return { fieldErrors: { couponCode: "Cupón inválido" } };
     }
-    const now = new Date();
+    // Reusamos el `now` del scope del action (declarado en el bloque de
+    // scheduling, arriba). Antes había un `const now = new Date()` local
+    // que shadow-eaba el outer y producía un timestamp distinto de los
+    // demás checks — code smell que confunde refactors.
     if (coupon.validFrom > now || coupon.validTo < now) {
       return { fieldErrors: { couponCode: "Cupón fuera de fecha" } };
     }
@@ -561,7 +601,10 @@ export async function createOrderAction(
       discountAmount = Math.min(discountAmount, maxDiscount);
       deliveryDiscountAmount = Math.min(deliveryDiscountAmount, maxDiscount);
     }
-    discountAmount = Math.min(discountAmount, subtotal); // no permitir total negativo
+    // NOTA: el clamp `discountAmount <= subtotal` se aplica después de
+    // sumar `deliveryDiscountAmount` (más abajo, tras el bloque de
+    // FREE_SHIPPING) — sin esto el descuento puede inflarse por encima
+    // del subtotal cuando un FREE_SHIPPING agrega su valor.
     couponId = coupon.id;
     couponCode = coupon.code;
   }
@@ -586,10 +629,20 @@ export async function createOrderAction(
     discountAmount = discountAmount + deliveryDiscountAmount;
   }
 
-  const total =
-    Math.round((subtotal - discountAmount + (deliveryFee ?? 0)) * 100) / 100;
+  // Clamp definitivo: descuento total no puede exceder subtotal. Aplicado
+  // DESPUÉS de sumar deliveryDiscountAmount para cubrir el caso donde un
+  // cupón con tope alto + FREE_SHIPPING llevan `discountAmount` por
+  // encima del subtotal y dejan al total negativo aunque deliveryFee=0.
+  discountAmount = Math.min(discountAmount, subtotal);
 
-  if (total < 0) return { error: "Error en el cálculo del total. Recarga la página." };
+  // Clampeamos a 0 en vez de devolver error: un cupón válido (ej.
+  // FIXED_AMOUNT que cubre exactamente subtotal + deliveryFee, o
+  // combinaciones de redondeo en el último centavo) puede dejar total
+  // negativo en el cálculo intermedio. Devolver error a un cliente con
+  // un cupón legítimo confunde y rompe conversión. Total 0 es perfectamente
+  // válido — significa "pago totalmente cubierto por el descuento".
+  const total =
+    Math.max(0, Math.round((subtotal - discountAmount + (deliveryFee ?? 0)) * 100) / 100);
 
   // 9. Decide initial status & paymentStatus
   // QR_STATIC arranca en PENDING_PAYMENT (cliente subió comprobante, owner aún
@@ -777,15 +830,24 @@ export async function createOrderAction(
       // en el check de `usageLimitPerUser`. Si moves este UPDATE después
       // del count o lo eliminas, reintroduces el TOCTOU.
       if (couponId) {
+        // El UPDATE atómico revalida `isActive` y `validTo`/`validFrom`
+        // dentro de la misma sentencia: si un admin desactivó el cupón
+        // entre el check externo y el commit, o si `validTo` se cumplió
+        // mientras el cliente estaba en checkout, el row lock + WHERE
+        // rechaza la actualización y abortamos. Sin estos guards, una
+        // ventana de ~100-500ms permitía aplicar cupones expirados.
         const updated = await tx.$executeRaw`
           UPDATE "Coupon"
           SET "usedCount" = "usedCount" + 1
           WHERE "id" = ${couponId}
+            AND "isActive" = true
+            AND "validFrom" <= NOW()
+            AND "validTo" >= NOW()
             AND ("usageLimit" IS NULL OR "usedCount" < "usageLimit")
         `;
         if (Number(updated) === 0) {
-          // updateMany devuelve 0 si el cupón se agotó entre el check inicial
-          // y este punto. Abortamos toda la transacción — el pedido no se crea.
+          // updateMany devuelve 0 si el cupón se agotó/expiró/desactivó
+          // entre el check inicial y este punto. Abortamos.
           throw new Error(
             "Cupón agotado — alguien lo usó mientras procesabas el pedido. Prueba sin cupón.",
           );
@@ -836,6 +898,13 @@ export async function createOrderAction(
       }
       if (err.message.startsWith("Ya usaste este cupón")) {
         return { fieldErrors: { couponCode: err.message } };
+      }
+      // Race de stock: el check fuera de la transacción pasó, pero el
+      // `updateMany` condicional `stock >= quantity` del UPDATE atómico
+      // perdió la carrera (otro pedido tomó la última unidad). Devolvemos
+      // un mensaje claro al cliente en vez de un 500 sin contexto.
+      if (err.message.startsWith("Stock insuficiente para")) {
+        return { error: err.message };
       }
     }
     throw err;

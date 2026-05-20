@@ -2,6 +2,8 @@ import "server-only";
 import { headers } from "next/headers";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
+import { pickFirstIp } from "@/lib/security/rateLimit";
+import { hashIp } from "@/lib/crypto/hashIp";
 
 /**
  * Acciones auditables — define el dominio. Tipo cerrado para que un typo
@@ -21,7 +23,9 @@ export type AuditAction =
   | "order.status_changed"
   | "order.payment.verified"
   | "order.payment.rejected"
+  | "order.payment.refunded"
   | "order.exported"
+  | "customer.exported"
   // Facturación SaaS
   | "invoice.generated"
   | "invoice.proof_uploaded"
@@ -49,6 +53,12 @@ export type AuditAction =
   // Bloqueos de calendario (vacaciones, almuerzo)
   | "booking_block.created"
   | "booking_block.deleted"
+  // Reservas
+  | "booking.created"
+  | "booking.confirmed"
+  | "booking.cancelled"
+  | "booking.completed"
+  | "booking.no_show"
   // Configuración de tienda (owner)
   | "store.settings_changed"
   // Catálogo (owner)
@@ -128,8 +138,16 @@ async function readRequestContext(): Promise<{
 }> {
   try {
     const h = await headers();
-    const fwd = h.get("x-forwarded-for");
-    const ip = fwd?.split(",")[0]?.trim() ?? h.get("x-real-ip") ?? null;
+    // Reutilizamos `pickFirstIp` para no propagar headers no validados:
+    // un cliente puede enviar `x-forwarded-for: <script>` sin trust-proxy y
+    // contaminar la columna IP del audit log. `pickFirstIp` valida con
+    // regex IPv4/IPv6 y descarta payloads inusuales.
+    const fromXff = pickFirstIp(h.get("x-forwarded-for"));
+    const fromReal = fromXff ?? pickFirstIp(h.get("x-real-ip"));
+    // Y la hasheamos con la misma salt rotativa que analytics — la IP
+    // cruda es PII y la política de privacidad declara "IP anonimizada"
+    // para datos de auditoría.
+    const ip = hashIp(fromReal);
     const userAgent = h.get("user-agent");
     return { ip, userAgent };
   } catch {

@@ -1,6 +1,6 @@
 import "server-only";
 import type { StoreVertical } from "@prisma/client";
-import { renderEmail, escapeHtml } from "../layout";
+import { renderEmail, escapeHtml, safeSubjectField } from "../layout";
 import { appUrl } from "../client";
 import { formatBob, formatWaPhone } from "@/lib/utils";
 import { storefrontCopy } from "@/lib/storefront/copy";
@@ -54,7 +54,7 @@ export function orderCreatedOwnerEmail(opts: {
     ${
       opts.awaitingVerification
         ? `<p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
-            ⚠ El cliente subió un comprobante. Verificá el pago antes de confirmar.
+            ⚠ El cliente subió un comprobante. Verifica el pago antes de confirmar.
           </p>`
         : ""
     }
@@ -62,7 +62,7 @@ export function orderCreatedOwnerEmail(opts: {
 
   return {
     to: opts.to,
-    subject: `${noun} #${opts.orderNumber} · ${opts.customerName} · ${formatBob(opts.total)}`,
+    subject: `${noun} #${opts.orderNumber} · ${safeSubjectField(opts.customerName)} · ${formatBob(opts.total)}`,
     html: renderEmail({
       title: `${noun} nuev${nounLower === "solicitud" ? "a" : "o"} #${opts.orderNumber}`,
       body,
@@ -95,7 +95,7 @@ export function paymentRejectedCustomerEmail(opts: {
       <strong>Motivo:</strong> ${escapeHtml(opts.reason)}
     </p>
     <p>
-      Para no perder ${nounLower === "solicitud" ? "la" : "el"} ${nounLower}, contactá a la tienda por WhatsApp y enviá un
+      Para no perder ${nounLower === "solicitud" ? "la" : "el"} ${nounLower}, contacta a la tienda por WhatsApp y envía un
       comprobante actualizado.
     </p>
     <p style="font-size: 13px;">

@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { StoreVertical } from "@prisma/client";
 import { requireSuperAdmin } from "@/lib/auth/session";
+import { hashPassword } from "@/lib/auth/password";
 import { PHONE_BO_RE } from "@/lib/auth/identifiers";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { importQuickStore } from "@/lib/import/quick/importer";
@@ -68,7 +69,7 @@ export async function adminImportQuickAction(
   _prev: ImportQuickState,
   formData: FormData,
 ): Promise<ImportQuickState> {
-  await requireSuperAdmin();
+  const admin = await requireSuperAdmin();
 
   const parsed = schema.safeParse({
     sourceUrl: formData.get("sourceUrl"),
@@ -101,9 +102,15 @@ export async function adminImportQuickAction(
   }
   const sourceSlug = match[1].toLowerCase();
 
+  // Hasheamos ANTES de pasar al importer para que la contraseña plana
+  // jamás cruce el boundary del módulo — si algún error en `importQuickStore`
+  // captura el `input` (Sentry, APM), solo verá el hash bcrypt.
+  const ownerPasswordHash = await hashPassword(parsed.data.ownerPassword);
+
   try {
     const result = await importQuickStore({
       sourceSlug,
+      actorId: admin.userId,
       target: {
         slug: parsed.data.slug,
         storeName: parsed.data.storeName,
@@ -112,7 +119,7 @@ export async function adminImportQuickAction(
         whatsappPhone: parsed.data.whatsappPhone,
         ownerName: parsed.data.ownerName,
         ownerIdentifier: parsed.data.ownerIdentifier,
-        ownerPassword: parsed.data.ownerPassword,
+        ownerPasswordHash,
       },
     });
 

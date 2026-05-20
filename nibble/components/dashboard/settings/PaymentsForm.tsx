@@ -47,7 +47,7 @@ export function PaymentsForm({ store }: { store: Store }) {
           label="Tu QR"
           kind="qr"
           initialUrl={store.qrImageUrl}
-          hint="Subí la captura del QR de tu banco. Ideal: alta resolución."
+          hint="Sube la captura del QR de tu banco. Ideal: alta resolución."
           error={fe.qrImageUrl}
           aspect="square"
         />
@@ -56,7 +56,7 @@ export function PaymentsForm({ store }: { store: Store }) {
           name="qrInstructions"
           label="Instrucciones para el cliente"
           defaultValue={store.qrInstructions}
-          placeholder="Escaneá el QR, pagá el monto exacto y sube el comprobante. Confirmamos en máximo 5 min."
+          placeholder="Escanea el QR, paga el monto exacto y sube el comprobante. Confirmamos en máximo 5 min."
           rows={3}
           maxLength={1000}
           error={fe.qrInstructions}

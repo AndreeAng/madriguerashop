@@ -20,7 +20,14 @@ async function resolveImpersonatedStore(
   if (role !== Role.SUPER_ADMIN) return null;
   const storeId = await readImpersonatedStoreId();
   if (!storeId) return null;
-  return db.store.findUnique({ where: { id: storeId } });
+  // Excluimos CANCELLED — no tiene sentido impersonar una tienda muerta;
+  // ACTIVE / TRIAL / PAST_DUE / SUSPENDED sí, porque el admin puede
+  // necesitar inspeccionar el estado tras una suspensión. Sin este filtro
+  // un admin podía entrar a una tienda CANCELLED y ejecutar mutaciones
+  // que ya no deberían ser posibles.
+  const store = await db.store.findUnique({ where: { id: storeId } });
+  if (!store || store.status === "CANCELLED") return null;
+  return store;
 }
 
 /**

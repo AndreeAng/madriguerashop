@@ -235,7 +235,7 @@ export default async function OrderTrackingPage({
               <div className="flex-1">
                 <p className="text-sm font-semibold">Pedido cancelado</p>
                 <p className="text-xs text-[color:var(--muted)]">
-                  Si pagaste por QR, contactá a la tienda para gestionar el reembolso.
+                  Si pagaste por QR, contacta a la tienda para gestionar el reembolso.
                 </p>
               </div>
             </div>

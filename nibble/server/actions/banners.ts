@@ -7,6 +7,7 @@ import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
+import { deleteBlobIfHosted } from "@/lib/storage/upload";
 
 export type BannerFormState = {
   ok?: true;
@@ -127,12 +128,30 @@ export async function upsertBannerAction(
 
   try {
     if (data.id) {
+      // Capturamos las URLs viejas ANTES del update para borrarlas del
+      // Blob storage si cambiaron. Sin esto, cada edit deja la imagen
+      // anterior acumulada en Vercel Blob para siempre.
+      const previous = await db.banner.findFirst({
+        where: { id: data.id, storeId },
+        select: { imageUrl: true, mobileImageUrl: true },
+      });
       const updated = await db.banner.updateMany({
         where: { id: data.id, storeId },
         data: payload,
       });
       if (updated.count === 0) {
         return { error: "Banner no encontrado en tu tienda." };
+      }
+      if (previous) {
+        if (previous.imageUrl && previous.imageUrl !== data.imageUrl) {
+          void deleteBlobIfHosted(previous.imageUrl);
+        }
+        if (
+          previous.mobileImageUrl &&
+          previous.mobileImageUrl !== data.mobileImageUrl
+        ) {
+          void deleteBlobIfHosted(previous.mobileImageUrl);
+        }
       }
       await audit({
         action: "banner.updated",

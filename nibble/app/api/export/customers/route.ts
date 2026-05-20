@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { rowsToCsv, csvFilename } from "@/lib/export/csv";
+import { audit } from "@/lib/audit/log";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -9,7 +10,7 @@ export const maxDuration = 60;
 const MAX_ROWS = 10_000;
 
 export async function GET() {
-  const { store } = await requireStoreOwner();
+  const { store, user } = await requireStoreOwner();
 
   const customers = await db.customer.findMany({
     where: { storeId: store.id },
@@ -42,6 +43,18 @@ export async function GET() {
   ]);
 
   const csv = rowsToCsv(headers, rows);
+
+  // Auditamos el export porque saca PII (nombre+teléfono+email+dirección)
+  // y un owner/cashier comprometido podría exfiltrar la base de clientes
+  // sin rastro. El conteo va a metadata para detectar exports atípicos.
+  await audit({
+    action: "customer.exported",
+    actorId: user.id,
+    actorRole: user.role,
+    storeId: store.id,
+    metadata: { exportedCount: customers.length },
+  });
+
   return new NextResponse(csv, {
     status: 200,
     headers: {

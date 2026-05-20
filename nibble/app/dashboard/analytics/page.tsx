@@ -19,6 +19,7 @@ import { MapDensity } from "@/components/shared/MapsClient";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { formatBob, formatBobAmount } from "@/lib/utils";
 import { dashboardCopy, type DashboardCopy } from "@/lib/dashboard/copy";
+import { dateInBolivia, inBolivia } from "@/lib/booking/timezone";
 
 export const metadata = { title: "Analytics · Madriguera Shop" };
 
@@ -48,11 +49,21 @@ export default async function AnalyticsPage({
   const days = RANGE_DAYS[rangeKey]!;
 
   const now = new Date();
-  const from = new Date(now);
-  from.setDate(from.getDate() - days);
-  from.setHours(0, 0, 0, 0);
-  const prevFrom = new Date(from);
-  prevFrom.setDate(prevFrom.getDate() - days);
+  // Ventana anclada a 00:00 HORA BOLIVIA (no TZ del proceso). `setHours(0)`
+  // en Vercel (UTC) trunca a 00:00 UTC = 20:00 BOT del día anterior, lo
+  // que metía pedidos de la tarde anterior en la ventana y daba KPIs
+  // desfasados 4h respecto a lo que el owner percibe en su día.
+  const bot = inBolivia(now);
+  const from = dateInBolivia(bot.year, bot.month, bot.day - days, 0, 0, 0, 0);
+  const prevFrom = dateInBolivia(
+    bot.year,
+    bot.month,
+    bot.day - days * 2,
+    0,
+    0,
+    0,
+    0,
+  );
 
   // Estados que cuentan como "venta real". CANCELLED y PENDING_PAYMENT
   // quedan fuera — el primero porque no se cobró, el segundo porque aún
@@ -167,9 +178,14 @@ export default async function AnalyticsPage({
     }),
     // Pedidos por día (ventana actual): para chart. Lo agrupamos en SQL
     // con `date_trunc` para no traer todos los orders al app.
+    //
+    // `AT TIME ZONE 'America/La_Paz'` convierte `createdAt` (timestamptz
+    // UTC) a hora-pared Bolivia antes del truncado. Sin esto, `date_trunc`
+    // corta en 00:00 UTC = 20:00 BOT del día anterior — los pedidos
+    // tomados entre 20:00 y 23:59 BOT aparecen en el día equivocado.
     db.$queryRaw<{ day: Date; count: bigint; revenue: string | null }[]>`
       SELECT
-        date_trunc('day', "createdAt") AS day,
+        date_trunc('day', "createdAt" AT TIME ZONE 'America/La_Paz') AS day,
         COUNT(*)::bigint AS count,
         SUM(CASE WHEN "status" NOT IN ('CANCELLED', 'PENDING_PAYMENT') THEN "total" ELSE 0 END)::text AS revenue
       FROM "Order"
@@ -177,11 +193,13 @@ export default async function AnalyticsPage({
       GROUP BY 1
       ORDER BY 1 ASC
     `,
-    // Hora pico: pedidos agrupados por hora del día (0-23). Solo ventas
-    // reales (excluye cancelled/pending). Useful para staffing.
+    // Hora pico: pedidos agrupados por hora del día (0-23) en HORA BOLIVIA.
+    // El servidor corre en UTC, así que sin el `AT TIME ZONE` la hora pico
+    // aparece 4 horas adelantada y el owner ve "pico 23:00" cuando su
+    // realidad es 19:00 BOT.
     db.$queryRaw<{ hour: number; count: bigint }[]>`
       SELECT
-        EXTRACT(HOUR FROM "createdAt")::int AS hour,
+        EXTRACT(HOUR FROM "createdAt" AT TIME ZONE 'America/La_Paz')::int AS hour,
         COUNT(*)::bigint AS count
       FROM "Order"
       WHERE "storeId" = ${store.id}
@@ -190,10 +208,13 @@ export default async function AnalyticsPage({
       GROUP BY 1
       ORDER BY 1 ASC
     `,
-    // Día de la semana: 0=domingo … 6=sábado (convención Postgres DOW).
+    // Día de la semana: 0=domingo … 6=sábado (convención Postgres DOW),
+    // en HORA BOLIVIA — un pedido del sábado 22:00 BOT cae a las 02:00 UTC
+    // del domingo. Sin el shift de TZ, ese pedido se contaría como del
+    // domingo y desfasaría el reporte de día más fuerte.
     db.$queryRaw<{ dow: number; count: bigint; revenue: string | null }[]>`
       SELECT
-        EXTRACT(DOW FROM "createdAt")::int AS dow,
+        EXTRACT(DOW FROM "createdAt" AT TIME ZONE 'America/La_Paz')::int AS dow,
         COUNT(*)::bigint AS count,
         SUM("total")::text AS revenue
       FROM "Order"
@@ -414,7 +435,7 @@ export default async function AnalyticsPage({
             value={String(pendingPayment)}
             sub={
               pendingPayment > 0
-                ? "Revisá los comprobantes pendientes"
+                ? "Revisa los comprobantes pendientes"
                 : "Todo verificado"
             }
             highlight={pendingPayment > 0}
@@ -436,10 +457,10 @@ export default async function AnalyticsPage({
               totalCustomersInWindow === 0
                 ? null
                 : repeatRate >= 30
-                  ? { tone: "good", text: "Base leal saludable. Seguí cuidándolos." }
+                  ? { tone: "good", text: "Base leal saludable. Sigue cuidándolos." }
                   : repeatRate >= 15
-                    ? { tone: "neutral", text: "Mejorable — pensá en cupones de regreso." }
-                    : { tone: "warn", text: "Pocos vuelven. Revisá calidad/tiempo de entrega." }
+                    ? { tone: "neutral", text: "Mejorable — piensa en cupones de regreso." }
+                    : { tone: "warn", text: "Pocos vuelven. Revisa calidad/tiempo de entrega." }
             }
           />
           <PulseCard
@@ -475,7 +496,7 @@ export default async function AnalyticsPage({
                   ? { tone: "good", text: "Bajo. Operación bajo control." }
                   : cancelRate <= 15
                     ? { tone: "neutral", text: "Aceptable, pero hay margen para bajar." }
-                    : { tone: "warn", text: "Alto. Mirá los motivos abajo y atacá la causa raíz." }
+                    : { tone: "warn", text: "Alto. Mira los motivos abajo y ataca la causa raíz." }
             }
           />
         </section>

@@ -117,18 +117,18 @@ export default async function ClientesPage({
               <table className="w-full text-sm">
                 <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-medium">Cliente</th>
-                    <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
+                    <th scope="col" className="px-5 py-3 text-left font-medium">Cliente</th>
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium md:table-cell">
                       Teléfono
                     </th>
-                    <th className="px-3 py-3 text-right font-medium">{copy.ordersLabel}</th>
-                    <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
+                    <th scope="col" className="px-3 py-3 text-right font-medium">{copy.ordersLabel}</th>
+                    <th scope="col" className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       Total gastado
                     </th>
-                    <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
+                    <th scope="col" className="hidden px-3 py-3 text-right font-medium md:table-cell">
                       Último {copy.orderSingular}
                     </th>
-                    <th className="px-3 py-3 text-right font-medium">Acción</th>
+                    <th scope="col" className="px-3 py-3 text-right font-medium">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[color:var(--line)]">

@@ -27,11 +27,12 @@ export type LoginState = {
  * (acá lanzamos `redirect`-like via `signIn` con `redirectTo`).
  */
 export async function loginAction(_prev: LoginState, formData: FormData): Promise<LoginState> {
-  // Rate limit por IP — 10 intentos / 5 min protege contra credential stuffing
+  // Rate limit POR IP: 10 intentos / 5 min protege contra credential stuffing
+  // desde una sola IP.
   const ip = await getClientIp();
-  const rl = await rateLimit(`login:${ip}`, 10, 5 * 60 * 1000);
-  if (!rl.success) {
-    return { error: rateLimitErrorMessage(rl.retryAfter) };
+  const rlIp = await rateLimit(`login:${ip}`, 10, 5 * 60 * 1000);
+  if (!rlIp.success) {
+    return { error: rateLimitErrorMessage(rlIp.retryAfter) };
   }
 
   const parsed = loginSchema.safeParse({
@@ -46,6 +47,15 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   }
 
   const identifier = normalizeIdentifier(parsed.data.username).value;
+
+  // Rate limit POR USUARIO: 20 intentos / 15 min. Esto cierra el vector de
+  // credential stuffing distribuido (botnet con N IPs, todas atacando el
+  // mismo identifier) que el limit por IP no detiene. El error es el mismo
+  // genérico para no leakear si el usuario existe.
+  const rlUser = await rateLimit(`login:id:${identifier}`, 20, 15 * 60 * 1000);
+  if (!rlUser.success) {
+    return { error: rateLimitErrorMessage(rlUser.retryAfter) };
+  }
 
   try {
     await signIn("credentials", {

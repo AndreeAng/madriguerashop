@@ -89,14 +89,20 @@ describe("isStoreOpenNow", () => {
       expect(isStoreOpenNow(lateNight, fri23bot)).toBe(true);
     });
 
-    it("abierto a las 02:00 del sábado BOT (todavía dentro del rango del viernes)", () => {
+    it("abierto a las 02:00 del sábado BOT (todavía dentro del rango overnight del viernes)", () => {
       // 2026-05-16T06:00 UTC = 02:00 BOT del sábado 2026-05-16
-      // Cuidado: el día en BOT ya es sábado, pero el rango del viernes
-      // sigue activo hasta 03:00. La función ACTUAL usa el día del
-      // momento (sábado) y no encuentra row → retorna false. Test
-      // documenta el comportamiento real, no el "ideal".
+      // El día en BOT es sábado, pero el rango del viernes (22:00→03:00)
+      // sigue activo hasta las 03:00 del sábado. La función ahora detecta
+      // ese caso de borde y mantiene el food truck "abierto" hasta el cierre.
       const sat02bot = new Date("2026-05-16T06:00:00Z");
-      expect(isStoreOpenNow(lateNight, sat02bot)).toBe(false);
+      expect(isStoreOpenNow(lateNight, sat02bot)).toBe(true);
+    });
+
+    it("cerrado a las 04:00 del sábado BOT (ya pasó el cierre overnight)", () => {
+      // 2026-05-16T08:00 UTC = 04:00 BOT del sábado 2026-05-16, fuera
+      // del rango overnight del viernes (que cerraba 03:00).
+      const sat04bot = new Date("2026-05-16T08:00:00Z");
+      expect(isStoreOpenNow(lateNight, sat04bot)).toBe(false);
     });
   });
 

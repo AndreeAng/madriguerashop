@@ -3,7 +3,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import crypto from "node:crypto";
 import sharp from "sharp";
-import { put } from "@vercel/blob";
+import { put, del } from "@vercel/blob";
 
 /**
  * Almacenamiento de imágenes — dual-mode (Vercel Blob vs filesystem).
@@ -226,9 +226,16 @@ export async function saveImage(
       });
       return { url: result.url, bytes: output.length };
     } catch (err) {
+      // Loguear el detalle real del fallo de Blob solo en server-side —
+      // si propagamos `err.message` al caller, callers que hacen
+      // `catch(e) { return { error: e.message } }` lo enseñan al cliente,
+      // exponiendo internals de Vercel (paths, tokens, etc.).
+      console.error("[upload] vercel-blob put failed", {
+        message: (err as Error).message,
+      });
       throw new UploadError(
         "io_error",
-        `Error guardando la imagen en Blob: ${(err as Error).message}`,
+        "No pudimos guardar la imagen. Intenta de nuevo.",
       );
     }
   }
@@ -242,9 +249,15 @@ export async function saveImage(
     await mkdir(dir, { recursive: true });
     await writeFile(filePath, output);
   } catch (err) {
+    // Loguear detalle (con path absoluto) solo server-side. El caller
+    // puede serializar `UploadError.message` al cliente, así que el
+    // mensaje user-facing es genérico.
+    console.error("[upload] fs write failed", {
+      message: (err as Error).message,
+    });
     throw new UploadError(
       "io_error",
-      `Error guardando la imagen: ${(err as Error).message}`,
+      "No pudimos guardar la imagen. Intenta de nuevo.",
     );
   }
 
@@ -300,9 +313,20 @@ export async function saveImageRaw(
     throw new UploadError("bad_content", "ownerId inválido");
   }
 
-  // Si el contentType declarado no coincide con un MIME aceptado, usamos
-  // el detectado por magic bytes — es la fuente de verdad.
-  const finalContentType = ACCEPTED_MIME.has(contentType)
+  // Whitelist explícita de MIMEs raster. Rechazamos SVG en particular:
+  // un SVG con un `<script>` embebido se sirve desde Vercel Blob con
+  // su MIME real y ejecuta JS en el contexto del dominio público —
+  // XSS clásico. Limitamos también a los formatos que `detectImageType`
+  // sabe identificar por magic bytes, evitando aceptar contentTypes
+  // confiables que el contenido no respalda.
+  const ALLOWED_RASTER_MIME = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+  ]);
+  const declaredAllowed =
+    ACCEPTED_MIME.has(contentType) && ALLOWED_RASTER_MIME.has(contentType);
+  const finalContentType = declaredAllowed
     ? contentType
     : detected === "jpeg"
       ? "image/jpeg"
@@ -333,9 +357,12 @@ export async function saveImageRaw(
       });
       return { url: result.url, bytes: buffer.length };
     } catch (err) {
+      console.error("[upload-raw] vercel-blob put failed", {
+        message: (err as Error).message,
+      });
       throw new UploadError(
         "io_error",
-        `Error guardando la imagen en Blob: ${(err as Error).message}`,
+        "No pudimos guardar la imagen. Intenta de nuevo.",
       );
     }
   }
@@ -358,4 +385,28 @@ export async function saveImageRaw(
     : [publicBaseUrl().replace(/\/$/, ""), ...segments, filename].join("/");
 
   return { url: urlPath, bytes: buffer.length };
+}
+
+/**
+ * Borra una imagen de Vercel Blob si la URL parece ser un blob hosteado.
+ * Para URLs locales (`/uploads/...`) no hace nada — el filesystem queda
+ * para el cron de cleanup si lo hubiera. Best-effort: cualquier error se
+ * loguea pero no se propaga al caller (la falla de cleanup no debe romper
+ * el update del banner/popup que la generó).
+ *
+ * Sin esta función, cada update de banner/popup deja la imagen vieja
+ * acumulada indefinidamente en Vercel Blob, inflando la factura del
+ * comerciante.
+ */
+export async function deleteBlobIfHosted(url: string | null | undefined): Promise<void> {
+  if (!url) return;
+  if (!url.includes("blob.vercel-storage.com")) return;
+  try {
+    await del(url);
+  } catch (err) {
+    console.error("[storage] del() failed", {
+      url,
+      message: (err as Error).message,
+    });
+  }
 }

@@ -28,7 +28,12 @@ export async function ensureGuestToken(): Promise<string> {
   store.set(GUEST_TOKEN_COOKIE, token, {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    // `secure: true` siempre. Vercel preview URLs son HTTPS, y el flag no
+    // afecta a localhost en dev (los browsers permiten cookies Secure en
+    // http://localhost por defecto). Antes la condición `NODE_ENV ===
+    // "production"` dejaba staging/preview sin Secure, lo que permite
+    // robar la cookie en cualquier mitm de HTTP downgrade en preview.
+    secure: true,
     maxAge: COOKIE_MAX_AGE,
     path: "/",
   });

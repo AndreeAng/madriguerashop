@@ -250,8 +250,8 @@ function DeleteBlock({
           <div className="rounded-lg border border-[color:var(--color-amber-500)]/30 bg-[color:var(--color-amber-50)] p-3 text-xs text-[color:var(--color-amber-800)]">
             <strong>Esta tienda tiene historial financiero.</strong> Borrar
             órdenes y facturas elimina evidencia que podría ser requerida
-            ante una auditoría (SIAT, disputas de pago). Considerá
-            archivar/suspender en su lugar si no tenés certeza.
+            ante una auditoría (SIAT, disputas de pago). Considera
+            archivar/suspender en su lugar si no tienes certeza.
           </div>
         )}
 
@@ -259,7 +259,7 @@ function DeleteBlock({
           <input type="hidden" name="storeId" value={storeId} />
           <label className="block">
             <span className="text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted)]">
-              Para confirmar, escribí{" "}
+              Para confirmar, escribe{" "}
               <code className="rounded bg-[color:var(--bg)] px-1 py-0.5 font-mono text-[color:var(--fg)]">
                 {slug}
               </code>

@@ -69,7 +69,7 @@ export function BookingForm({
         setSlots(result);
       } catch (err) {
         // Server action falló (red, server error, etc.). Sin este catch
-        // el `slots` queda en null y el cliente ve "Elegí la hora" sin
+        // el `slots` queda en null y el cliente ve "Elige la hora" sin
         // nada debajo — UX confusa.
         console.error("[BookingForm] slot fetch failed", err);
         setSlots([]);
@@ -98,6 +98,15 @@ export function BookingForm({
   // corría a las 23:59:58 y el cliente hidrataba a las 00:00:01, los
   // dos calculaban días distintos y React lanzaba hydration mismatch.
   const [today] = useState<Date>(() => startOfDay());
+
+  // Guard contra double-submit (mismo patrón que CheckoutForm). El touch
+  // jitter en mobile puede disparar dos submissions antes de que
+  // `useActionState` propague `isPending`; el server termina creando
+  // dos reservas idénticas en distintos slots. Bloqueamos client-side.
+  const [submitting, setSubmitting] = useState(false);
+  useEffect(() => {
+    if (state.error) setSubmitting(false);
+  }, [state.error]);
   const weekStart = new Date(today);
   weekStart.setDate(weekStart.getDate() + weekOffset * 7);
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -107,7 +116,11 @@ export function BookingForm({
   });
 
   return (
-    <form action={action} className="space-y-5">
+    <form
+      action={action}
+      onSubmit={() => setSubmitting(true)}
+      className="space-y-5"
+    >
       <input type="hidden" name="productId" value={productId} />
       <input type="hidden" name="storeSlug" value={storeSlug} />
       <input type="hidden" name="startsAt" value={selectedSlot} />
@@ -126,7 +139,7 @@ export function BookingForm({
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
             <CalendarClock className="mr-1 inline size-3.5" />
-            Elegí el día
+            Elige el día
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -183,7 +196,7 @@ export function BookingForm({
       <div>
         <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
           <Clock className="mr-1 inline size-3.5" />
-          Elegí la hora · {durationMin} min
+          Elige la hora · {durationMin} min
         </p>
         {slotsError ? (
           <p
@@ -196,7 +209,7 @@ export function BookingForm({
           // `slots === null` = aún no terminó el primer effect (montaje
           // del componente). Mostrar el mismo "Buscando…" que cuando
           // cambian de día — evita el flash de "no aparece nada".
-          <p className="mt-3 text-sm text-[color:var(--muted)]">
+          <p role="status" className="mt-3 text-sm text-[color:var(--muted)]">
             Buscando horarios libres…
           </p>
         ) : slots.length === 0 ? (
@@ -272,10 +285,10 @@ export function BookingForm({
         shape="pill"
         width="full"
         className="py-3"
-        disabled={selectedSlot === ""}
+        disabled={selectedSlot === "" || submitting}
         pendingLabel="Reservando…"
       >
-        {selectedSlot === "" ? "Elegí un día y un horario" : `Reservar ${productName}`}
+        {selectedSlot === "" ? "Elige un día y un horario" : `Reservar ${productName}`}
       </SubmitButton>
     </form>
   );

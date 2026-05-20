@@ -18,7 +18,19 @@ const upsertSchema = z.object({
   name: z.string().trim().min(2).max(60),
   vertical: z.enum(["RESTAURANT", "FOOD_TRUCK", "RETAIL", "HARDWARE", "SERVICES"]),
   description: z.string().trim().min(10).max(500),
-  previewUrl: z.string().trim().url("URL de preview inválida"),
+  // `.url()` solo de Zod acepta cualquier scheme (http, https, ftp,
+   // javascript:). El previewUrl se renderiza como `href` y como `src` de
+   // iframes en `/admin/plantillas` — restringimos a http/https para evitar
+   // XSS via `javascript:alert(1)` que un admin malintencionado o con
+   // sesión comprometida podría inyectar.
+  previewUrl: z
+    .string()
+    .trim()
+    .url("URL de preview inválida")
+    .refine(
+      (v) => v.startsWith("https://") || v.startsWith("http://"),
+      "Solo URLs http o https",
+    ),
   componentKey: z
     .string()
     .trim()
@@ -140,9 +152,18 @@ export async function deleteTemplateAction(
   const parsed = idSchema.safeParse({ id: formData.get("id") });
   if (!parsed.success) return { error: INVALID_INPUT_ERROR };
 
+  // Snapshot completo para el audit log — sin esto, después del delete
+  // no hay forma de saber qué vertical/componentKey tenía la plantilla
+  // borrada (forensics).
   const tpl = await db.template.findUnique({
     where: { id: parsed.data.id },
-    select: { id: true, name: true },
+    select: {
+      id: true,
+      name: true,
+      vertical: true,
+      isActive: true,
+      componentKey: true,
+    },
   });
   if (!tpl) return { error: "Plantilla no encontrada." };
 
@@ -164,7 +185,12 @@ export async function deleteTemplateAction(
     actorId: admin.id,
     actorRole: "SUPER_ADMIN",
     target: tpl.id,
-    metadata: { name: tpl.name },
+    metadata: {
+      name: tpl.name,
+      vertical: tpl.vertical,
+      isActive: tpl.isActive,
+      componentKey: tpl.componentKey,
+    },
   });
 
   revalidatePath("/admin/plantillas");

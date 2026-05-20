@@ -57,7 +57,7 @@ export async function sendEmail(input: SendInput): Promise<SendResult> {
     return { delivered: true, messageId: info.messageId };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[email:send_failed]", { to: input.to, subject: input.subject, error: message });
+    console.error("[email:send_failed]", { to: redactRecipient(input.to), subject: input.subject, error: message });
     return { delivered: false, reason: "send_failed", error: message };
   }
 }
@@ -70,7 +70,13 @@ export async function sendEmail(input: SendInput): Promise<SendResult> {
  */
 export function sendEmailBackground(input: SendInput): void {
   void sendEmail(input).catch((err) => {
-    console.error("[email:background_failed]", err);
+    // SOLO logueamos el mensaje del error, NO el objeto `err` raw — el
+    // objeto puede contener el `data.html` que se intentó enviar (incluido
+    // el reset URL / token de verificación) si Nodemailer falla al
+    // serializar el SMTP envelope. Sin esta restricción, los reset URLs
+    // pueden terminar en Vercel Logs / Datadog en texto claro.
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[email:background_failed]", { message });
   });
 }
 

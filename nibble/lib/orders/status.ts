@@ -52,14 +52,18 @@ export const PAYMENT_LABELS: Record<PaymentStatus, string> = {
 /**
  * Pasos visibles en la timeline del cliente. CANCELLED se muestra aparte
  * con un treatment distinto.
+ *
+ * Texto neutro de vertical: antes "la cocina lo está revisando" sonaba
+ * absurdo para tiendas de hardware/retail. Las descripciones son
+ * universales — no asumen restaurante.
  */
 export const TRACKING_STEPS: { key: OrderStatus; label: string; desc: string }[] = [
-  { key: "PENDING_PAYMENT", label: "Pago pendiente", desc: "Subí el comprobante para que verifiquemos tu pago." },
-  { key: "NEW", label: "Recibido", desc: "Lo tenemos. La cocina lo está revisando." },
+  { key: "PENDING_PAYMENT", label: "Pago pendiente", desc: "Sube el comprobante para que verifiquemos tu pago." },
+  { key: "NEW", label: "Recibido", desc: "Lo tenemos. Estamos revisando tu pedido." },
   { key: "CONFIRMED", label: "Confirmado", desc: "Pago verificado. Empezamos a preparar." },
   { key: "PREPARING", label: "Preparando", desc: "Tu pedido está en preparación." },
   { key: "IN_DELIVERY", label: "En camino", desc: "Salió hacia tu dirección." },
-  { key: "DELIVERED", label: "Entregado", desc: "Disfrutá. ¡Gracias por elegirnos!" },
+  { key: "DELIVERED", label: "Entregado", desc: "Disfruta. ¡Gracias por elegirnos!" },
 ];
 
 /** Retorna el índice del step actual (-1 si está cancelado o desconocido). */

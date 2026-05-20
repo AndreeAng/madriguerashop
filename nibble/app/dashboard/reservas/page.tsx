@@ -85,7 +85,7 @@ export default async function ReservasPage({
             <h1 className="font-display mt-1 text-3xl">Reservas</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
               Tus servicios reservables. Confirma o cancela las pendientes.
-              Tip: marcá un producto como reservable en{" "}
+              Tip: marca un producto como reservable en{" "}
               <Link
                 href="/dashboard/productos"
                 className="font-medium text-[color:var(--fg)] underline"

@@ -2,13 +2,46 @@
  * Script one-shot para probar el importer de Quick contra Leozma.
  * Corre con: `npx tsx scripts/test-quick-import.ts`
  *
- * Lee env vars del proceso (DATABASE_URL, etc) — asegurate de tener .env
- * cargado o de exportarlas antes.
+ * Lee env vars del proceso (DATABASE_URL, OWNER_PASSWORD, OWNER_PHONE,
+ * OWNER_IDENTIFIER) — asegúrate de tener .env cargado o exportarlas antes.
+ *
+ * Guardrail: aborta si NODE_ENV es production o si DATABASE_URL apunta a
+ * un host de Neon/Supabase/Vercel principal — este script borra y recrea
+ * datos, nunca debe correr contra producción.
  */
 import { db } from "../lib/db";
 import { importQuickStore } from "../lib/import/quick/importer";
+import { hashPassword } from "../lib/auth/password";
+
+function assertNotProduction() {
+  if (process.env.NODE_ENV === "production") {
+    console.error("❌ ABORT: NODE_ENV=production. Este script borra datos.");
+    process.exit(1);
+  }
+  const url = process.env.DATABASE_URL ?? "";
+  if (/\b(prod|main)\b/i.test(url)) {
+    console.error(
+      "❌ ABORT: DATABASE_URL contiene 'prod' o 'main'. Apunta a una branch de DB de prueba.",
+    );
+    process.exit(1);
+  }
+}
 
 async function main() {
+  assertNotProduction();
+
+  const ownerPassword = process.env.OWNER_PASSWORD;
+  const ownerPhone = process.env.OWNER_PHONE ?? "+59100000000";
+  const ownerIdentifier =
+    process.env.OWNER_IDENTIFIER ?? "leozma-owner@madrigueras.shop";
+
+  if (!ownerPassword) {
+    console.error(
+      "❌ Falta OWNER_PASSWORD en env. Exporta una contraseña antes de correr el script.",
+    );
+    process.exit(1);
+  }
+
   console.log("== Quick importer smoke test == ");
 
   // Si ya existe leozma, borramos para reintentar limpio
@@ -26,7 +59,7 @@ async function main() {
 
   // También borrar el user por username si quedó huérfano de un intento previo
   const orphan = await db.user.findUnique({
-    where: { username: "leozma-owner@madrigueras.shop" },
+    where: { username: ownerIdentifier },
     select: { id: true },
   });
   if (orphan) {
@@ -35,6 +68,7 @@ async function main() {
   }
 
   const t0 = Date.now();
+  const ownerPasswordHash = await hashPassword(ownerPassword);
   const result = await importQuickStore({
     sourceSlug: "leozma",
     target: {
@@ -42,10 +76,10 @@ async function main() {
       storeName: "Leozma",
       vertical: "RETAIL",
       city: "Cochabamba",
-      whatsappPhone: "+59176355469",
+      whatsappPhone: ownerPhone,
       ownerName: "Owner Leozma",
-      ownerIdentifier: "leozma-owner@madrigueras.shop",
-      ownerPassword: "Leozma2026!",
+      ownerIdentifier,
+      ownerPasswordHash,
     },
   });
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1);

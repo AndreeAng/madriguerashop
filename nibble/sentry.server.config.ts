@@ -8,7 +8,11 @@ const dsn = process.env.SENTRY_DSN;
 if (dsn) {
   Sentry.init({
     dsn,
-    environment: process.env.NODE_ENV,
+    environment:
+      process.env.APP_ENV ??
+      process.env.NEXT_PUBLIC_APP_ENV ??
+      process.env.NODE_ENV ??
+      "unknown",
     // Server: 1.0 — cuando un server action falla queremos verlo siempre.
     // Si la cuota gratis (5k/mes) se vuelve un problema, bajamos.
     sampleRate: 1.0,

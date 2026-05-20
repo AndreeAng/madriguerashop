@@ -196,8 +196,12 @@ export async function upsertProductAction(
   const data = parsed.data;
 
   // Plan limits: solo aplica al CREATE (un edit no aumenta el conteo).
-  // Si el plan tope alcanzó, devolvemos error global con guía al owner
-  // para suspender otro producto o subir de plan.
+  // El check definitivo se hace DENTRO de la transacción del CREATE
+  // con un advisory lock por tenant — un check fuera de la transacción
+  // tiene race window (dos pestañas concurrentes pueden pasar el check
+  // ambas si están en el límite exacto). Este chequeo previo es solo
+  // un short-circuit que evita el roundtrip de armar el payload completo
+  // cuando ya sabemos que va a fallar; el enforcement real está abajo.
   if (!data.id) {
     const { checkProductLimit, productLimitMessage } = await import(
       "@/lib/billing/plan-limits"
@@ -374,37 +378,66 @@ export async function upsertProductAction(
         }
       });
     } else {
-      // CREATE
-      await db.product.create({
-        data: {
-          ...productData,
-          images:
-            images.length > 0
-              ? {
-                  create: images.map((img, i) => ({
-                    url: img.url,
-                    alt: img.alt || null,
-                    sortOrder: i,
-                  })),
-                }
-              : undefined,
-          variants:
-            variants.length > 0
-              ? {
-                  create: variants.map((v, i) => ({
-                    name: v.name,
-                    sku: v.sku || null,
-                    price: v.price ? new Prisma.Decimal(v.price) : null,
-                    attributes: v.attributes ?? {},
-                    sortOrder: i,
-                    isActive: true,
-                    manageStock: v.manageStock,
-                    stock: v.manageStock ? v.stock : 0,
-                  })),
-                }
-              : undefined,
-        },
+      // CREATE — enforcement real del límite del plan.
+      //
+      // El advisory lock per-tenant serializa la sección crítica
+      // (count + create) bajo el isolation por defecto. Sin él, dos
+      // requests concurrentes leen count=N, ambos pasan el check y ambos
+      // crean → el tenant excede el límite del plan en 1 unidad. El lock
+      // se libera automáticamente al commit/rollback de la transacción.
+      const { checkProductLimit, productLimitMessage } = await import(
+        "@/lib/billing/plan-limits"
+      );
+      const overLimitError = await db.$transaction(async (tx) => {
+        // hashtext es estable y rápido; el namespace `42` separa este lock
+        // de otros advisory locks futuros.
+        await tx.$executeRawUnsafe(
+          `SELECT pg_advisory_xact_lock(42, hashtext($1))`,
+          `product-limit:${storeId}`,
+        );
+        // CRÍTICO: pasamos `tx` al check para que la query corra en la
+        // MISMA conexión que tiene el advisory lock. Sin esto, el count
+        // se ejecuta en el pool externo (otra conexión) y el lock no
+        // protege contra dos creates simultáneos.
+        const limit = await checkProductLimit(storeId, tx);
+        if (limit.exceeded) {
+          return productLimitMessage(limit);
+        }
+        await tx.product.create({
+          data: {
+            ...productData,
+            images:
+              images.length > 0
+                ? {
+                    create: images.map((img, i) => ({
+                      url: img.url,
+                      alt: img.alt || null,
+                      sortOrder: i,
+                    })),
+                  }
+                : undefined,
+            variants:
+              variants.length > 0
+                ? {
+                    create: variants.map((v, i) => ({
+                      name: v.name,
+                      sku: v.sku || null,
+                      price: v.price ? new Prisma.Decimal(v.price) : null,
+                      attributes: v.attributes ?? {},
+                      sortOrder: i,
+                      isActive: true,
+                      manageStock: v.manageStock,
+                      stock: v.manageStock ? v.stock : 0,
+                    })),
+                  }
+                : undefined,
+          },
+        });
+        return null;
       });
+      if (overLimitError) {
+        return { error: overLimitError };
+      }
     }
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {

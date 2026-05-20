@@ -1,5 +1,5 @@
 import "server-only";
-import { renderEmail, escapeHtml } from "../layout";
+import { renderEmail, escapeHtml, safeSubjectField } from "../layout";
 import { appUrl } from "../client";
 import type { SendInput } from "../send";
 
@@ -29,7 +29,7 @@ export function welcomeEmail(opts: {
 
   return {
     to: opts.to,
-    subject: `Bienvenido a Madriguera Shop, ${opts.ownerName}`,
+    subject: `Bienvenido a Madriguera Shop, ${safeSubjectField(opts.ownerName, 80)}`,
     html: renderEmail({
       title: `Tu tienda está lista, ${escapeHtml(firstName)}`,
       body,

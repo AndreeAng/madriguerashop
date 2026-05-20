@@ -21,8 +21,8 @@ export type ActionState<F extends string = string> = {
  * cliente vea el mismo texto en cualquier form — antes había variantes
  * "Datos inválidos" y "Input inválido" mezcladas, con la misma semántica.
  *
- * Si necesitas un mensaje más específico, usá `fieldErrors` con
+ * Si necesitas un mensaje más específico, usa `fieldErrors` con
  * `zodIssuesToFieldErrors(parsed.error)` que mapea por path; este string
- * es solo el fallback de error global cuando no podés mapear por campo.
+ * es solo el fallback de error global cuando no puedes mapear por campo.
  */
 export const INVALID_INPUT_ERROR = "Datos inválidos";

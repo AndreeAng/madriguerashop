@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 const MAX_RESET_ATTEMPTS = 3;
 
@@ -36,8 +37,14 @@ export default function GlobalError({
   }, [error.digest]);
 
   useEffect(() => {
-    // En dev, console.error. En prod, esto se reemplaza por captureError
-    // del lib/observability cuando se integre Sentry.
+    // Sentry captura automáticamente errores no manejados del runtime,
+    // pero los que llegan a este error boundary ya fueron envueltos por
+    // Next.js — necesitamos reportarlos explícitamente para que aparezcan
+    // con el contexto del boundary (route, digest). Sentry hace early
+    // return si no hay DSN configurado.
+    Sentry.captureException(error, {
+      tags: { boundary: "app/error", digest: error.digest ?? "none" },
+    });
     console.error("[app/error]", error);
   }, [error]);
 

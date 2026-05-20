@@ -16,23 +16,35 @@ export type LegalEntity = {
   contactEmail: string;
 };
 
-export const LEGAL_ENTITY: LegalEntity = {
-  name: process.env.LEGAL_ENTITY_NAME ?? "",
-  address: process.env.LEGAL_ENTITY_ADDRESS ?? "",
-  taxId: process.env.LEGAL_ENTITY_TAX_ID,
-  contactEmail: process.env.LEGAL_ENTITY_CONTACT_EMAIL ?? "hola@madrigueras.shop",
-};
+/**
+ * Lee la entidad legal cada vez que se invoca — antes era una constante
+ * de módulo evaluada en import time, lo que cacheaba para siempre los
+ * valores del primer cold start. Si en producción se rota una env var
+ * vía feature flags / runtime config, las páginas legales mostraban el
+ * valor viejo hasta el próximo deploy. Con función, cada request lee
+ * el `process.env` actual.
+ */
+export function getLegalEntity(): LegalEntity {
+  return {
+    name: process.env.LEGAL_ENTITY_NAME ?? "",
+    address: process.env.LEGAL_ENTITY_ADDRESS ?? "",
+    taxId: process.env.LEGAL_ENTITY_TAX_ID,
+    contactEmail:
+      process.env.LEGAL_ENTITY_CONTACT_EMAIL ?? "hola@madrigueras.shop",
+  };
+}
 
 /** ¿Están seteados los datos mínimos para que el documento legal sea válido? */
 export function isLegalEntityComplete(): boolean {
-  return Boolean(LEGAL_ENTITY.name) && Boolean(LEGAL_ENTITY.address);
+  const e = getLegalEntity();
+  return Boolean(e.name) && Boolean(e.address);
 }
 
 /** Texto seguro para los párrafos legales. Si falta data, dice "Madriguera Shop". */
 export function legalEntityName(): string {
-  return LEGAL_ENTITY.name || "Madriguera Shop";
+  return getLegalEntity().name || "Madriguera Shop";
 }
 
 export function legalEntityAddress(): string {
-  return LEGAL_ENTITY.address || "Cochabamba, Bolivia";
+  return getLegalEntity().address || "Cochabamba, Bolivia";
 }

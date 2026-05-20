@@ -43,8 +43,7 @@ function getKey(): Buffer {
       "ENCRYPTION_KEY no seteada. Generala con: openssl rand -base64 32",
     );
   }
-  // Si el valor parece base64 de 32+ bytes, usalo directo. Sino, derivar con
-  // scrypt desde la string como passphrase (más lento pero acepta cualquier valor).
+  // Camino esperado: base64 de 32+ bytes (generado con `openssl rand -base64 32`).
   if (/^[A-Za-z0-9+/=]+$/.test(raw) && raw.length >= 43) {
     const buf = Buffer.from(raw, "base64");
     if (buf.length >= KEY_LEN) {
@@ -52,8 +51,17 @@ function getKey(): Buffer {
       return cachedKey;
     }
   }
-  // Fallback: derivar de la passphrase con scrypt (salt fija para que el
-  // mismo ENCRYPTION_KEY produzca la misma clave entre boots).
+  // Fallback de derivación con scrypt + salt fija. Diseñado solo para dev
+  // local donde alguien pasa una passphrase corta no-base64; en producción
+  // exigimos el formato canónico porque salt fija + low-entropy permite
+  // rainbow tables y debilita el cifrado at-rest del token delegado SIAT.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "ENCRYPTION_KEY inválida en producción: debe ser base64 de 32+ bytes " +
+        "(generala con `openssl rand -base64 32`). Una passphrase con scrypt + " +
+        "salt fija no es lo bastante fuerte para cifrar el token delegado SIAT.",
+    );
+  }
   cachedKey = scryptSync(raw, "nibble-encrypt-v1", KEY_LEN);
   return cachedKey;
 }

@@ -118,7 +118,7 @@ export async function sendPasswordResetForUserAction(
     return { error: "Este usuario no tiene email — no se puede mandar el reset." };
   }
   if (!target.isActive) {
-    return { error: "Usuario suspendido. Reactivalo primero." };
+    return { error: "Usuario suspendido. Reactívalo primero." };
   }
 
   // En DB guardamos el hash del token; el plano viaja solo por email.

@@ -61,7 +61,7 @@ export async function uploadInvoiceProofAction(
   _prev: ActionState<"proofUrl">,
   formData: FormData,
 ): Promise<ActionState<"proofUrl">> {
-  const { storeId } = await requireOwnerOnlyIds();
+  const { userId, storeId, role } = await requireOwnerOnlyIds();
 
   const parsed = uploadProofSchema.safeParse({
     invoiceId: formData.get("invoiceId"),
@@ -88,6 +88,9 @@ export async function uploadInvoiceProofAction(
   await audit({
     action: "invoice.proof_uploaded",
     target: invoice.id,
+    actorId: userId,
+    actorRole: role,
+    storeId,
   });
 
   revalidatePath("/dashboard/facturacion");
@@ -189,10 +192,10 @@ export async function verifyInvoicePaymentAction(
     actorId: guard.id,
     actorRole: "SUPER_ADMIN",
     target: invoice.id,
+    storeId: invoice.storeId,
     metadata: {
       invoiceNumber: invoice.invoiceNumber,
       amount: Number(invoice.amount),
-      storeId: invoice.storeId,
     },
   });
 
@@ -256,11 +259,28 @@ export async function cancelInvoiceAction(
 
   // Cancelar la invoice y, si la tienda quedó sin facturas pendientes/vencidas,
   // reactivarla. Sin esto, la tienda queda SUSPENDED hasta el próximo cron.
+  //
+  // Claim atómico: `updateMany` con `status: { notIn: [...] }` actúa como
+  // test-and-set. Si dos admins clickean "Cancelar" simultáneamente sobre
+  // la misma factura, solo uno tiene `count === 1`. Sin esto, ambos
+  // ejecutaban el update + el conteo de `stillOpen` y disparaban dos
+  // intentos de reactivación de la tienda.
+  let cancelled = false;
   await db.$transaction(async (tx) => {
-    await tx.invoice.update({
-      where: { id: invoice.id },
+    const claimed = await tx.invoice.updateMany({
+      where: {
+        id: invoice.id,
+        status: { notIn: ["PAID", "CANCELLED"] },
+      },
       data: { status: "CANCELLED", notes: parsed.data.reason },
     });
+    if (claimed.count === 0) {
+      // Otro admin la procesó entre el find y el update — salimos sin tocar
+      // la tienda. No hace falta retornar error: el resultado final
+      // (factura cancelada) es lo que ambos querían.
+      return;
+    }
+    cancelled = true;
 
     const stillOpen = await tx.invoice.count({
       where: {
@@ -282,6 +302,9 @@ export async function cancelInvoiceAction(
       });
     }
   });
+  if (!cancelled) {
+    return { error: "Esta factura ya fue procesada por otro admin." };
+  }
 
   await audit({
     storeId: invoice.storeId,

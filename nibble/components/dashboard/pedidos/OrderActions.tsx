@@ -8,6 +8,7 @@ import {
   changeOrderStatusAction,
   verifyPaymentAction,
   rejectPaymentAction,
+  markOrderRefundedAction,
 } from "@/server/actions/order-management";
 import { STATUS_FLOW } from "@/lib/orders/status";
 import type { ActionState } from "@/lib/validation/actionState";
@@ -216,12 +217,7 @@ export function PaymentActions({
   const [showReject, setShowReject] = useState(false);
 
   if (paymentStatus === "VERIFIED") {
-    return (
-      <div className="rounded-xl border border-[color:var(--color-leaf-500)]/30 bg-[color:var(--color-leaf-500)]/5 p-3 text-sm text-[color:var(--color-leaf-700)]">
-        <CheckCircle2 className="mr-1.5 inline-block size-4" />
-        Pago verificado.
-      </div>
-    );
+    return <VerifiedWithRefundOption orderId={orderId} />;
   }
 
   if (paymentStatus === "REJECTED") {
@@ -229,6 +225,15 @@ export function PaymentActions({
       <div className="rounded-xl border border-[color:var(--color-tomato-500)]/30 bg-[color:var(--color-tomato-500)]/5 p-3 text-sm text-[color:var(--color-tomato-700)]">
         <ShieldX className="mr-1.5 inline-block size-4" />
         Pago rechazado.
+      </div>
+    );
+  }
+
+  if (paymentStatus === "REFUNDED") {
+    return (
+      <div className="rounded-xl border border-[color:var(--color-amber-500)]/30 bg-[color:var(--color-amber-500)]/5 p-3 text-sm text-[color:var(--color-amber-700)]">
+        <ShieldX className="mr-1.5 inline-block size-4" />
+        Pago reembolsado.
       </div>
     );
   }
@@ -308,3 +313,88 @@ export function PaymentActions({
     </div>
   );
 }
+
+/**
+ * Cuando el pago está VERIFIED, mostramos confirmación + opción de
+ * registrar un reembolso. El reembolso real (devolución del dinero al
+ * cliente) ocurre fuera de la app — esta UI solo registra el estado
+ * contable para que dashboards de revenue excluyan estos pedidos.
+ */
+function VerifiedWithRefundOption({ orderId }: { orderId: string }) {
+  const [state, action] = useActionState<ActionState<"reason">, FormData>(
+    markOrderRefundedAction,
+    {},
+  );
+  const [showRefund, setShowRefund] = useState(false);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-xl border border-[color:var(--color-leaf-500)]/30 bg-[color:var(--color-leaf-500)]/5 p-3 text-sm text-[color:var(--color-leaf-700)]">
+        <CheckCircle2 className="mr-1.5 inline-block size-4" />
+        Pago verificado.
+      </div>
+
+      {!showRefund ? (
+        <button
+          type="button"
+          onClick={() => setShowRefund(true)}
+          className="text-xs text-[color:var(--muted)] underline hover:text-[color:var(--fg)]"
+        >
+          Marcar como reembolsado
+        </button>
+      ) : (
+        <form
+          action={action}
+          className="space-y-2 rounded-xl border border-[color:var(--color-amber-500)]/30 bg-[color:var(--color-amber-500)]/5 p-3"
+        >
+          <input type="hidden" name="orderId" value={orderId} />
+          <p className="text-xs text-[color:var(--color-amber-800)]">
+            Solo registra el reembolso en el sistema. La devolución del
+            dinero la coordinas tú con el cliente.
+          </p>
+          <label className="block">
+            <span className="text-xs font-medium text-[color:var(--color-amber-800)]">
+              Motivo del reembolso
+            </span>
+            <input
+              name="reason"
+              required
+              minLength={3}
+              maxLength={280}
+              placeholder="Pedido cancelado por cliente / producto devuelto / verificación errónea"
+              aria-invalid={Boolean(state.fieldErrors?.reason)}
+              className="mt-1 w-full rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-500)]"
+            />
+            {state.fieldErrors?.reason && (
+              <p
+                role="alert"
+                className="mt-1 text-xs text-[color:var(--color-tomato-600)]"
+              >
+                {state.fieldErrors.reason}
+              </p>
+            )}
+          </label>
+          {state.error && (
+            <p role="alert" className="text-xs text-[color:var(--color-tomato-600)]">
+              {state.error}
+            </p>
+          )}
+          <div className="flex items-center gap-2">
+            <PendingButton variant="danger">
+              <ShieldX className="size-4" />
+              Confirmar reembolso
+            </PendingButton>
+            <button
+              type="button"
+              onClick={() => setShowRefund(false)}
+              className="text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+            >
+              Volver
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
