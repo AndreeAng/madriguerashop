@@ -9,6 +9,7 @@ import {
 import { CategoryForm } from "./CategoryForm";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { ErrorAlert } from "@/components/ui/Alert";
+import { useDashboardCopy } from "@/lib/dashboard/copy-context";
 
 type Cat = {
   id: string;
@@ -25,6 +26,7 @@ type Cat = {
 type Mode = { type: "list" } | { type: "new" } | { type: "edit"; cat: Cat };
 
 export function CategoriesClient({ categories }: { categories: Cat[] }) {
+  // copy se lee en `RowInner` directamente (más cerca del uso).
   const [mode, setMode] = useState<Mode>({ type: "list" });
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -212,6 +214,9 @@ function RowInner({
   onToggle: () => void;
   isChild?: boolean;
 }) {
+  // Cuántos "productos/platos/servicios" hay en la categoría —
+  // varía por vertical de la tienda.
+  const copy = useDashboardCopy();
   return (
     <div
       className={`flex items-center gap-4 px-5 py-3.5 ${isChild ? "pl-12" : ""}`}
@@ -230,7 +235,7 @@ function RowInner({
         <p className="text-xs text-[color:var(--muted)]">
           <span className="font-mono">/{cat.slug}</span>
           {" · "}
-          {cat.productsCount} {cat.productsCount === 1 ? "producto" : "productos"}
+          {cat.productsCount} {cat.productsCount === 1 ? copy.productSingular : copy.productsLabel.toLowerCase()}
           {cat.childrenCount > 0 && ` · ${cat.childrenCount} subcat.`}
         </p>
       </div>

@@ -125,7 +125,7 @@ export default async function OrdersPage({
             <input
               name="q"
               defaultValue={q}
-              placeholder="Buscar por #pedido, nombre o teléfono"
+              placeholder={`Buscar por #${copy.orderSingular}, nombre o teléfono`}
               className="w-full rounded-full border border-[color:var(--line)] bg-[color:var(--card)] py-2 pl-9 pr-3 text-sm outline-none focus:border-[color:var(--color-bark-300)]"
             />
           </form>

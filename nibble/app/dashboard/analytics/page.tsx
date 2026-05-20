@@ -18,8 +18,13 @@ import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MapDensity } from "@/components/shared/MapsClient";
 import { KpiCard } from "@/components/shared/KpiCard";
 import { formatBob, formatBobAmount } from "@/lib/utils";
+import { dashboardCopy, type DashboardCopy } from "@/lib/dashboard/copy";
 
 export const metadata = { title: "Analytics · Madriguera Shop" };
+
+// El h2 "Productos top" y demás varían por vertical, así que dejamos
+// el title del tab del browser estático (no hay un sustantivo principal
+// que decida la vista).
 
 // Rangos soportados. Cada uno define la ventana actual + se compara con
 // la ventana inmediatamente anterior del mismo tamaño para los deltas %.
@@ -36,6 +41,8 @@ export default async function AnalyticsPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const { store } = await requireStoreOwner();
+  const copy = dashboardCopy(store.vertical);
+  const noOrdersMsg = `Sin ${copy.ordersLabel.toLowerCase()} en este período.`;
   const sp = await searchParams;
   const rangeKey = sp.range && RANGE_DAYS[sp.range] ? sp.range : DEFAULT_RANGE;
   const days = RANGE_DAYS[rangeKey]!;
@@ -362,7 +369,7 @@ export default async function AnalyticsPage({
           />
           <KpiCard
             icon={<ShoppingBag className="size-4" />}
-            label="Pedidos"
+            label={copy.ordersLabel}
             value={currentOrders.toLocaleString("es-BO")}
             delta={pctDelta(currentOrders, prevOrders)}
             deltaFormat="percent"
@@ -375,7 +382,7 @@ export default async function AnalyticsPage({
             delta={pctDelta(currentAOV, prevAOV)}
             deltaFormat="percent"
             showNoComparable
-            hint={currentOrders === 0 ? "Sin pedidos en el período" : undefined}
+            hint={currentOrders === 0 ? `Sin ${copy.ordersLabel.toLowerCase()} en el período` : undefined}
           />
           <KpiCard
             icon={<Users className="size-4" />}
@@ -441,8 +448,8 @@ export default async function AnalyticsPage({
             value={`${cancelRate.toFixed(1)}%`}
             sub={
               totalInWindow === 0
-                ? "Sin pedidos en este período."
-                : `${cancelledCount} pedidos cancelados de ${totalInWindow} totales.`
+                ? noOrdersMsg
+                : `${cancelledCount} ${copy.ordersLabel.toLowerCase()} cancelados de ${totalInWindow} totales.`
             }
             extras={
               cancelReasons.length > 0 ? (
@@ -482,7 +489,7 @@ export default async function AnalyticsPage({
             </p>
           </div>
           <div className="mt-4">
-            <DailyOrdersChart series={series} />
+            <DailyOrdersChart series={series} copy={copy} />
           </div>
         </section>
 
@@ -498,7 +505,7 @@ export default async function AnalyticsPage({
               en cocina/entrega.
             </p>
             <div className="mt-4">
-              <HourlyChart buckets={hourly} />
+              <HourlyChart buckets={hourly} copy={copy} />
             </div>
           </div>
 
@@ -512,7 +519,7 @@ export default async function AnalyticsPage({
               ¿valdría una promo para activarlo?
             </p>
             <div className="mt-4">
-              <WeekdayChart buckets={weekday} />
+              <WeekdayChart buckets={weekday} copy={copy} />
             </div>
           </div>
         </section>
@@ -520,13 +527,13 @@ export default async function AnalyticsPage({
         {/* Top productos + Top clientes */}
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
           <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-            <h2 className="font-display text-lg">Productos top</h2>
+            <h2 className="font-display text-lg">{copy.productsLabel} top</h2>
             <p className="mt-1 text-xs text-[color:var(--muted)]">
               Por ingresos en los últimos {days} días.
             </p>
             {topProductsRaw.length === 0 ? (
               <p className="mt-4 text-sm text-[color:var(--muted)]">
-                Todavía no hay pedidos en este período.
+                Todavía no hay {copy.ordersLabel.toLowerCase()} en este período.
               </p>
             ) : (
               <ul className="mt-4 divide-y divide-[color:var(--line)]">
@@ -576,7 +583,7 @@ export default async function AnalyticsPage({
                         {c.fullName ?? "(sin nombre)"}
                       </p>
                       <p className="text-xs text-[color:var(--muted)]">
-                        {c.phone} · {c.ordersCount} pedidos
+                        {c.phone} · {c.ordersCount} {c.ordersCount === 1 ? copy.orderSingular : copy.ordersLabel.toLowerCase()}
                       </p>
                     </div>
                     <span className="num-tabular text-sm font-semibold">
@@ -594,14 +601,14 @@ export default async function AnalyticsPage({
           <div className="flex flex-wrap items-end justify-between gap-2">
             <div className="flex items-center gap-2">
               <MapPin className="size-4 text-[color:var(--color-tomato-600)]" />
-              <h2 className="font-display text-lg">Mapa de pedidos</h2>
+              <h2 className="font-display text-lg">Mapa de {copy.ordersLabel.toLowerCase()}</h2>
             </div>
             <p className="text-xs text-[color:var(--muted)]">
-              {mapPoints.length} pedido{mapPoints.length === 1 ? "" : "s"} con ubicación en los últimos {days} días
+              {mapPoints.length} {mapPoints.length === 1 ? copy.orderSingular : copy.ordersLabel.toLowerCase()} con ubicación en los últimos {days} días
             </p>
           </div>
           <p className="mt-1 text-xs text-[color:var(--muted)]">
-            Cada punto se hace más grande y más opaco cuanto más pedidos llegaron
+            Cada punto se hace más grande y más opaco cuanto más {copy.ordersLabel.toLowerCase()} llegaron
             ahí. Útil para identificar zonas con más demanda y planificar reparto.
           </p>
           <div className="mt-4">
@@ -616,13 +623,13 @@ export default async function AnalyticsPage({
             <h2 className="font-display text-lg">Inventario dormido</h2>
           </div>
           <p className="mt-1 text-xs text-[color:var(--muted)]">
-            Productos activos sin una sola venta en los últimos {days} días.
+            {copy.productsLabel} activos sin una sola venta en los últimos {days} días.
             Si están publicados pero nadie los compra, vale la pena revisar
-            precio, foto, descripción — o sacarlos del menú.
+            precio, foto, descripción — o sacarlos del catálogo.
           </p>
           {deadProducts.length === 0 ? (
             <p className="mt-4 text-sm text-[color:var(--color-leaf-600)]">
-              Todos tus productos activos tuvieron al menos una venta.
+              Todos tus {copy.productsLabel.toLowerCase()} activos tuvieron al menos una venta.
             </p>
           ) : (
             <ul className="mt-4 divide-y divide-[color:var(--line)]">
@@ -860,12 +867,18 @@ function PulseCard({
  * dueño la identifique de un vistazo — "ah, mi pico es 19h, ponte
  * más gente desde las 18:30".
  */
-function HourlyChart({ buckets }: { buckets: { key: number; count: number }[] }) {
+function HourlyChart({
+  buckets,
+  copy,
+}: {
+  buckets: { key: number; count: number }[];
+  copy: DashboardCopy;
+}) {
   const total = buckets.reduce((s, b) => s + b.count, 0);
   if (total === 0) {
     return (
       <p className="py-8 text-center text-sm text-[color:var(--muted)]">
-        Sin pedidos en este período.
+        Sin {copy.ordersLabel.toLowerCase()} en este período.
       </p>
     );
   }
@@ -883,7 +896,7 @@ function HourlyChart({ buckets }: { buckets: { key: number; count: number }[] })
         viewBox={`0 0 ${width} ${height + 22}`}
         className="block min-w-[420px] max-w-full"
         role="img"
-        aria-label="Pedidos por hora del día"
+        aria-label={`${copy.ordersLabel} por hora del día`}
       >
         {buckets.map((b, i) => {
           const x = padX + barW * i + 1;
@@ -902,7 +915,7 @@ function HourlyChart({ buckets }: { buckets: { key: number; count: number }[] })
               opacity={b.count > 0 ? 1 : 0.15}
             >
               <title>
-                {String(b.key).padStart(2, "0")}:00 — {b.count} pedidos
+                {String(b.key).padStart(2, "0")}:00 — {b.count} {copy.ordersLabel.toLowerCase()}
               </title>
             </rect>
           );
@@ -929,7 +942,7 @@ function HourlyChart({ buckets }: { buckets: { key: number; count: number }[] })
         <strong className="text-[color:var(--color-tomato-600)]">
           {String(peakIdx).padStart(2, "0")}:00–{String((peakIdx + 1) % 24).padStart(2, "0")}:00
         </strong>{" "}
-        con {buckets[peakIdx]?.count ?? 0} pedidos.
+        con {buckets[peakIdx]?.count ?? 0} {copy.ordersLabel.toLowerCase()}.
       </p>
     </div>
   );
@@ -940,12 +953,18 @@ function HourlyChart({ buckets }: { buckets: { key: number; count: number }[] })
  * reordenamos a Lun–Dom para coincidir con la convención boliviana.
  * Día más fuerte se pinta distinto.
  */
-function WeekdayChart({ buckets }: { buckets: { key: number; count: number }[] }) {
+function WeekdayChart({
+  buckets,
+  copy,
+}: {
+  buckets: { key: number; count: number }[];
+  copy: DashboardCopy;
+}) {
   const total = buckets.reduce((s, b) => s + b.count, 0);
   if (total === 0) {
     return (
       <p className="py-8 text-center text-sm text-[color:var(--muted)]">
-        Sin pedidos en este período.
+        Sin {copy.ordersLabel.toLowerCase()} en este período.
       </p>
     );
   }
@@ -969,7 +988,7 @@ function WeekdayChart({ buckets }: { buckets: { key: number; count: number }[] }
         viewBox={`0 0 ${width} ${height + 22}`}
         className="block w-full"
         role="img"
-        aria-label="Pedidos por día de la semana"
+        aria-label={`${copy.ordersLabel} por día de la semana`}
       >
         {reordered.map((b, i) => {
           const x = padX + barW * i + 4;
@@ -987,7 +1006,7 @@ function WeekdayChart({ buckets }: { buckets: { key: number; count: number }[] }
                 fill={isPeak ? "var(--color-leaf-500)" : "var(--color-amber-500)"}
                 opacity={b.count > 0 ? 1 : 0.15}
               >
-                <title>{labels[i]}: {b.count} pedidos</title>
+                <title>{labels[i]}: {b.count} {copy.ordersLabel.toLowerCase()}</title>
               </rect>
               <text
                 x={x + (barW - 8) / 2}
@@ -1007,7 +1026,7 @@ function WeekdayChart({ buckets }: { buckets: { key: number; count: number }[] }
         <strong className="text-[color:var(--color-leaf-600)]">
           {labels[peakIdx]}
         </strong>{" "}
-        con {reordered[peakIdx]?.count ?? 0} pedidos.
+        con {reordered[peakIdx]?.count ?? 0} {copy.ordersLabel.toLowerCase()}.
       </p>
     </div>
   );
@@ -1020,8 +1039,10 @@ function WeekdayChart({ buckets }: { buckets: { key: number; count: number }[] }
  */
 function DailyOrdersChart({
   series,
+  copy,
 }: {
   series: { day: string; count: number; revenue: number }[];
+  copy: DashboardCopy;
 }) {
   if (series.length === 0) {
     return (
@@ -1043,7 +1064,7 @@ function DailyOrdersChart({
         viewBox={`0 0 ${width} ${height + 26}`}
         className="block min-w-[640px] max-w-full"
         role="img"
-        aria-label="Pedidos por día"
+        aria-label={`${copy.ordersLabel} por día`}
       >
         {/* Líneas guía horizontales: 0%, 50%, 100% del max */}
         {[0, 0.5, 1].map((p) => {
@@ -1079,7 +1100,7 @@ function DailyOrdersChart({
                 opacity={s.count > 0 ? 1 : 0.15}
               >
                 <title>
-                  {shortDateWithWeekday(s.day)}: {s.count} pedidos · Bs {formatBobAmount(s.revenue)}
+                  {shortDateWithWeekday(s.day)}: {s.count} {copy.ordersLabel.toLowerCase()} · Bs {formatBobAmount(s.revenue)}
                 </title>
               </rect>
             </g>

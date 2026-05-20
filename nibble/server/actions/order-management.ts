@@ -357,7 +357,7 @@ export async function verifyPaymentAction(
       orderNumber: true,
       customerEmail: true,
       total: true,
-      store: { select: { name: true, slug: true } },
+      store: { select: { name: true, slug: true, vertical: true } },
     },
   });
   if (!order) return { error: "Pedido no encontrado" };
@@ -453,6 +453,7 @@ export async function verifyPaymentAction(
         orderNumber: order.orderNumber,
         trackingToken: order.trackingToken,
         total: Number(order.total),
+        vertical: order.store.vertical,
       }),
     );
   }
@@ -492,7 +493,7 @@ export async function rejectPaymentAction(
       trackingToken: true,
       orderNumber: true,
       customerEmail: true,
-      store: { select: { name: true, slug: true, whatsappPhone: true } },
+      store: { select: { name: true, slug: true, whatsappPhone: true, vertical: true } },
     },
   });
   if (!order) return { error: "Pedido no encontrado" };
@@ -585,6 +586,7 @@ export async function rejectPaymentAction(
         trackingToken: order.trackingToken,
         reason: parsed.data.reason,
         storeWhatsapp: order.store.whatsappPhone,
+        vertical: order.store.vertical,
       }),
     );
   }

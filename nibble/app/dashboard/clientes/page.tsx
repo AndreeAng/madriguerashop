@@ -110,7 +110,7 @@ export default async function ClientesPage({
                 <p className="mt-3 text-[color:var(--muted)]">
                   {q
                     ? "No se encontraron clientes con esa búsqueda."
-                    : "Tus clientes aparecen acá apenas hagan su primer pedido."}
+                    : `Tus clientes aparecen acá apenas hagan ${copy.orderSingular === "solicitud" ? "su primera" : "su primer"} ${copy.orderSingular}.`}
                 </p>
               </div>
             ) : (

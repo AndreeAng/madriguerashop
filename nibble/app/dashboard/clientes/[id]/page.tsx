@@ -6,6 +6,7 @@ import { requireStoreOwner } from "@/lib/auth/session";
 import { formatBob, formatWaPhone } from "@/lib/utils";
 import { STATUS_COLORS } from "@/lib/orders/status";
 import { OrderStatusPill } from "@/components/ui/OrderStatusPill";
+import { dashboardCopy } from "@/lib/dashboard/copy";
 
 export const metadata = { title: "Cliente · Madriguera Shop" };
 
@@ -15,6 +16,7 @@ export default async function CustomerDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { store } = await requireStoreOwner();
+  const copy = dashboardCopy(store.vertical);
   const { id } = await params;
 
   // Una sola query con `include` — `customerId` ya implica pertenencia al
@@ -57,14 +59,14 @@ export default async function CustomerDetailPage({
 
               <div className="mt-6 grid gap-3 md:grid-cols-3">
                 <Stat
-                  label="Pedidos totales"
+                  label={`${copy.ordersLabel} totales`}
                   value={String(customer.ordersCount)}
                   hint={
                     customer.ordersCount > 1
                       ? "Cliente recurrente"
                       : customer.ordersCount === 1
-                      ? "Primer pedido"
-                      : "Sin pedidos"
+                      ? `${copy.orderSingular === "solicitud" ? "Primera" : "Primer"} ${copy.orderSingular}`
+                      : `Sin ${copy.ordersLabel.toLowerCase()}`
                   }
                 />
                 <Stat
@@ -72,7 +74,7 @@ export default async function CustomerDetailPage({
                   value={formatBob(Number(customer.totalSpent))}
                 />
                 <Stat
-                  label="Último pedido"
+                  label={`Último ${copy.orderSingular}`}
                   value={
                     customer.lastOrderAt
                       ? customer.lastOrderAt.toLocaleDateString("es-BO", {
@@ -86,10 +88,10 @@ export default async function CustomerDetailPage({
 
               {/* Order history */}
               <section className="mt-8">
-                <h2 className="font-semibold">Histórico de pedidos</h2>
+                <h2 className="font-semibold">Histórico de {copy.ordersLabel.toLowerCase()}</h2>
                 {orders.length === 0 ? (
                   <p className="mt-3 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-6 text-center text-sm text-[color:var(--muted)]">
-                    Sin pedidos registrados.
+                    Sin {copy.ordersLabel.toLowerCase()} registrados.
                   </p>
                 ) : (
                   <ul className="mt-3 space-y-2">

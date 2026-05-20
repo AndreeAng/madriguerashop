@@ -315,7 +315,7 @@ export function CheckoutForm({
                         <p className="rounded-lg bg-[color:var(--color-amber-50)] px-3 py-2 text-xs text-[color:var(--color-amber-700)]">
                           Tu punto cae fuera de nuestras zonas de cobertura.
                           {store.defaultDeliveryFee != null
-                            ? ` Si confirmamos el pedido, cobramos la tarifa por defecto (${formatBob(store.defaultDeliveryFee)}).`
+                            ? ` Si confirmamos ${copy.orderSingular === "solicitud" ? "la" : "el"} ${copy.orderSingular}, cobramos la tarifa por defecto (${formatBob(store.defaultDeliveryFee)}).`
                             : " Te contactamos por WhatsApp para coordinar."}
                         </p>
                       ) : null}
@@ -385,7 +385,7 @@ export function CheckoutForm({
                   onClick={() => setPaymentMethod("CASH_ON_DELIVERY")}
                   icon={<Banknote className="size-5" />}
                   title="Contra entrega"
-                  desc="Pagas en efectivo cuando recibes el pedido."
+                  desc={`Pagas en efectivo cuando recibes ${copy.orderSingular === "solicitud" ? "la" : "el"} ${copy.orderSingular}.`}
                 />
               )}
             </div>
@@ -475,7 +475,7 @@ export function CheckoutForm({
               role="status"
               className="rounded-2xl border border-[color:var(--color-amber-300)] bg-[color:var(--color-amber-50)] p-4 text-sm text-[color:var(--color-amber-900)]"
             >
-              <p className="font-medium">El producto cambió, revisa tu carrito.</p>
+              <p className="font-medium">{copy.itemSingular === "servicio" ? "Algo cambió, revisa tu solicitud." : `El ${copy.itemSingular} cambió, revisa ${copy.cartLabel.toLowerCase()}.`}</p>
               <p className="mt-1 text-xs">
                 Quitamos algún artículo porque ya no está disponible o el
                 vendedor lo modificó.
@@ -520,7 +520,7 @@ export function CheckoutForm({
                 />
               )}
               <p className="text-[10px] text-[color:var(--muted)]">
-                Si usas cupón, se aplica al confirmar el pedido.
+                Si usas cupón, se aplica al confirmar {copy.cartLabel.toLowerCase()}.
               </p>
               <div className="flex justify-between border-t border-[color:var(--line)] pt-3 text-base font-semibold">
                 <span>Total estimado</span>
@@ -533,7 +533,7 @@ export function CheckoutForm({
             <CheckoutSubmit paymentMethod={paymentMethod} proofUrl={proofUrl} />
 
             <p className="mt-3 text-center text-xs text-[color:var(--muted)]">
-              Al confirmar abres WhatsApp con el resumen del pedido para {store.name}.
+              Al confirmar abres WhatsApp con el resumen para {store.name}.
             </p>
           </div>
         </aside>
