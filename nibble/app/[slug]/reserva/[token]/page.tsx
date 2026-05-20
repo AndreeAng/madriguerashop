@@ -47,12 +47,16 @@ const STATUS_COPY: Record<
 };
 
 import { longDate } from "@/lib/i18n/dates";
+import { inBolivia } from "@/lib/booking/timezone";
 
 // `formatDateLong` y `formatHHMM` antes vivían como copias locales — ahora
 // reusamos `longDate` del módulo compartido y un wrapper trivial para hora.
 const formatDateLong = (d: Date) => longDate(d);
+// Hora en zona Bolivia (UTC-4). `d.getHours()` usa la TZ del proceso, que en
+// Vercel es UTC: una reserva a las "10:00 BOT" se mostraría como "14:00".
 function formatHHMM(d: Date): string {
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  const b = inBolivia(d);
+  return `${String(b.hours).padStart(2, "0")}:${String(b.minutes).padStart(2, "0")}`;
 }
 
 export default async function ReservaPage({

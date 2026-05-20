@@ -184,13 +184,43 @@ export async function importProductsAction(
     });
   }
 
+  // Enforce plan-limit dentro de un advisory lock per-tenant — mismo patrón
+  // que `upsertProductAction`. Sin esto un owner sube un CSV con 1000 filas
+  // y se salta el límite del plan: el `createMany` no chequea nada y la UI
+  // solo enforce en el flow de productos uno-a-uno. Si el batch completo
+  // no cabe, abortamos el import entero (decisión: "todo o nada" es más
+  // predecible para el owner que importar parcialmente y dejarlo cerca del
+  // tope sin saberlo).
   let created = 0;
   if (toCreate.length > 0) {
-    const result = await db.product.createMany({
-      data: toCreate,
-      skipDuplicates: true,
+    const { checkProductLimit } = await import("@/lib/billing/plan-limits");
+    const limitError = await db.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `SELECT pg_advisory_xact_lock(42, hashtext($1))`,
+        `product-limit:${storeId}`,
+      );
+      const limit = await checkProductLimit(storeId, tx);
+      if (limit.limit !== null && limit.current + toCreate.length > limit.limit) {
+        const room = Math.max(0, limit.limit - limit.current);
+        return (
+          `Tu plan permite ${limit.limit} productos activos. ` +
+          `Tenes ${limit.current} y este CSV agregaría ${toCreate.length}. ` +
+          (room === 0
+            ? "Suspende productos o sube de plan antes de importar."
+            : `Reduce el archivo a ${room} filas o sube de plan.`)
+        );
+      }
+      const result = await tx.product.createMany({
+        data: toCreate,
+        skipDuplicates: true,
+      });
+      return result.count;
     });
-    created = result.count;
+
+    if (typeof limitError === "string") {
+      return { error: limitError };
+    }
+    created = limitError;
   }
 
   await audit({

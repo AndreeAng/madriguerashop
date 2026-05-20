@@ -13,11 +13,17 @@
  * NO uso `Category.slug` de DB porque la sección del storefront se
  * agrupa por NOMBRE (StorefrontMenu indexa por nombre, no por slug),
  * y queremos un solo identificador que los dos lados generen igual.
+ *
+ * Usamos la propiedad Unicode `\p{Mn}` (Mark, Nonspacing) en lugar de
+ * un rango con caracteres combinantes literales: esos chars son
+ * zero-width y dependen de que el editor/save preserve la secuencia.
+ * `\p{Mn}` también cubre marcas combinantes fuera de U+0300–U+036F
+ * (ej. arábigas) — más correcto para nombres con grafías mixtas.
  */
 export function categoryAnchorId(name: string): string {
   return name
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/\p{Mn}/gu, "")
     .replace(/\s+/g, "-");
 }

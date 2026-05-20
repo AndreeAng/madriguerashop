@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { StoreVertical } from "@prisma/client";
-import { requireSuperAdmin } from "@/lib/auth/session";
+import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import { hashPassword } from "@/lib/auth/password";
 import { PHONE_BO_RE } from "@/lib/auth/identifiers";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
@@ -69,7 +69,12 @@ export async function adminImportQuickAction(
   _prev: ImportQuickState,
   formData: FormData,
 ): Promise<ImportQuickState> {
-  const admin = await requireSuperAdmin();
+  // `requireSuperAdminOrFail` (no `requireSuperAdmin`): este caller es una
+  // server action que devuelve `ActionState`. `requireSuperAdmin` redirige
+  // con `redirect()`, lo cual desde un POST de action tira NEXT_REDIRECT y
+  // el cliente recibe un error de red en vez del mensaje de error tipado.
+  const admin = await requireSuperAdminOrFail();
+  if ("error" in admin) return { error: admin.error };
 
   const parsed = schema.safeParse({
     sourceUrl: formData.get("sourceUrl"),
@@ -110,7 +115,7 @@ export async function adminImportQuickAction(
   try {
     const result = await importQuickStore({
       sourceSlug,
-      actorId: admin.userId,
+      actorId: admin.id,
       target: {
         slug: parsed.data.slug,
         storeName: parsed.data.storeName,

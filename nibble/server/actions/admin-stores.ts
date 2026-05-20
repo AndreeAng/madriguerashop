@@ -458,12 +458,12 @@ export async function adminTransferOwnerAction(
   }
 
   await audit({
-    action: "saas.user_role_changed",
+    action: "saas.store_owner_transferred",
     actorId: guard.id,
+    storeId: store.id,
     target: store.id,
     metadata: {
       slug: store.slug,
-      adminTransferredOwner: true,
       suspendedOwnerIds: suspendedIds,
     },
   });

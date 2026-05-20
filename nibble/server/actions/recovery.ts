@@ -10,7 +10,7 @@ import {
   isValidRecoveryTokenFormat,
   RECOVERY_TOKEN_HEX_LEN,
 } from "@/lib/auth/recovery-token";
-import { sendEmail } from "@/lib/email/send";
+import { sendEmailBackground } from "@/lib/email/send";
 import { passwordResetEmail } from "@/lib/email/templates/password-reset";
 import { appUrl } from "@/lib/email/client";
 import { audit } from "@/lib/audit/log";
@@ -129,9 +129,14 @@ export async function requestPasswordResetAction(
     }),
   ]);
 
-  // Enviar email — el plano viaja solo por el canal de email.
+  // Enviar email en BACKGROUND para cerrar el oracle de timing: SMTP tiene
+  // varianza de 100-500ms (red+greylisting+queue del MX) y un atacante con
+  // ping estable puede distinguir el happy path por la varianza incluso
+  // con el dummy bcrypt en el path negativo. Despachando al fondo, la
+  // respuesta al cliente sale apenas confirmamos el token en DB,
+  // independiente del estado del SMTP.
   const resetUrl = `${appUrl()}/recovery/${tokenPlain}`;
-  const result = await sendEmail(
+  sendEmailBackground(
     passwordResetEmail({
       to: user.email,
       resetUrl,
@@ -139,18 +144,14 @@ export async function requestPasswordResetAction(
     }),
   );
 
-  // Si SMTP falla, NO mostramos error al usuario (anti-enumeración: igual
-  // mostramos noticeKey="sent"). Pero auditamos el fallo para que ops note
-  // el problema — sin esto, los emails de recovery podrían fallar
-  // silenciosamente durante días.
+  // El audit se emite SIEMPRE (intento de envío). Si SMTP fallara, queda en
+  // `console.error` desde `sendEmailBackground` y Sentry lo recoge; perdemos
+  // el `delivered: true/false` en el audit pero ganamos cerrar el oracle.
   await audit({
     action: "auth.password_reset.requested",
     actorId: user.id,
-    // Target = user.id, no el identifier crudo (sería PII en logs).
     target: user.id,
-    metadata: result.delivered
-      ? { kind: ident.kind, delivered: true }
-      : { kind: ident.kind, delivered: false, reason: result.reason },
+    metadata: { kind: ident.kind, enqueued: true },
   });
 
   return { ok: true, noticeKey: "sent" };
@@ -203,8 +204,14 @@ export async function completePasswordResetAction(
 
   // El URL trae el token plano; en DB guardamos el hash. Hasheamos input
   // antes del lookup.
+  //
+  // ORDEN IMPORTA: el bcrypt cuesta ~100ms de CPU. Si lo ejecutamos ANTES de
+  // validar el token, un atacante puede abusar del endpoint (rate limit 10/
+  // min/IP) para saturar el worker pool con hashes contra tokens inventados
+  // (que pasan el regex de formato de 64 hex). Hasheamos solo después de
+  // confirmar el token en DB para que ese costo se pague únicamente cuando
+  // hay un reset real en curso.
   const tokenHash = hashRecoveryToken(parsed.data.token);
-  const passwordHash = await hashPassword(parsed.data.password);
   const now = new Date();
 
   // TOCTOU-safe: consumimos el token con un `updateMany` condicional
@@ -214,27 +221,34 @@ export async function completePasswordResetAction(
   // Sin este patrón, ambas requests pasaban el `findUnique + check`
   // y ambas sobreescribían el `passwordHash` — un atacante podía
   // race contra la víctima legítima por el control del password final.
+  // Pre-validación FUERA de la transacción para fail fast antes del bcrypt:
+  // si el token no existe, está usado o expiró, devolvemos sin gastar CPU.
+  // No abre ventana TOCTOU porque el `updateMany` condicional dentro de la
+  // tx más abajo es la fuente de verdad — el pre-check sólo evita el hash.
+  const preReset = await db.passwordReset.findUnique({
+    where: { token: tokenHash },
+    select: { id: true, userId: true, expiresAt: true, usedAt: true },
+  });
+  if (!preReset) return { error: "Link inválido o ya usado." };
+  if (preReset.usedAt) return { error: "Link inválido o ya usado." };
+  if (preReset.expiresAt < now) return { error: "El link expiró. Solicita uno nuevo." };
+
+  const passwordHash = await hashPassword(parsed.data.password);
+
   let userId: string | null = null;
   try {
     userId = await db.$transaction(async (tx) => {
-      const reset = await tx.passwordReset.findUnique({
-        where: { token: tokenHash },
-        select: { id: true, userId: true, expiresAt: true, usedAt: true },
-      });
-      if (!reset) throw new Error("__invalid__");
-      if (reset.usedAt) throw new Error("__used__");
-      if (reset.expiresAt < now) throw new Error("__expired__");
-
-      // Consumo atómico: si otra request ya lo marcó usado entre el find
-      // y este update, `count` será 0 y abortamos sin tocar el password.
+      // Consumo atómico: si otra request ya lo marcó usado entre el
+      // pre-check y este update, `count` será 0 y abortamos sin tocar el
+      // password. Es el único punto donde se decide quién "gana" el reset.
       const claimed = await tx.passwordReset.updateMany({
-        where: { id: reset.id, usedAt: null },
+        where: { id: preReset.id, usedAt: null, expiresAt: { gt: now } },
         data: { usedAt: now },
       });
       if (claimed.count !== 1) throw new Error("__race__");
 
       await tx.user.update({
-        where: { id: reset.userId },
+        where: { id: preReset.userId },
         // `passwordChangedAt` invalida cualquier JWT activo en el próximo
         // revalidate (ver auth.ts callback). Sin esto, si un atacante
         // capturó el link de recovery mientras la víctima estaba logueada,
@@ -244,20 +258,17 @@ export async function completePasswordResetAction(
 
       // Invalidar el resto de tokens del usuario
       await tx.passwordReset.updateMany({
-        where: { userId: reset.userId, usedAt: null },
+        where: { userId: preReset.userId, usedAt: null },
         data: { usedAt: now },
       });
 
-      return reset.userId;
+      return preReset.userId;
     });
   } catch (err) {
-    if (err instanceof Error) {
-      if (err.message === "__invalid__" || err.message === "__used__" || err.message === "__race__") {
-        return { error: "Link inválido o ya usado." };
-      }
-      if (err.message === "__expired__") {
-        return { error: "El link expiró. Solicita uno nuevo." };
-      }
+    if (err instanceof Error && err.message === "__race__") {
+      // Otra request consumió el token entre el pre-check y el claim
+      // atómico — tratar como "link ya usado" igual que el pre-check.
+      return { error: "Link inválido o ya usado." };
     }
     throw err;
   }

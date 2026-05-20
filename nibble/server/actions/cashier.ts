@@ -147,10 +147,10 @@ export async function inviteCashierAction(
 
   if (createdId) {
     await audit({
-      action: "saas.user_role_changed", // reusamos; metadata aclara invitación
+      action: "staff.invited",
       actorId,
+      storeId,
       target: createdId,
-      metadata: { invitedCashier: true, storeId },
     });
   }
 

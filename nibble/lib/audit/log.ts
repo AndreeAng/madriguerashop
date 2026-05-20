@@ -16,6 +16,7 @@ export type AuditAction =
   | "auth.logout"
   | "auth.password_reset.requested"
   | "auth.password_reset.completed"
+  | "auth.email_verified"
   // Onboarding
   | "store.registered"
   // Pedidos
@@ -89,7 +90,10 @@ export type AuditAction =
   // /admin/tiendas/[id], distintas del flujo automático de billing).
   | "saas.store_suspended"
   | "saas.store_reactivated"
-  | "saas.store_deleted";
+  | "saas.store_deleted"
+  | "saas.store_owner_transferred"
+  // Equipo
+  | "staff.invited";
 
 /**
  * Registra una entrada de auditoría. Nunca falla la operación principal:

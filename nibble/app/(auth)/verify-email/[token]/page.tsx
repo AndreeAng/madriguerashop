@@ -50,15 +50,9 @@ export default async function VerifyEmailPage({
     });
     if (updated.count > 0) {
       await audit({
-        action: "auth.password_reset.completed",
-        // Reusamos esta action: no hay tipo dedicado para email-verified
-        // todavía, y "completed" cubre el caso semánticamente (un flujo
-        // de verificación se completó). TODO: agregar
-        // `auth.email_verified` al enum cuando este flow tenga métricas
-        // separadas.
+        action: "auth.email_verified",
         actorId: verify.userId,
         target: verify.userId,
-        metadata: { flow: "email_verification" },
       });
       status = "ok";
     } else {

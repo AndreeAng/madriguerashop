@@ -374,9 +374,15 @@ export async function saveImageRaw(
     await mkdir(dir, { recursive: true });
     await writeFile(filePath, buffer);
   } catch (err) {
+    // Mismo patrón que `saveImage`: detalle (path absoluto, errno) sólo
+    // server-side. Si propagáramos `err.message` el caller que serializa
+    // `UploadError.message` al cliente expondría rutas internas y errno.
+    console.error("[upload-raw] fs write failed", {
+      message: (err as Error).message,
+    });
     throw new UploadError(
       "io_error",
-      `Error guardando la imagen: ${(err as Error).message}`,
+      "No pudimos guardar la imagen. Intenta de nuevo.",
     );
   }
 
