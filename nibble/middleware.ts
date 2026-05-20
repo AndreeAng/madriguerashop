@@ -50,6 +50,14 @@ function imgSrcSources(): string {
       // ignored — URL mal formateada
     }
   }
+  // Vercel Blob — cuando guardamos uploads ahí, las URLs son
+  // https://<id>.public.blob.vercel-storage.com/... y el browser necesita
+  // permiso CSP para cargarlas. Lo agregamos siempre que haya token (es la
+  // señal de que `saveImage` está escribiendo a Blob). En dev sin token,
+  // no contamina la CSP con un dominio que no se usa.
+  if (process.env.BLOB_READ_WRITE_TOKEN) {
+    sources.push("https://*.public.blob.vercel-storage.com");
+  }
   if (process.env.NODE_ENV !== "production") {
     sources.push("https://images.unsplash.com", "https://picsum.photos");
   }
