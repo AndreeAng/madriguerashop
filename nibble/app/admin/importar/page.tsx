@@ -5,9 +5,13 @@ import { ImportQuickForm } from "@/components/admin/importar/ImportQuickForm";
 export const metadata = { title: "Importar de Quick · Admin" };
 
 // La server action del import descarga ~90 imágenes desde quick.com.bo +
-// 90 inserts a Postgres. Con paralelismo de 8 imágenes a la vez tarda
-// ~5-15s típico, pero el default de 10s era insuficiente para tiendas
-// grandes. 60s es el máximo en Hobby plan de Vercel y nos da headroom.
+// las sube a Vercel Blob + bulk-inserta los productos. Optimizaciones
+// aplicadas (ver importer.ts):
+//   - Pool de 12 workers (no batches que bloqueen al worst-case).
+//   - `saveImageRaw` salta sharp (~30s de CPU ahorrados en 90 imágenes).
+//   - `createManyAndReturn` en lugar de 92 INSERTs secuenciales.
+// Tiempo target: 15-25s para 90+ productos. 60s es el máximo del Hobby
+// plan de Vercel — nos da ~2x headroom contra latencias largas.
 export const maxDuration = 60;
 
 export default async function AdminImportPage() {

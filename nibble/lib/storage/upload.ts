@@ -254,3 +254,108 @@ export async function saveImage(
 
   return { url: urlPath, bytes: output.length };
 }
+
+/**
+ * Versión "raw" de `saveImage` — guarda los bytes tal cual, sin pasar por
+ * sharp. Pensada para imports masivos donde los bytes ya vienen optimizados
+ * desde la fuente (otra plataforma de e-commerce, Cloudinary, etc.) y el
+ * costo de CPU de sharp (≈300ms por imagen) se traduce en timeouts cuando
+ * importamos decenas o cientos de fotos contra el límite serverless.
+ *
+ * Trade-off explícito vs `saveImage`:
+ *   - Tamaño: las imágenes pueden ser MÁS PESADAS (no las convertimos a
+ *     WebP ni redimensionamos al ancho del kind). Estimación: x2-3 bytes
+ *     sobre una optimizada.
+ *   - Quality: si la fuente sirve PNG sin compresión o JPG al 100%, eso
+ *     se preserva tal cual.
+ *   - Mime: se mantiene el original (JPG, PNG, WebP). Sin conversión.
+ *
+ * Lo que SÍ valida (mismo nivel de seguridad que saveImage):
+ *   - Tamaño máximo (`MAX_UPLOAD_SIZE_MB`).
+ *   - Magic bytes (rechazo bytes que no son imagen).
+ *   - ownerId regex (anti path-traversal).
+ *
+ * Para una segunda pasada de optimización fuera del path crítico del
+ * import, ver el roadmap: un cron job podría re-encodear con sharp.
+ */
+export async function saveImageRaw(
+  buffer: Buffer,
+  contentType: string,
+  ownerId: string,
+  kind: ImageKind,
+): Promise<{ url: string; bytes: number }> {
+  if (buffer.length > maxSizeBytes()) {
+    throw new UploadError(
+      "too_large",
+      `Imagen demasiado grande. Máx ${maxSizeBytes() / 1024 / 1024} MB.`,
+    );
+  }
+
+  const detected = detectImageType(buffer);
+  if (!detected) {
+    throw new UploadError("bad_content", "El archivo no es una imagen válida.");
+  }
+
+  if (!/^[a-zA-Z0-9_-]+$/.test(ownerId)) {
+    throw new UploadError("bad_content", "ownerId inválido");
+  }
+
+  // Si el contentType declarado no coincide con un MIME aceptado, usamos
+  // el detectado por magic bytes — es la fuente de verdad.
+  const finalContentType = ACCEPTED_MIME.has(contentType)
+    ? contentType
+    : detected === "jpeg"
+      ? "image/jpeg"
+      : detected === "png"
+        ? "image/png"
+        : "image/webp";
+
+  const ext = detected === "jpeg" ? "jpg" : detected;
+  const id = crypto.randomUUID();
+  const filename = `${id}.${ext}`;
+  const isPrivate = kind === "proof";
+  const segments = isPrivate
+    ? [ownerId]
+    : KIND_SUBDIR[kind]
+      ? [ownerId, KIND_SUBDIR[kind]!]
+      : [ownerId];
+
+  if (isBlobMode()) {
+    const blobKey = (isPrivate
+      ? ["proof", ...segments, filename]
+      : ["uploads", ...segments, filename]
+    ).join("/");
+    try {
+      const result = await put(blobKey, buffer, {
+        access: "public",
+        contentType: finalContentType,
+        addRandomSuffix: false,
+      });
+      return { url: result.url, bytes: buffer.length };
+    } catch (err) {
+      throw new UploadError(
+        "io_error",
+        `Error guardando la imagen en Blob: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  const baseDir = isPrivate ? proofUploadDir() : uploadDir();
+  const dir = path.join(baseDir, ...segments);
+  const filePath = path.join(dir, filename);
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(filePath, buffer);
+  } catch (err) {
+    throw new UploadError(
+      "io_error",
+      `Error guardando la imagen: ${(err as Error).message}`,
+    );
+  }
+
+  const urlPath = isPrivate
+    ? ["/api/uploads/proof", ...segments, filename].join("/")
+    : [publicBaseUrl().replace(/\/$/, ""), ...segments, filename].join("/");
+
+  return { url: urlPath, bytes: buffer.length };
+}
