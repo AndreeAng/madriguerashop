@@ -364,18 +364,23 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
   });
   const productsCreated = createdProducts.length;
 
-  // Mapear los IDs creados a los quick IDs por orden de inserción
-  // (createManyAndReturn preserva el orden en Postgres). Después
-  // bulk-insertamos las ProductImage.
+  // Mapeo `productId` por `slug` (no por índice). createManyAndReturn de
+  // Prisma 5.14+ documenta que devuelve los registros en el mismo orden
+  // del input, pero usar un Map slug→id es defensivo: aunque cambie ese
+  // contrato (Prisma upgrade, optimización del driver, etc.) seguiría
+  // funcionando. Slugs son únicos por tienda por design — los garantizamos
+  // arriba con `usedProductSlugs`.
+  const productIdBySlug = new Map<string, string>(
+    createdProducts.map((p) => [p.slug, p.id]),
+  );
   const productImageData: Array<{ productId: string; url: string; sortOrder: number }> = [];
-  for (let i = 0; i < prepared.length; i++) {
-    const prep = prepared[i];
-    const created = createdProducts[i];
-    if (!prep || !created) continue; // imposible si createManyAndReturn respeta el orden
-    const savedUrl = imageResults.get(prep.quickProduct.id);
+  for (const p of prepared) {
+    const productId = productIdBySlug.get(p.slug);
+    if (!productId) continue; // imposible si createMany no falló silently
+    const savedUrl = imageResults.get(p.quickProduct.id);
     if (savedUrl) {
       productImageData.push({
-        productId: created.id,
+        productId,
         url: savedUrl,
         sortOrder: 0,
       });
