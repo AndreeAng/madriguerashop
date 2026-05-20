@@ -135,7 +135,7 @@ export function paymentVerifiedCustomerEmail(opts: {
     ${escapeHtml(opts.storeName)} fue confirmado.</p>
     <p>
       Total verificado: <strong>${formatBob(opts.total)}</strong>.
-      Ya empezamos a prepararlo — vas a recibir actualizaciones en tu link de seguimiento.
+      Ya empezamos a preparar${nounLower === "solicitud" ? "la" : "lo"} — vas a recibir actualizaciones en tu link de seguimiento.
     </p>
   `;
 

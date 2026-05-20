@@ -19,28 +19,47 @@ const upsertSchema = z.object({
   slug: z.string().trim().optional(),
   description: z.string().trim().max(280).optional(),
   parentId: z.string().nullable().optional(),
-  // imageUrl: solo paths relativos (/uploads/... vía nuestro endpoint de
-  // upload) o https:// hacia hosts whitelisted en next.config.ts. Antes
-  // aceptaba CUALQUIER https://, lo que permitía:
-  //   1) SSRF latente si en el futuro alguien hace fetch server-side
-  //      del imageUrl (ej. para generar thumbnails)
+  // imageUrl: la URL debe venir de NUESTRO upload endpoint, no de un host
+  // externo. Aceptamos tres formas según el modo de storage activo:
+  //   - /uploads/...           → filesystem público (dev sin Blob token)
+  //   - /api/uploads/...       → route handler privado (dev sin Blob token)
+  //   - https://*.public.blob.vercel-storage.com/uploads/...
+  //                            → Vercel Blob (prod con BLOB_READ_WRITE_TOKEN)
+  // Sin esta whitelist se abrían tres vectores:
+  //   1) SSRF latente si en el futuro alguien hace fetch server-side del
+  //      imageUrl (ej. para generar thumbnails).
   //   2) Errors 500 en runtime cuando next/image rechaza un host no
-  //      listado en `remotePatterns`
-  //   3) Phishing — un atacante con acceso de owner mete URLs externas
-  //      como "imagen" de categoría
+  //      listado en `remotePatterns`.
+  //   3) Phishing — un owner mete URLs externas como "imagen" de categoría.
   imageUrl: z
     .string()
     .trim()
     .max(2048)
-    .refine(
-      (v) =>
-        v === "" ||
-        v.startsWith("/uploads/") ||
-        v.startsWith("/api/uploads/"),
-      "Sube la imagen desde el botón — sólo se aceptan rutas internas",
-    )
+    .refine(isAcceptedUploadUrl, "Sube la imagen desde el botón — sólo se aceptan rutas internas")
     .optional(),
 });
+
+/**
+ * Predicate para imageUrl de categoría. Acepta tanto el formato filesystem
+ * (paths relativos) como el de Vercel Blob (URLs absolutas al bucket de
+ * Madriguera). El hostname `.public.blob.vercel-storage.com` + el path
+ * `/uploads/` aseguran que la URL viene de nuestro propio bucket.
+ */
+function isAcceptedUploadUrl(v: string): boolean {
+  if (v === "") return true;
+  if (v.startsWith("/uploads/")) return true;
+  if (v.startsWith("/api/uploads/")) return true;
+  try {
+    const u = new URL(v);
+    return (
+      u.protocol === "https:" &&
+      u.hostname.endsWith(".public.blob.vercel-storage.com") &&
+      u.pathname.startsWith("/uploads/")
+    );
+  } catch {
+    return false;
+  }
+}
 
 type UpsertField = "name" | "slug" | "description" | "parentId" | "imageUrl";
 
