@@ -1,4 +1,5 @@
 import "server-only";
+import { inBolivia } from "@/lib/booking/timezone";
 import type { FacturaInput } from "./types";
 
 /**
@@ -8,11 +9,24 @@ import type { FacturaInput } from "./types";
  *   - usar `xmlbuilder2` para no escribir strings concatenados
  *   - validar contra el XSD oficial con `xsd-schema-validator` antes de enviar
  *   - los XSD están en https://siatinfo.impuestos.gob.bo
+ *   - firmar con XMLDSig (requisito SIN para modalidad electrónica en línea)
+ *     antes de enviar a `recepcionFactura`.
  *
  * Por ahora retorna un esqueleto con los campos correctos pero no validado.
  */
 export function buildFacturaXml(input: FacturaInput): string {
-  const fmtDate = (d: Date) => d.toISOString().replace("Z", "");
+  // `fechaEmision` debe ir en hora Bolivia (UTC-4). `toISOString()` emite
+  // UTC, así que una factura emitida 21:00 BOT quedaría con la fecha del
+  // día siguiente — el SIN rechaza con 904/911 al no encontrar el CUFD
+  // correspondiente al día declarado.
+  const fmtDate = (d: Date) => {
+    const b = inBolivia(d);
+    const pad = (n: number, w = 2) => String(n).padStart(w, "0");
+    return (
+      `${b.year}-${pad(b.month + 1)}-${pad(b.day)}` +
+      `T${pad(b.hours)}:${pad(b.minutes)}:${pad(b.seconds)}.${pad(b.milliseconds, 3)}`
+    );
+  };
   const fmtMoney = (n: number) => n.toFixed(2);
 
   const items = input.items

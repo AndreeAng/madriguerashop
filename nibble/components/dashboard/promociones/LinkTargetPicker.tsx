@@ -143,7 +143,7 @@ export function LinkTargetPicker({
           onChange={(e) => setPayload(e.target.value)}
           className="mt-2 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
         >
-          <option value="">— Elegí la categoría —</option>
+          <option value="">— Elige la categoría —</option>
           {categories.map((c) => (
             <option key={c.name} value={c.name}>
               {c.name}
@@ -158,7 +158,7 @@ export function LinkTargetPicker({
           onChange={(e) => setPayload(e.target.value)}
           className="mt-2 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
         >
-          <option value="">— Elegí el producto —</option>
+          <option value="">— Elige el producto —</option>
           {products.map((p) => (
             <option key={p.slug} value={p.slug}>
               {p.name}

@@ -35,4 +35,17 @@ async function main() {
   }
   await db.$disconnect();
 }
-main();
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    // Garantiza que el pool de Prisma se cierre — sin esto, una excepción
+    // antes del `$disconnect` deja el proceso colgado por las conexiones
+    // abiertas (mata el feedback loop del dev cuando algo falla).
+    // El `await` (no `void`) hace que el proceso espere efectivamente al
+    // cierre — `void` programa la promesa pero el event loop puede
+    // terminar antes de procesarla.
+    await db.$disconnect();
+  });

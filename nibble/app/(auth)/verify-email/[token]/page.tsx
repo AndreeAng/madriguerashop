@@ -35,10 +35,17 @@ export default async function VerifyEmailPage({
   if (!verify.ok) {
     status = verify.reason === "expired" ? "expired" : "invalid";
   } else {
-    // Idempotente: si emailVerifiedAt ya está seteado, no lo pisamos para
-    // preservar el timestamp original (auditoría) y devolvemos "already".
+    // Idempotente Y email-bound: si emailVerifiedAt ya está seteado, no
+    // lo pisamos para preservar el timestamp original (auditoría) y
+    // devolvemos "already". El `email: verify.email` previene que un
+    // link viejo verifique un email distinto al que tiene la cuenta hoy
+    // (ej. admin cambió el email entre la emisión del token y el click).
     const updated = await db.user.updateMany({
-      where: { id: verify.userId, emailVerifiedAt: null },
+      where: {
+        id: verify.userId,
+        email: verify.email,
+        emailVerifiedAt: null,
+      },
       data: { emailVerifiedAt: new Date() },
     });
     if (updated.count > 0) {
@@ -108,7 +115,7 @@ export default async function VerifyEmailPage({
               {status === "expired"
                 ? "Este link de verificación expiró (24 hs)."
                 : "Este link no es válido o ya fue procesado."}
-              {" "}Pedí un nuevo link desde la configuración de tu cuenta.
+              {" "}Pide un nuevo link desde la configuración de tu cuenta.
             </p>
           </>
         )}

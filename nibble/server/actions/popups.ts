@@ -7,6 +7,7 @@ import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
+import { deleteBlobIfHosted } from "@/lib/storage/upload";
 
 export type PopupFormState = {
   ok?: true;
@@ -146,11 +147,21 @@ export async function upsertPopupAction(
 
   try {
     if (data.id) {
+      // Capturamos la imageUrl previa para cleanup del Blob storage si
+      // cambió (mismo patrón que banners). Sin esto cada edit acumula
+      // imágenes huérfanas indefinidamente.
+      const previous = await db.popup.findFirst({
+        where: { id: data.id, storeId },
+        select: { imageUrl: true },
+      });
       const updated = await db.popup.updateMany({
         where: { id: data.id, storeId },
         data: payload,
       });
       if (updated.count === 0) return { error: "Popup no encontrado." };
+      if (previous?.imageUrl && previous.imageUrl !== (data.imageUrl || null)) {
+        void deleteBlobIfHosted(previous.imageUrl);
+      }
       await audit({
         action: "popup.updated",
         actorId,

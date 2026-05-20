@@ -192,6 +192,7 @@ model Store {
   alerts        Alert[]
   bookings      Booking[]
   bookingBlocks BookingBlock[]
+  orderCounter  StoreOrderCounter?
 
   @@index([status])
   @@index([slug])
@@ -317,7 +318,11 @@ model Booking {
   storeId   String
   store     Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
   productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  // `Restrict` — borrar un producto con reservas debe fallar, igual que
+  // OrderItem.product. Antes era Cascade, lo que silenciosamente hacía
+  // desaparecer reservas confirmadas (cliente esperando) si alguien
+  // hard-deleteaba el producto desde una migración o admin tool.
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict)
 
   customerName  String
   customerPhone String
@@ -431,9 +436,11 @@ model Coupon {
 
   orders Order[]
   usages CouponUsage[]
+  // `@@unique([storeId, code])` ya crea un B-tree sobre `(storeId, code)`,
+  // por lo que un `@@index([storeId])` separado sería redundante (queries
+  // que solo filtran por storeId usan el prefijo izquierdo del unique).
 
   @@unique([storeId, code])
-  @@index([storeId])
 }
 
 model Banner {
@@ -521,6 +528,9 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   orders Order[]
+  // `@@index([storeId])` redundante: `@@unique([storeId, phone])` y
+  // `@@index([storeId, userId])` ya cubren queries que filtran solo por
+  // storeId via prefijo izquierdo del B-tree.
 
   @@unique([storeId, phone])
   // Nota: la unicidad real de (storeId, userId) vive como índice parcial
@@ -528,7 +538,6 @@ model Customer {
   // unique parciales en la DSL, así que solo declaramos @@index acá para
   // que el query planner lo use, sin que Prisma intente "arreglarlo".
   @@index([storeId, userId])
-  @@index([storeId])
 }
 
 model Cart {
@@ -582,6 +591,17 @@ enum PaymentMethod {
   CASH_ON_DELIVERY
 }
 
+/// Estados del pago de un pedido.
+///
+///   - PENDING: pago en proceso (CoD esperando entrega).
+///   - AWAITING_VERIFICATION: cliente subió comprobante QR; owner debe verificar.
+///   - VERIFIED: pago confirmado por el owner. Stock aplicado.
+///   - REJECTED: comprobante rechazado por el owner. Sin efecto fiscal.
+///   - REFUNDED: pago verificado y posteriormente devuelto. Por ahora se
+///     setea manualmente vía script de soporte o admin SQL — aún no hay
+///     UI de refund. Los reembolsos se coordinan por WhatsApp y el admin
+///     marca el estado a posteriori. Cualquier dashboard que cuente
+///     revenue debe filtrar `paymentStatus != REFUNDED`.
 enum PaymentStatus {
   PENDING
   AWAITING_VERIFICATION
@@ -654,6 +674,11 @@ model Order {
 
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  // `newAt` rastrea cuándo entró el pedido al flujo activo (NEW). Para
+  // pedidos CoD coincide con `createdAt`. Para QR, se setea en la
+  // verificación de pago (transición PENDING_PAYMENT → NEW). Sin este
+  // timestamp no se podía medir "tiempo de verificación de QR".
+  newAt        DateTime?
   confirmedAt  DateTime?
   preparingAt  DateTime?
   inDeliveryAt DateTime?
@@ -669,8 +694,10 @@ model Order {
 
   @@unique([storeId, orderNumber])
   @@index([storeId, status])
+  @@index([storeId, paymentStatus])
   @@index([storeId, createdAt])
   @@index([customerId])
+  @@index([couponId])
   @@index([createdAt])
   @@index([deliveryLat, deliveryLng])
 }
@@ -807,6 +834,7 @@ model PageView {
 
   @@index([storeId, createdAt])
   @@index([productId])
+  @@index([visitorToken])
 }
 
 // NOTA: los modelos AiChatSession / AiChatMessage fueron eliminados.
@@ -830,8 +858,10 @@ model AuditLog {
 
   @@index([storeId])
   @@index([actorId])
-  @@index([action])
-  @@index([createdAt])
+  // Índice compuesto para paginación de `/admin/auditoria` que filtra por
+  // `action` (prefijo) + ORDER BY createdAt DESC. Reemplaza los dos
+  // separados que requerían sort en memoria.
+  @@index([action, createdAt(sort: Desc)])
 }
 
 // ============== CRON LOCK ==============
@@ -854,7 +884,7 @@ model CronRun {
   error      String?       @db.Text
   result     Json?
 
-  @@index([name, startedAt])
+  @@index([name, status, startedAt])
 }
 
 // ============== ALERTAS OPERATIVAS ==============
@@ -938,8 +968,14 @@ model BillingCounter {
 // Counter atómico por tienda para `Order.orderNumber`. El `update` con
 // `increment` toma row lock en Postgres, garantizando unicidad entre
 // requests concurrentes — reemplaza el patrón frágil `aggregate _max + 1`.
+//
+// FK a Store con onDelete: Cascade — cuando se borra una tienda, su
+// counter se borra junto. Sin esta FK, los counters huérfanos quedan
+// indefinidamente en DB (CUID prácticamente sin reutilización, pero
+// basura acumulada).
 model StoreOrderCounter {
   storeId String @id
+  store   Store  @relation(fields: [storeId], references: [id], onDelete: Cascade)
   current Int    @default(0)
 }
 
@@ -951,7 +987,12 @@ model StoreOrderCounter {
 model CouponUsage {
   id            String   @id @default(cuid())
   couponId      String
-  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  // `Restrict` evita que borrar un cupón destruya su historial de uso.
+  // Antes era Cascade — borrar un cupón eliminaba retroactivamente la
+  // evidencia de qué clientes lo usaron, impidiendo auditar abusos de
+  // `usageLimitPerUser`. Para borrar un cupón con usos, ahora hay que
+  // hacer soft-delete (`isActive: false`).
+  coupon        Coupon   @relation(fields: [couponId], references: [id], onDelete: Restrict)
   orderId       String
   order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   customerPhone String

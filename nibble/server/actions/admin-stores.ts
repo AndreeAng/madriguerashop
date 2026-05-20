@@ -23,6 +23,7 @@ import {
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { audit } from "@/lib/audit/log";
+import { revertOrderImpact } from "@/server/actions/order-management";
 import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import {
   clearImpersonatedStore,
@@ -68,8 +69,8 @@ export type AdminAssignOwnerState = {
 // Base de la tienda: campos obligatorios sin importar si hay owner o no.
 const storeBaseSchema = z.object({
   storeName: z.string().trim().min(2, "Mínimo 2 caracteres").max(60),
-  slug: z.string().trim().min(1, "Elegí un identificador"),
-  vertical: z.nativeEnum(StoreVertical, { message: "Elegí el rubro" }),
+  slug: z.string().trim().min(1, "Elige un identificador"),
+  vertical: z.nativeEnum(StoreVertical, { message: "Elige el rubro" }),
   whatsappPhone: z
     .string()
     .trim()
@@ -77,8 +78,8 @@ const storeBaseSchema = z.object({
       (v) => PHONE_BO_RE.test(v.replace(/[\s-]/g, "")),
       "Teléfono inválido. Formato: +591XXXXXXXX",
     ),
-  city: z.string().trim().min(2, "Ingresá la ciudad").max(60),
-  planSlug: z.string().trim().min(1, "Elegí un plan"),
+  city: z.string().trim().min(2, "Ingresa la ciudad").max(60),
+  planSlug: z.string().trim().min(1, "Elige un plan"),
   /** Si está marcado, la tienda aparece en /tiendas. Para demos lo dejas
    * apagado: el cliente ve su tienda por URL directa, pero no en el
    * directorio público. */
@@ -634,17 +635,22 @@ export async function adminExitStoreAction(): Promise<void> {
   const storeId = await readImpersonatedStoreId();
   await clearImpersonatedStore();
 
+  // Si NO hay sesión válida de admin, no tiene sentido redirigir a una
+  // ruta `/admin/*` (el layout volverá a `/login`). Mandamos directo a
+  // `/login` y evitamos un paso intermedio confuso. El audit solo se
+  // emite si hay sesión.
+  const guard = await requireSuperAdminOrFail();
+  if ("error" in guard) {
+    redirect("/login");
+  }
+
   if (storeId) {
-    // Best-effort audit: si hay sesión de admin, lo registramos.
-    const guard = await requireSuperAdminOrFail();
-    if (!("error" in guard)) {
-      await audit({
-        action: "saas.store_impersonation_ended",
-        actorId: guard.id,
-        target: storeId,
-        metadata: {},
-      });
-    }
+    await audit({
+      action: "saas.store_impersonation_ended",
+      actorId: guard.id,
+      target: storeId,
+      metadata: {},
+    });
     redirect(`/admin/tiendas/${storeId}`);
   }
   redirect("/admin/tiendas");
@@ -728,12 +734,58 @@ export async function adminToggleStoreStatusAction(
       return { error: "Tienda cancelada — usá eliminar en su lugar." };
     }
     if (!reason) {
-      return { fieldErrors: { reason: "Escribí la razón de la suspensión." } };
+      return { fieldErrors: { reason: "Escribe la razón de la suspensión." } };
     }
 
-    await db.store.update({
-      where: { id: storeId },
-      data: { status: StoreStatus.SUSPENDED },
+    // Suspender la tienda cancela los pedidos activos: el owner pierde
+    // acceso al dashboard, así que dejar pedidos pendientes los condena
+    // al limbo (cliente esperando + nadie procesando). Incluimos
+    // PENDING_PAYMENT porque el stock ya está aplicado (orders.ts:664
+    // siempre aplica stock al crear) y debe restaurarse, además el
+    // cliente que subió comprobante merece un estado terminal.
+    //
+    // Pedidos IN_DELIVERY los dejamos vivos — están en mano del courier
+    // y debe completarse o gestionarse externamente. DELIVERED ya está
+    // cerrado.
+    const cancelledOrders = await db.$transaction(async (tx) => {
+      const targets = await tx.order.findMany({
+        where: {
+          storeId,
+          status: { in: ["PENDING_PAYMENT", "NEW", "CONFIRMED", "PREPARING"] },
+        },
+        select: { id: true },
+      });
+      const cancelReason = `Tienda suspendida por administración: ${reason}`;
+      const cancelledAt = new Date();
+      for (const o of targets) {
+        await tx.order.update({
+          where: { id: o.id },
+          data: {
+            status: "CANCELLED",
+            cancelReason,
+            cancelledAt,
+          },
+        });
+        // OrderEvent para que el cliente y el audit trail vean el motivo.
+        await tx.orderEvent.create({
+          data: {
+            orderId: o.id,
+            type: "STATUS_CANCELLED",
+            description: cancelReason,
+            byUserId: guard.id,
+            byUserName: "Administración",
+          },
+        });
+        // revertOrderImpact restituye stock, decrementa contadores del
+        // customer e incrementa el counter del cupón. Idempotente:
+        // verifica `stockApplied` antes de tocar nada.
+        await revertOrderImpact(tx, o.id);
+      }
+      await tx.store.update({
+        where: { id: storeId },
+        data: { status: StoreStatus.SUSPENDED },
+      });
+      return targets.length;
     });
 
     await audit({
@@ -745,6 +797,7 @@ export async function adminToggleStoreStatusAction(
         previousStatus: store.status,
         reason,
         manualOverride: true,
+        cancelledOrders,
       },
     });
   } else {
@@ -755,10 +808,25 @@ export async function adminToggleStoreStatusAction(
       return { error: "Tienda cancelada — no se puede reactivar." };
     }
 
-    await db.store.update({
-      where: { id: storeId },
-      data: { status: StoreStatus.ACTIVE },
+    // updateMany con guard atómico: si entre el findUnique y este update
+    // otro admin (o el cron) ya cambió el estado, abortamos sin sobreescribir.
+    // Limpiamos `suspendedAt/suspendedReason` para mantener consistencia
+    // con los otros caminos de reactivación (syncStoreStatuses, verify
+    // invoice payment, cancel invoice).
+    const reactivated = await db.store.updateMany({
+      where: {
+        id: storeId,
+        status: { in: ["PAST_DUE", "SUSPENDED", "TRIAL"] },
+      },
+      data: {
+        status: StoreStatus.ACTIVE,
+        suspendedAt: null,
+        suspendedReason: null,
+      },
     });
+    if (reactivated.count === 0) {
+      return { error: "El estado de la tienda cambió. Recarga la página." };
+    }
 
     await audit({
       action: "saas.store_reactivated",
@@ -929,12 +997,14 @@ export async function adminDeleteStoreAction(
 
   try {
     await db.$transaction(async (tx) => {
-      // 1. Deshabilitar owners ANTES de tocar la store — evita ventana en
-      //    la que un owner pueda loguear con storeId nullified pero todavía
-      //    activo. Después del cascade SetNull quedan con storeId=null e
-      //    isActive=false, lo que el guard de sesión rechaza limpio.
+      // 1. Deshabilitar TODOS los usuarios de la tienda (owners Y cashiers)
+      //    ANTES de tocar la store — evita la ventana en la que un user
+      //    pueda loguear con storeId nullified pero todavía activo. Sin
+      //    incluir a los cashiers, un cashier con JWT vivo (window de
+      //    revalidación de 60s) puede seguir accionando contra una tienda
+      //    que ya no existe.
       await tx.user.updateMany({
-        where: { storeId, role: Role.STORE_OWNER, isActive: true },
+        where: { storeId, isActive: true },
         data: { isActive: false },
       });
 

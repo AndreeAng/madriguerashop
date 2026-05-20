@@ -122,7 +122,7 @@ const BAKERY: StorefrontCopy = {
   searchPlaceholder: "Buscar panes, tortas, postres…",
   checkoutNotesPlaceholder: "Sin azúcar, mensaje en la torta, etc.",
   featuredTitle: "Las consentidas de la casa",
-  featuredSubtitle: "Recién horneadas — preparadas el día que las pedís.",
+  featuredSubtitle: "Recién horneadas — preparadas el día que las pides.",
   featuredPill: "Más pedidos hoy",
   variantLabel: "Tamaño",
   deliveryHint: "Entrega en el día",

@@ -81,15 +81,15 @@ export function ProductsTable({ rows }: { rows: Row[] }) {
         <table className="w-full text-sm">
           <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
             <tr>
-              <th className="px-5 py-3 text-left font-medium">{copy.productSingular.charAt(0).toUpperCase() + copy.productSingular.slice(1)}</th>
-              <th className="hidden px-3 py-3 text-left font-medium md:table-cell">
+              <th scope="col" className="px-5 py-3 text-left font-medium">{copy.productSingular.charAt(0).toUpperCase() + copy.productSingular.slice(1)}</th>
+              <th scope="col" className="hidden px-3 py-3 text-left font-medium md:table-cell">
                 Categoría
               </th>
-              <th className="px-3 py-3 text-right font-medium">Precio</th>
-              <th className="hidden px-3 py-3 text-right font-medium md:table-cell">
+              <th scope="col" className="px-3 py-3 text-right font-medium">Precio</th>
+              <th scope="col" className="hidden px-3 py-3 text-right font-medium md:table-cell">
                 Stock
               </th>
-              <th className="px-3 py-3 text-right font-medium">Acciones</th>
+              <th scope="col" className="px-3 py-3 text-right font-medium">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[color:var(--line)]">
@@ -155,6 +155,7 @@ export function ProductsTable({ rows }: { rows: Row[] }) {
                   <td className="px-3 py-3">
                     <div className="flex items-center justify-end gap-0.5">
                       <button
+                        type="button"
                         onClick={() => handleToggle(r)}
                         disabled={pending}
                         aria-label={r.isActive ? "Desactivar" : "Activar"}
@@ -171,6 +172,7 @@ export function ProductsTable({ rows }: { rows: Row[] }) {
                         <Pencil className="size-4" />
                       </Link>
                       <button
+                        type="button"
                         onClick={() => setPendingDelete({ id: r.id, name: r.name })}
                         disabled={pending}
                         aria-label="Eliminar"

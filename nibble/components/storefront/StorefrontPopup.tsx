@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
@@ -15,8 +15,10 @@ import { X } from "lucide-react";
  *  - `sessionStorage` (no localStorage): si el cliente cierra la pestaña
  *    y vuelve mañana, queremos volver a mostrar el popup. Si lo
  *    cerramos para siempre, el merchant pierde un canal valioso.
- *  - Sin focus trap formal — es un modal informacional, no un form.
- *    `Escape` lo cierra, click afuera también.
+ *  - Focus trap mínimo: Tab cicla dentro del dialog, Shift+Tab también.
+ *    Sin esto, `aria-modal="true"` mentía a screen readers — el foco se
+ *    escapaba al contenido oculto detrás del overlay.
+ *  - `Escape` lo cierra, click afuera también.
  */
 export function StorefrontPopup({
   popupId,
@@ -38,6 +40,12 @@ export function StorefrontPopup({
   showOncePerSession: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  // `useId()` evita colisión si dos dialogs coexisten (animación de
+  // salida + apertura encadenada). Antes el id era `"popup-title"`
+  // hardcodeado y el screen reader leía el título del primero al
+  // abrir el segundo.
+  const titleId = useId();
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const key = `popup_seen_${popupId}`;
@@ -51,14 +59,42 @@ export function StorefrontPopup({
     return () => clearTimeout(t);
   }, [popupId, delaySeconds, showOncePerSession]);
 
-  // Escape para cerrar.
+  // Escape para cerrar + focus trap + restore focus al cerrar (WCAG 2.4.3).
   useEffect(() => {
     if (!open) return;
+    // Capturamos el elemento que tenía el foco antes de abrir el modal
+    // para devolverle el foco al cerrar — sin esto el foco salta al
+    // `<body>` y el usuario de teclado pierde el contexto.
+    const opener = document.activeElement as HTMLElement | null;
+    const dialog = dialogRef.current;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        return;
+      }
+      if (e.key !== "Tab" || !dialog) return;
+      const focusables = dialog.querySelectorAll<HTMLElement>(
+        'a, button, input, [tabindex]:not([tabindex="-1"])',
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0]!;
+      const last = focusables[focusables.length - 1]!;
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      // Restaurar foco solo si el opener sigue en el DOM y enfocable.
+      if (opener && typeof opener.focus === "function") {
+        opener.focus();
+      }
+    };
   }, [open]);
 
   if (!open) return null;
@@ -69,11 +105,12 @@ export function StorefrontPopup({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="popup-title"
+      aria-labelledby={titleId}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm"
       onClick={() => setOpen(false)}
     >
       <div
+        ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[color:var(--card)] shadow-2xl"
       >
@@ -94,7 +131,7 @@ export function StorefrontPopup({
         )}
 
         <div className="p-6">
-          <h2 id="popup-title" className="font-display text-2xl leading-tight">
+          <h2 id={titleId} className="font-display text-2xl leading-tight">
             {title}
           </h2>
           <p className="mt-2 whitespace-pre-line text-sm text-[color:var(--fg-soft)]">

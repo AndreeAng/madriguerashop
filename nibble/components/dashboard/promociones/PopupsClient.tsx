@@ -281,7 +281,7 @@ function PopupForm({
         value={imageUrl}
         onChange={setImageUrl}
         error={fe.imageUrl}
-        hint="Recomendado: 800×600 px. Si no la subís, el popup es solo texto."
+        hint="Recomendado: 800×600 px. Si no la subes, el popup es solo texto."
       />
 
       <Field

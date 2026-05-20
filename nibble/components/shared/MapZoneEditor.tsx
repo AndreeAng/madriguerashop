@@ -213,7 +213,7 @@ export function MapZoneEditor({
         </div>
       ) : (
         <p className="text-xs text-[color:var(--muted)]">
-          Marcá un punto en el mapa para empezar a definir el área.
+          Marca un punto en el mapa para empezar a definir el área.
         </p>
       )}
 

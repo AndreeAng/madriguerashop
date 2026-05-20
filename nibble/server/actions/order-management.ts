@@ -15,6 +15,11 @@ import {
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
+import {
+  rateLimit,
+  rateLimitErrorMessage,
+  getClientIp,
+} from "@/lib/security/rateLimit";
 
 /**
  * Helpers de stock + Customer counters.
@@ -98,7 +103,7 @@ async function applyOrderImpact(tx: TxClient, orderId: string): Promise<void> {
   });
 }
 
-async function revertOrderImpact(tx: TxClient, orderId: string): Promise<void> {
+export async function revertOrderImpact(tx: TxClient, orderId: string): Promise<void> {
   const order = await tx.order.findUnique({
     where: { id: orderId },
     select: {
@@ -185,8 +190,9 @@ async function revertOrderImpact(tx: TxClient, orderId: string): Promise<void> {
 // ============== Cambio de estado ==============
 
 const TIMESTAMP_FIELDS: Partial<
-  Record<OrderStatus, "confirmedAt" | "preparingAt" | "inDeliveryAt" | "deliveredAt" | "cancelledAt">
+  Record<OrderStatus, "newAt" | "confirmedAt" | "preparingAt" | "inDeliveryAt" | "deliveredAt" | "cancelledAt">
 > = {
+  NEW: "newAt",
   CONFIRMED: "confirmedAt",
   PREPARING: "preparingAt",
   IN_DELIVERY: "inDeliveryAt",
@@ -232,6 +238,7 @@ export async function changeOrderStatusAction(
       storeId: true,
       paymentMethod: true,
       paymentStatus: true,
+      deliveryAddress: true,
     },
   });
   if (!order) return { error: "Pedido no encontrado" };
@@ -241,6 +248,22 @@ export async function changeOrderStatusAction(
   if (!allowed.includes(toStatus)) {
     return {
       error: `No puedes pasar de "${STATUS_LABELS[order.status]}" a "${STATUS_LABELS[toStatus]}".`,
+    };
+  }
+
+  // PREPARING → DELIVERED solo es legítimo para pickup (cliente retira en
+  // local, no hay step IN_DELIVERY). Para delivery exigimos pasar por
+  // IN_DELIVERY primero — saltar el paso oculta la asignación al courier
+  // y rompe el TRACKING_STEPS del cliente. Inferimos el método del pedido
+  // desde `deliveryAddress`: si tiene dirección no vacía → delivery.
+  const isDeliveryOrder = order.deliveryAddress.trim().length > 0;
+  if (
+    order.status === "PREPARING" &&
+    toStatus === "DELIVERED" &&
+    isDeliveryOrder
+  ) {
+    return {
+      error: "Marca primero el pedido como 'En camino' antes de entregarlo.",
     };
   }
 
@@ -261,55 +284,78 @@ export async function changeOrderStatusAction(
   // recibir el pedido — el pago queda VERIFIED. Sin esto el pedido se
   // entregaba pero quedaba con paymentStatus=PENDING, lo que ensucia las
   // métricas de revenue y confunde al admin viendo "pagos pendientes".
+  //
+  // Solo el OWNER puede registrar el cobro. El cashier puede cambiar el
+  // status del pedido pero no decidir que el efectivo fue recibido — esa
+  // es responsabilidad de quien controla la caja. Sin este guard, un
+  // cashier que marca DELIVERED en un CoD verifica el pago saltándose
+  // el `requireOwnerOnlyIds` que protege `verifyPaymentAction`.
   const autoVerifyPayment =
     toStatus === "DELIVERED" &&
     order.paymentMethod === "CASH_ON_DELIVERY" &&
-    order.paymentStatus === "PENDING";
+    order.paymentStatus === "PENDING" &&
+    role !== Role.CASHIER;
 
-  await db.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: orderId },
-      data: {
-        status: toStatus,
-        ...(tsField ? { [tsField]: now } : {}),
-        ...(toStatus === "CANCELLED" ? { cancelReason: reason ?? null } : {}),
-        ...(autoVerifyPayment
-          ? {
-              paymentStatus: PaymentStatus.VERIFIED,
-              paymentVerifiedAt: now,
-              paymentVerifiedById: userId,
-            }
-          : {}),
-      },
-    });
-    await tx.orderEvent.create({
-      data: {
-        orderId,
-        type: `STATUS_${toStatus}`,
-        description: `Estado cambiado a "${STATUS_LABELS[toStatus]}"${reason ? ` — ${reason}` : ""}`,
-        byUserId: userId,
-        byUserName: actor?.fullName ?? actor?.username ?? null,
-      },
-    });
+  try {
+    await db.$transaction(async (tx) => {
+      // CLAIM ATÓMICO: el `updateMany` con `status: order.status` actúa
+      // como test-and-set. Si entre el `findFirst` (fuera de tx) y este
+      // update otro cashier/owner cambió el estado, `count === 0` y
+      // abortamos sin tocar nada — evita doble-DELIVERED, doble auto-verify
+      // de pago CoD, y overwrite de un CANCELLED por un DELIVERED tardío.
+      const claimed = await tx.order.updateMany({
+        where: { id: orderId, status: order.status },
+        data: {
+          status: toStatus,
+          ...(tsField ? { [tsField]: now } : {}),
+          ...(toStatus === "CANCELLED" ? { cancelReason: reason ?? null } : {}),
+          ...(autoVerifyPayment
+            ? {
+                paymentStatus: PaymentStatus.VERIFIED,
+                paymentVerifiedAt: now,
+                paymentVerifiedById: userId,
+              }
+            : {}),
+        },
+      });
+      if (claimed.count === 0) {
+        throw new Error("__status_changed__");
+      }
 
-    if (autoVerifyPayment) {
       await tx.orderEvent.create({
         data: {
           orderId,
-          type: "PAYMENT_VERIFIED",
-          description: "Pago en efectivo recibido en entrega",
+          type: `STATUS_${toStatus}`,
+          description: `Estado cambiado a "${STATUS_LABELS[toStatus]}"${reason ? ` — ${reason}` : ""}`,
           byUserId: userId,
           byUserName: actor?.fullName ?? actor?.username ?? null,
         },
       });
-    }
 
-    // Si se cancela, restituir stock + Customer counters + cupón (el helper
-    // es idempotente por dentro: cada subsistema chequea su propio flag).
-    if (toStatus === "CANCELLED") {
-      await revertOrderImpact(tx, orderId);
+      if (autoVerifyPayment) {
+        await tx.orderEvent.create({
+          data: {
+            orderId,
+            type: "PAYMENT_VERIFIED",
+            description: "Pago en efectivo recibido en entrega",
+            byUserId: userId,
+            byUserName: actor?.fullName ?? actor?.username ?? null,
+          },
+        });
+      }
+
+      // Si se cancela, restituir stock + Customer counters + cupón (el helper
+      // es idempotente por dentro: cada subsistema chequea su propio flag).
+      if (toStatus === "CANCELLED") {
+        await revertOrderImpact(tx, orderId);
+      }
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "__status_changed__") {
+      return { error: "Otro usuario ya cambió el estado de este pedido. Recarga la página." };
     }
-  });
+    throw err;
+  }
 
   await audit({
     action: "order.status_changed",
@@ -394,6 +440,12 @@ export async function verifyPaymentAction(
         where: {
           id: order.id,
           paymentStatus: { in: ["AWAITING_VERIFICATION", "PENDING"] },
+          // Guard atómico contra cancelación concurrente: si entre el
+          // findFirst (fuera de tx) y este updateMany, otro flujo cancela
+          // el pedido (changeOrderStatusAction o adminToggleStoreStatus),
+          // este where rechaza el claim. Sin esto un order CANCELLED
+          // quedaba con paymentStatus:VERIFIED — estado inconsistente.
+          status: { not: "CANCELLED" },
         },
         data: {
           paymentStatus: "VERIFIED",
@@ -403,7 +455,7 @@ export async function verifyPaymentAction(
           // formalmente al flujo de cocina. Si ya estaba NEW (cash que pagó
           // anticipado), lo confirmamos directo.
           ...(order.status === "PENDING_PAYMENT"
-            ? { status: "NEW" }
+            ? { status: "NEW", newAt: new Date() }
             : order.status === "NEW"
               ? { status: "CONFIRMED", confirmedAt: new Date() }
               : {}),
@@ -421,6 +473,21 @@ export async function verifyPaymentAction(
           byUserName: actor?.fullName ?? actor?.username ?? null,
         },
       });
+      // Si la verificación implicó NEW→CONFIRMED, también emitimos el
+      // STATUS_CONFIRMED event para que el timeline del cliente y los
+      // filtros de auditoría por "status_changed" no pierdan el evento.
+      // Sin esto, confirmedAt quedaba seteado pero no había trail visible.
+      if (order.status === "NEW") {
+        await tx.orderEvent.create({
+          data: {
+            orderId: order.id,
+            type: "STATUS_CONFIRMED",
+            description: "Pedido confirmado por verificación de pago",
+            byUserId: userId,
+            byUserName: actor?.fullName ?? actor?.username ?? null,
+          },
+        });
+      }
 
       // Aplicar stock + Customer counters si aún no fueron aplicados (típico
       // en pedidos QR que diferían el impacto hasta verificación).
@@ -521,21 +588,35 @@ export async function rejectPaymentAction(
     order.status === "CONFIRMED" ||
     order.status === "PREPARING";
 
-  await db.$transaction(async (tx) => {
-    await tx.order.update({
-      where: { id: order.id },
-      data: {
-        paymentStatus: PaymentStatus.REJECTED,
-        paymentRejectedReason: parsed.data.reason,
-        ...(willCancel
-          ? {
-              status: "CANCELLED",
-              cancelledAt: new Date(),
-              cancelReason: `Pago rechazado: ${parsed.data.reason}`,
-            }
-          : {}),
-      },
-    });
+  try {
+    await db.$transaction(async (tx) => {
+      // CLAIM ATÓMICO: el `updateMany` con guard `paymentStatus` actúa como
+      // test-and-set. Sin esto, dos rejects concurrentes (o un reject vs un
+      // verify) podían sobreescribir mutuamente y `revertOrderImpact` corría
+      // dos veces decrementando `totalSpent`/`ordersCount` doble. El filtro
+      // `status:{not:CANCELLED}` previene tocar una orden que ya fue
+      // cancelada por otro flujo.
+      const claimed = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          paymentStatus: { in: [PaymentStatus.AWAITING_VERIFICATION, PaymentStatus.PENDING] },
+          status: { not: "CANCELLED" },
+        },
+        data: {
+          paymentStatus: PaymentStatus.REJECTED,
+          paymentRejectedReason: parsed.data.reason,
+          ...(willCancel
+            ? {
+                status: "CANCELLED",
+                cancelledAt: new Date(),
+                cancelReason: `Pago rechazado: ${parsed.data.reason}`,
+              }
+            : {}),
+        },
+      });
+      if (claimed.count === 0) {
+        throw new Error("__payment_status_changed__");
+      }
     await tx.orderEvent.create({
       data: {
         orderId: order.id,
@@ -566,7 +647,13 @@ export async function rejectPaymentAction(
     // Si el stock había sido aplicado (raro en este flujo, pero posible si
     // el pago se verificó y luego se rechazó manualmente), restituir.
     await revertOrderImpact(tx, order.id);
-  });
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "__payment_status_changed__") {
+      return { error: "El estado del pago ya cambió. Recarga la página." };
+    }
+    throw err;
+  }
 
   await audit({
     action: "order.payment.rejected",
@@ -590,6 +677,109 @@ export async function rejectPaymentAction(
       }),
     );
   }
+
+  revalidatePath(`/${order.store.slug}/orden/${order.trackingToken}`);
+  revalidatePath("/dashboard/pedidos");
+  revalidatePath(`/dashboard/pedidos/${order.id}`);
+  return { ok: true };
+}
+
+// ============== Marcar pago como reembolsado ==============
+//
+// Caso de uso: el owner ya verificó un pago (paymentStatus = VERIFIED) y
+// posteriormente debe devolverlo — porque cancela el pedido por su lado,
+// se equivocó al verificar, o el cliente lo solicitó. La devolución del
+// dinero ocurre fuera de la app (WhatsApp + transferencia bancaria); esta
+// action solo registra el estado contable para que los dashboards de
+// revenue puedan excluir pedidos refundeados.
+//
+// Requisitos:
+//   - Solo OWNER (no CASHIER) — caja es del dueño.
+//   - paymentStatus actual debe ser VERIFIED. PENDING/AWAITING/REJECTED
+//     no son válidos (no hay pago que devolver).
+//   - El order puede estar en cualquier status — incluso DELIVERED si el
+//     cliente devolvió el producto.
+
+const refundSchema = z.object({
+  orderId: z.string().min(1),
+  reason: z.string().trim().min(3, "Indica el motivo del reembolso").max(280),
+});
+
+export async function markOrderRefundedAction(
+  _prev: ActionState<"reason">,
+  formData: FormData,
+): Promise<ActionState<"reason">> {
+  const { storeId, userId } = await requireOwnerOnlyIds();
+  const parsed = refundSchema.safeParse({
+    orderId: formData.get("orderId"),
+    reason: formData.get("reason"),
+  });
+  if (!parsed.success) {
+    return { fieldErrors: zodIssuesToFieldErrors<"reason">(parsed.error) };
+  }
+
+  const order = await db.order.findFirst({
+    where: { id: parsed.data.orderId, storeId },
+    select: {
+      id: true,
+      orderNumber: true,
+      trackingToken: true,
+      paymentStatus: true,
+      store: { select: { slug: true } },
+    },
+  });
+  if (!order) return { error: "Pedido no encontrado." };
+  if (order.paymentStatus !== "VERIFIED") {
+    return { error: "Solo se pueden reembolsar pagos verificados." };
+  }
+
+  const actor = await db.user.findUnique({
+    where: { id: userId },
+    select: { fullName: true, username: true },
+  });
+
+  try {
+    await db.$transaction(async (tx) => {
+      // Claim atómico: solo transicionamos si paymentStatus sigue siendo
+      // VERIFIED. Otro flujo concurrente (rejectPaymentAction tardío) podría
+      // haber cambiado el estado entre el findFirst y este update.
+      const claimed = await tx.order.updateMany({
+        where: { id: order.id, paymentStatus: "VERIFIED" },
+        data: {
+          paymentStatus: PaymentStatus.REFUNDED,
+          paymentRejectedReason: parsed.data.reason,
+        },
+      });
+      if (claimed.count === 0) {
+        throw new Error("__not_verified__");
+      }
+      await tx.orderEvent.create({
+        data: {
+          orderId: order.id,
+          type: "PAYMENT_REFUNDED",
+          description: `Pago reembolsado: ${parsed.data.reason}`,
+          byUserId: userId,
+          byUserName: actor?.fullName ?? actor?.username ?? null,
+        },
+      });
+      // Si el pedido aún no estaba cancelado, NO lo cancelamos automáticamente:
+      // el owner puede reembolsar un DELIVERED como cortesía (cliente devolvió
+      // físicamente). La decisión de cancelar es separada.
+    });
+  } catch (err) {
+    if (err instanceof Error && err.message === "__not_verified__") {
+      return { error: "El pago ya no está verificado. Recarga la página." };
+    }
+    throw err;
+  }
+
+  await audit({
+    action: "order.payment.refunded",
+    actorId: userId,
+    storeId,
+    target: order.id,
+    metadata: { orderNumber: order.orderNumber, reason: parsed.data.reason },
+  });
 
   revalidatePath(`/${order.store.slug}/orden/${order.trackingToken}`);
   revalidatePath("/dashboard/pedidos");
@@ -623,6 +813,16 @@ export async function customerCancelOrderAction(
   _prev: ActionState<"reason">,
   formData: FormData,
 ): Promise<ActionState<"reason">> {
+  // Rate limit por IP: la action es pública (token-based, sin sesión).
+  // Aunque una cancelación exitosa es terminal (segundo intento devuelve
+  // "ya cambió de estado"), spamear la action no cuesta nada al atacante.
+  // 5 intentos / minuto es generoso para un cliente legítimo.
+  const ip = await getClientIp();
+  const rl = await rateLimit(`customer-cancel:${ip}`, 5, 60 * 1000);
+  if (!rl.success) {
+    return { error: rateLimitErrorMessage(rl.retryAfter) };
+  }
+
   const parsed = customerCancelSchema.safeParse({
     token: formData.get("token"),
     reason: formData.get("reason"),
@@ -678,7 +878,7 @@ export async function customerCancelOrderAction(
     });
   } catch (err) {
     if (err instanceof Error && err.message === "__already_processed__") {
-      return { error: "Este pedido ya cambió de estado. Refrescá la página." };
+      return { error: "Este pedido ya cambió de estado. Recarga la página." };
     }
     throw err;
   }

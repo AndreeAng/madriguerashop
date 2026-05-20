@@ -180,12 +180,12 @@ export default async function AdminUsersPage({
               <table className="w-full text-sm">
                 <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
                   <tr>
-                    <th className="px-5 py-3 text-left font-medium">Usuario</th>
-                    <th className="hidden px-3 py-3 text-left font-medium md:table-cell">Tienda</th>
-                    <th className="px-3 py-3 text-left font-medium">Rol</th>
-                    <th className="hidden px-3 py-3 text-left font-medium lg:table-cell">Último login</th>
-                    <th className="px-3 py-3 text-left font-medium">Estado</th>
-                    <th className="px-3 py-3 text-right font-medium">Acciones</th>
+                    <th scope="col" className="px-5 py-3 text-left font-medium">Usuario</th>
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium md:table-cell">Tienda</th>
+                    <th scope="col" className="px-3 py-3 text-left font-medium">Rol</th>
+                    <th scope="col" className="hidden px-3 py-3 text-left font-medium lg:table-cell">Último login</th>
+                    <th scope="col" className="px-3 py-3 text-left font-medium">Estado</th>
+                    <th scope="col" className="px-3 py-3 text-right font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[color:var(--line)]">

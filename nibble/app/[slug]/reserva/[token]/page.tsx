@@ -31,7 +31,7 @@ const STATUS_COPY: Record<
   },
   CANCELLED: {
     label: "Cancelada",
-    description: "Esta reserva fue cancelada. Si fue por error, contactá al local.",
+    description: "Esta reserva fue cancelada. Si fue por error, contacta al local.",
     tone: "tomato",
   },
   COMPLETED: {
@@ -136,9 +136,9 @@ export default async function ReservaPage({
         </div>
 
         <div className="mt-6 rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-          <p className="text-sm font-semibold">¿Necesitás cambiar algo?</p>
+          <p className="text-sm font-semibold">¿Necesitas cambiar algo?</p>
           <p className="mt-1 text-xs text-[color:var(--muted)]">
-            Hablanos por WhatsApp y te ayudamos a reagendar o cancelar.
+            Escríbenos por WhatsApp y te ayudamos a reagendar o cancelar.
           </p>
           <Link
             href={`https://wa.me/${phoneOnly}`}
@@ -152,7 +152,7 @@ export default async function ReservaPage({
         </div>
 
         <p className="mt-6 text-center text-xs text-[color:var(--muted)]">
-          Guardá este link para volver a ver tu reserva más tarde.
+          Guarda este link para volver a ver tu reserva más tarde.
         </p>
       </main>
     </div>

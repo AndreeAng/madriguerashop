@@ -1,7 +1,6 @@
 import "server-only";
 import { Prisma, Role, StoreStatus, BillingCycle, StoreVertical } from "@prisma/client";
 import { db } from "@/lib/db";
-import { hashPassword } from "@/lib/auth/password";
 import { normalizeIdentifier, normalizePhoneBO } from "@/lib/auth/identifiers";
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { saveImage, saveImageRaw, type ImageKind } from "@/lib/storage/upload";
@@ -42,8 +41,22 @@ export type ImportInput = {
     whatsappPhone: string;
     ownerName: string;
     ownerIdentifier: string;
-    ownerPassword: string;
+    /**
+     * Hash bcrypt de la contraseña del owner. El caller (admin action o
+     * script) debe ejecutar `hashPassword` ANTES de invocar — recibimos
+     * el hash, nunca el plano. Esto evita que la contraseña aparezca en
+     * stack traces, logs APM o snapshots de errores si algo falla durante
+     * el import.
+     */
+    ownerPasswordHash: string;
   };
+  /**
+   * ID del super admin que dispara el import. Se persiste en el audit log
+   * de `store.registered` para trazabilidad: distingue un onboarding
+   * orgánico (actorId null = autoservicio) de una migración del competidor
+   * iniciada por un admin específico.
+   */
+  actorId?: string;
 };
 
 export type ImportResult = {
@@ -118,7 +131,7 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
   // Las imágenes y los productos van DESPUÉS de la TX porque incluyen IO
   // potencialmente lento (descarga de N imágenes); no queremos una TX
   // abierta por minutos.
-  const passwordHash = await hashPassword(input.target.ownerPassword);
+  const passwordHash = input.target.ownerPasswordHash;
   const whatsappPhone = normalizePhoneBO(input.target.whatsappPhone);
   const email = ident.kind === "email" ? ident.value : null;
   const phone = ident.kind === "phone" ? ident.value : null;
@@ -392,6 +405,7 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
 
   await audit({
     action: "store.registered",
+    actorId: input.actorId ?? null,
     storeId,
     target: targetSlug,
     metadata: {
@@ -483,7 +497,7 @@ async function downloadAndSaveRaw(
  * Comparado con `processInBatches` (que usa Promise.all por batch): el
  * pool nunca espera al "más lento" antes de avanzar. Si una request tarda
  * 8s, los otros workers siguen procesando — la latencia del worst-case no
- * se amplifica al batch entero. Importante cuando tenés imágenes con
+ * se amplifica al batch entero. Importante cuando tienes imágenes con
  * latencias variables (CDN cache miss, hotlink protection, redirects).
  */
 async function processWithWorkers<T>(

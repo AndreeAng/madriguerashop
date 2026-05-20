@@ -19,7 +19,10 @@ export type StoreView = {
   // Vertical de la tienda. Define el copy del storefront (placeholders,
   // labels de variantes, frases promocionales). Ver lib/storefront/copy.ts.
   vertical: StoreVertical;
-  whatsapp: string;
+  /** WhatsApp del comerciante. Puede ser `null` si la tienda no lo configuró
+   *  todavía — los componentes que lo renderizan deben null-guard antes de
+   *  formatear o crear el link `wa.me/...`. */
+  whatsapp: string | null;
   email: string | null;
   addressText: string | null;
 

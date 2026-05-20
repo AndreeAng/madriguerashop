@@ -18,6 +18,7 @@ import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
+import { rateLimit, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 
 // ============== Tipos ==============
 
@@ -45,6 +46,14 @@ export async function inviteCashierAction(
   // (lo cubre `requireOwnerOnlyIds` que acepta SUPER_ADMIN con la cookie).
   const { storeId, userId: actorId } = await requireOwnerOnlyIds();
 
+  // Rate limit por actor: previene enumeración de usuarios vía el mensaje
+  // de error "ya existe una cuenta con este email/teléfono" + abuso si
+  // las credenciales del owner se ven comprometidas.
+  const rl = await rateLimit(`invite-cashier:${actorId}`, 10, 60 * 1000);
+  if (!rl.success) {
+    return { error: rateLimitErrorMessage(rl.retryAfter) };
+  }
+
   const parsed = inviteSchema.safeParse({
     name: formData.get("name"),
     identifier: formData.get("identifier"),
@@ -59,14 +68,16 @@ export async function inviteCashierAction(
   }
   const data = parsed.data;
 
-  // Plan limit: el plan define cuántos cashiers puede tener la tienda.
-  // Si llegó al tope, el owner debe suspender alguno antes de invitar otro.
+  // Pre-check informativo del límite del plan — el enforcement REAL
+  // ocurre dentro de la transacción con advisory lock más abajo. Este
+  // short-circuit evita el roundtrip de hashear la password cuando ya
+  // sabemos que va a fallar.
   const { checkStaffLimit, staffLimitMessage } = await import(
     "@/lib/billing/plan-limits"
   );
-  const limit = await checkStaffLimit(storeId);
-  if (limit.exceeded) {
-    return { error: staffLimitMessage(limit) };
+  const limitPreview = await checkStaffLimit(storeId);
+  if (limitPreview.exceeded) {
+    return { error: staffLimitMessage(limitPreview) };
   }
 
   const ident = normalizeIdentifier(data.identifier);
@@ -82,34 +93,47 @@ export async function inviteCashierAction(
     return {
       fieldErrors: {
         identifier:
-          "Ya existe una cuenta con este email/teléfono. Usá uno distinto.",
+          "Ya existe una cuenta con este email/teléfono. Usa uno distinto.",
       },
     };
   }
 
   const passwordHash = await hashPassword(data.password);
 
+  // ENFORCEMENT atómico: dos invitaciones simultáneas (dos pestañas, o el
+  // owner y SUPER_ADMIN impersonando) sin advisory lock pueden ambas
+  // pasar el pre-check y ambas crear → tenant excede el límite en 1.
+  // Mismo patrón que `products.ts` (products) y `categories.ts` (reorder).
+  let createdId: string | null = null;
   try {
-    const created = await db.user.create({
-      data: {
-        username: ident.value,
-        email: ident.kind === "email" ? ident.value : null,
-        phone: ident.kind === "phone" ? ident.value : null,
-        passwordHash,
-        role: Role.CASHIER,
-        fullName: data.name,
-        storeId,
-        isActive: true,
-      },
-      select: { id: true },
+    const overLimitError = await db.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `SELECT pg_advisory_xact_lock(42, hashtext($1))`,
+        `staff-limit:${storeId}`,
+      );
+      const limit = await checkStaffLimit(storeId, tx);
+      if (limit.exceeded) {
+        return staffLimitMessage(limit);
+      }
+      const created = await tx.user.create({
+        data: {
+          username: ident.value,
+          email: ident.kind === "email" ? ident.value : null,
+          phone: ident.kind === "phone" ? ident.value : null,
+          passwordHash,
+          role: Role.CASHIER,
+          fullName: data.name,
+          storeId,
+          isActive: true,
+        },
+        select: { id: true },
+      });
+      createdId = created.id;
+      return null;
     });
-
-    await audit({
-      action: "saas.user_role_changed", // reusamos; metadata aclara invitación
-      actorId,
-      target: created.id,
-      metadata: { invitedCashier: true, storeId },
-    });
+    if (overLimitError) {
+      return { error: overLimitError };
+    }
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
       return {
@@ -119,6 +143,15 @@ export async function inviteCashierAction(
       };
     }
     throw err;
+  }
+
+  if (createdId) {
+    await audit({
+      action: "saas.user_role_changed", // reusamos; metadata aclara invitación
+      actorId,
+      target: createdId,
+      metadata: { invitedCashier: true, storeId },
+    });
   }
 
   revalidatePath("/dashboard/equipo");
@@ -212,6 +245,15 @@ export async function resetCashierPasswordAction(
 ): Promise<ResetCashierPasswordState> {
   const { storeId, userId: actorId } = await requireOwnerOnlyIds();
 
+  // Rate limit: previene token flooding al inbox del cashier si las
+  // credenciales del owner están comprometidas o el owner abusa del
+  // botón. 10 resets / minuto por owner es más que suficiente para
+  // operación normal.
+  const rlActor = await rateLimit(`cashier-reset:actor:${actorId}`, 10, 60 * 1000);
+  if (!rlActor.success) {
+    return { error: rateLimitErrorMessage(rlActor.retryAfter) };
+  }
+
   const parsed = resetSchema.safeParse({
     userId: formData.get("userId"),
   });
@@ -230,13 +272,13 @@ export async function resetCashierPasswordAction(
   if (!target) return { error: "Cajero no encontrado en tu tienda." };
   if (!target.isActive) {
     return {
-      error: "Cajero suspendido. Reactivalo primero para poder resetear su password.",
+      error: "Cajero suspendido. Reactívalo primero para poder resetear su password.",
     };
   }
   if (!target.email) {
     return {
       error:
-        "Este cajero no tiene email registrado. Pedile que ingrese uno desde su perfil antes de resetear la contraseña.",
+        "Este cajero no tiene email registrado. Pídele que ingrese uno desde su perfil antes de resetear la contraseña.",
     };
   }
 

@@ -147,21 +147,32 @@ export async function upsertCategoryAction(
         },
       });
     } else {
-      // sortOrder = max + 1 dentro del mismo nivel
-      const maxOrder = await db.category.aggregate({
-        where: { storeId, parentId: data.parentId ?? null },
-        _max: { sortOrder: true },
-      });
-      await db.category.create({
-        data: {
-          storeId,
-          name: data.name,
-          slug,
-          description: data.description || null,
-          parentId: data.parentId ?? null,
-          imageUrl: data.imageUrl || null,
-          sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
-        },
+      // sortOrder = max + 1 dentro del mismo nivel. Aggregate + create
+      // sin advisory lock pueden producir dos categorías con el mismo
+      // sortOrder si dos creates concurrentes leen `_max` simultáneo.
+      // No hay constraint UNIQUE sobre sortOrder, así que el orden en
+      // el storefront queda no-determinístico para esos pares.
+      // Serializamos creates por (storeId, parentId) con un advisory lock.
+      await db.$transaction(async (tx) => {
+        await tx.$executeRawUnsafe(
+          `SELECT pg_advisory_xact_lock(42, hashtext($1))`,
+          `category-create:${storeId}:${data.parentId ?? "root"}`,
+        );
+        const maxOrder = await tx.category.aggregate({
+          where: { storeId, parentId: data.parentId ?? null },
+          _max: { sortOrder: true },
+        });
+        await tx.category.create({
+          data: {
+            storeId,
+            name: data.name,
+            slug,
+            description: data.description || null,
+            parentId: data.parentId ?? null,
+            imageUrl: data.imageUrl || null,
+            sortOrder: (maxOrder._max.sortOrder ?? 0) + 1,
+          },
+        });
       });
     }
   } catch (err) {
@@ -269,11 +280,22 @@ export async function reorderCategoriesAction(input: {
     return { error: "Una o más categorías no pertenecen a tu tienda" };
   }
 
-  await db.$transaction(
-    parsed.data.ids.map((id, idx) =>
-      db.category.update({ where: { id }, data: { sortOrder: idx } }),
-    ),
-  );
+  // Advisory lock per-tenant: dos reorders simultáneos (dos pestañas, dos
+  // drag-drops rápidos) sin lock pueden intercalar sus N updates y dejar
+  // sortOrder mezclados. El lock se libera al commit/rollback.
+  await db.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(
+      `SELECT pg_advisory_xact_lock(42, hashtext($1))`,
+      `category-reorder:${storeId}`,
+    );
+    for (let i = 0; i < parsed.data.ids.length; i++) {
+      const id = parsed.data.ids[i]!;
+      await tx.category.update({
+        where: { id },
+        data: { sortOrder: i },
+      });
+    }
+  });
 
   invalidate(await getStoreSlugById(storeId));
   await audit({

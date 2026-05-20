@@ -126,6 +126,8 @@ export function inBolivia(d: Date): {
   weekday: number;
   hours: number;
   minutes: number;
+  seconds: number;
+  milliseconds: number;
 } {
   // BOT = UTC - 4h. Sumamos BOT_OFFSET_HOURS (que es -4) al timestamp y
   // luego usamos `getUTC*` para extraer componentes sin que la TZ del
@@ -140,5 +142,7 @@ export function inBolivia(d: Date): {
     weekday: u.getUTCDay(),
     hours: u.getUTCHours(),
     minutes: u.getUTCMinutes(),
+    seconds: u.getUTCSeconds(),
+    milliseconds: u.getUTCMilliseconds(),
   };
 }

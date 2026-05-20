@@ -48,7 +48,12 @@ export async function generateInvoice(
 
   const amount = priceForCycle(store.plan, store.billingCycle);
   const billing = await getBillingSettings();
-  const dueDate = addDays(now, billing.dueDays);
+  // `dueDate = periodStart + dueDays`, NO `now + dueDays`. Si el cron se
+  // atrasa (caída de Vercel, lock zombie, etc.) la factura se emite con
+  // fecha correcta de período pero el dueDate quedaría desfasado dándole
+  // al merchant menos plazo del contractualmente prometido y disparando
+  // OVERDUE antes de lo debido. Anclar al período es determinista.
+  const dueDate = addDays(periodStart, billing.dueDays);
 
   // Sequence atómica vía BillingCounter: el `update` con `increment` toma row
   // lock en Postgres, así que dos lambdas concurrentes obtienen seq distintos
@@ -132,7 +137,9 @@ export async function generateInvoice(
 
 // ============== Helpers ==============
 
-function priceForCycle(plan: Plan, cycle: BillingCycle): number {
+// Exportadas para tests unit. `priceForCycle` y `computePeriod` no tocan
+// la DB — pueden testearse con fixtures planos.
+export function priceForCycle(plan: Plan, cycle: BillingCycle): number {
   return cycle === BillingCycle.YEARLY
     ? Number(plan.yearlyPriceBob)
     : Number(plan.monthlyPriceBob);
@@ -150,7 +157,7 @@ function startOfDayBolivia(d: Date): Date {
   return dateInBolivia(b.year, b.month, b.day, 0, 0, 0, 0);
 }
 
-function computePeriod(store: Store, now: Date) {
+export function computePeriod(store: Store, now: Date) {
   // periodStart viene del contrato (nextInvoiceAt), no de cuando corra el cron.
   // Si el cron se atrasó un día, igual cubrimos el período correcto.
   const anchor = store.nextInvoiceAt ?? now;

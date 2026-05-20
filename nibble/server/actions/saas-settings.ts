@@ -21,9 +21,23 @@ const settingsSchema = z.object({
     .trim()
     .min(2)
     .max(8)
-    .regex(/^[A-Z0-9-]+$/i, "Sólo letras, números y guiones"),
-  billingDueDays: z.coerce.number().int().min(0).max(60),
-  billingGraceDays: z.coerce.number().int().min(0).max(30),
+    // Debe empezar y terminar con alfanumérico — un prefijo como `---` o
+    // `-ABC-` generaría números de factura tipo `---00001` que rompen
+    // integraciones contables externas y validaciones del SIN sobre
+    // formato del prefijo de la serie.
+    .regex(
+      /^[A-Z0-9](?:[A-Z0-9-]*[A-Z0-9])?$/i,
+      "Sólo letras y números; los guiones solo pueden ir en medio",
+    ),
+  // Mínimo 3 días de plazo para que el merchant pague sin sorpresas.
+  // Con 0 días la factura vence el mismo día de emisión y `syncStoreStatuses`
+  // la marca OVERDUE al día siguiente — peor experiencia que el SaaS más
+  // hostil del mercado.
+  billingDueDays: z.coerce.number().int().min(3).max(60),
+  // Mínimo 1 día de gracia post-vencimiento antes de suspender. Con 0 días
+  // de gracia, una tienda recién pasada a OVERDUE puede pasar a SUSPENDED
+  // en el siguiente run del cron (mismo día) sin tiempo de respuesta.
+  billingGraceDays: z.coerce.number().int().min(1).max(30),
 });
 
 export async function updateSaasSettingsAction(

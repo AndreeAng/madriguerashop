@@ -27,10 +27,8 @@ const initialInvite: InviteCashierState = {};
 const initialReset: ResetCashierPasswordState = {};
 
 export function TeamClient({
-  ownerName: _ownerName,
   cashiers,
 }: {
-  ownerName: string;
   cashiers: Cashier[];
 }) {
   const [mode, setMode] = useState<"list" | "invite">("list");
@@ -209,8 +207,8 @@ function InviteForm({ onDone }: { onDone: () => void }) {
       )}
 
       <p className="text-xs text-[color:var(--muted)]">
-        Creale una cuenta con la contraseña que vos elijas. Después se la
-        comunicás (WhatsApp, presencial). Ellos pueden cambiarla luego.
+        Crea una cuenta con la contraseña que tú elijas. Después compártela
+        con el cajero (WhatsApp, presencial). Él puede cambiarla luego.
       </p>
 
       <Field
@@ -285,12 +283,12 @@ function ResetPasswordDialog({
         <p className="mt-1 text-sm text-[color:var(--muted)]">
           Le enviamos un link de reseteo por email a{" "}
           <strong className="text-[color:var(--fg)]">{cashier.fullName}</strong>.
-          El cajero define su nueva contraseña — vos no la ves.
+          El cajero define su nueva contraseña — tú no la ves.
         </p>
 
         {state.ok && (
           <p className="mt-3 rounded-lg bg-[color:var(--color-leaf-50)] px-3 py-2 text-xs text-[color:var(--color-leaf-700)]">
-            ✓ Link enviado. Avisale al cajero que revise su email (válido 1 hora).
+            ✓ Link enviado. Avisa al cajero que revise su email (válido 1 hora).
           </p>
         )}
         {state.error && (

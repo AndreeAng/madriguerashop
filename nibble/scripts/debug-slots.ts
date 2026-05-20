@@ -89,4 +89,11 @@ async function main() {
   }
   await db.$disconnect();
 }
-main();
+main()
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await db.$disconnect();
+  });

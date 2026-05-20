@@ -36,9 +36,9 @@ function parseCircleFields(form: FormData):
 
   // Si vino al menos uno, exigimos los 3 — un radio sin centro o viceversa
   // queda inconsistente. Mostramos el primer faltante.
-  if (!latRaw) return { ok: false, field: "centerLat", message: "Marcá el centro en el mapa." };
-  if (!lngRaw) return { ok: false, field: "centerLng", message: "Marcá el centro en el mapa." };
-  if (!radRaw) return { ok: false, field: "radiusMeters", message: "Definí el radio." };
+  if (!latRaw) return { ok: false, field: "centerLat", message: "Marca el centro en el mapa." };
+  if (!lngRaw) return { ok: false, field: "centerLng", message: "Marca el centro en el mapa." };
+  if (!radRaw) return { ok: false, field: "radiusMeters", message: "Define el radio." };
 
   const lat = Number(latRaw);
   const lng = Number(lngRaw);

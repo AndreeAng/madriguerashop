@@ -64,7 +64,7 @@ const registerSchema = z.object({
   // aceptación. Browsers requieren `required` en el input, pero curl/bots
   // pueden saltearlo; por eso validamos también acá.
   acceptTerms: z.literal("on", {
-    message: "Tenés que aceptar los términos y la política de privacidad.",
+    message: "Tienes que aceptar los términos y la política de privacidad.",
   }),
 });
 
@@ -213,13 +213,13 @@ export async function registerStoreAction(
   if (!template) {
     return {
       error:
-        "No encontramos un template para ese rubro. Contactá soporte (este es un error nuestro).",
+        "No encontramos un template para ese rubro. Contacta a soporte (este es un error nuestro).",
     };
   }
   if (!plan) {
     return {
       error:
-        "No hay un plan disponible. Ejecutá `npm run db:seed` o contactá soporte.",
+        "No hay un plan disponible. Ejecuta `npm run db:seed` o contacta a soporte.",
     };
   }
 
@@ -324,7 +324,7 @@ export async function registerStoreAction(
     // null y la app sigue funcionando. La verificación habilita
     // notificaciones (futuro) y previene typos en el email del registro.
     if (createdUserId) {
-      const token = generateEmailVerificationToken(createdUserId);
+      const token = generateEmailVerificationToken(createdUserId, email);
       sendEmailBackground(
         emailVerificationEmail({
           to: email,

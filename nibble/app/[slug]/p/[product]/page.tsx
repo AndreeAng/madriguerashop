@@ -47,7 +47,7 @@ export async function generateMetadata({
   const description =
     product.shortDescription ||
     product.description?.slice(0, 200) ||
-    `Pedí ${product.name} en ${storeData.name}.`;
+    `Pide ${product.name} en ${storeData.name}.`;
   const image = product.images[0]?.url;
   const canonical = `/${slug}/p/${productSlug}`;
 
@@ -161,7 +161,12 @@ export default async function ProductDetailPage({
                         : "border-[color:var(--line)]"
                     }`}
                   >
-                    <Image src={img} alt="" fill className="object-cover" />
+                    <Image
+                      src={img}
+                      alt={`${product.name} — vista ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
                 ))}
               </div>

@@ -121,7 +121,7 @@ export default async function OrderDetailPage({
                       </a>
                       <div>
                         <p className="text-sm text-[color:var(--fg)]">
-                          El cliente subió este comprobante. Verificá que el monto
+                          El cliente subió este comprobante. Verifica que el monto
                           (<strong className="num-tabular">{formatBob(total)}</strong>) y
                           el destinatario coincidan con tu cuenta.
                         </p>
@@ -140,7 +140,7 @@ export default async function OrderDetailPage({
                         {order.paymentMethod === "CASH_ON_DELIVERY"
                           ? "en efectivo a la entrega"
                           : "pendiente"}
-                        . Cuando confirmes que recibiste el pago, marcalo como verificado.
+                        . Cuando confirmes que recibiste el pago, márcalo como verificado.
                       </p>
                       <div className="mt-4">
                         <PaymentActions

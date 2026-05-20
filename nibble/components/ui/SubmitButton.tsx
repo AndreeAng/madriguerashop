@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 /**
  * Botón de submit con estado pending automático vía `useFormStatus()`.
  * Debe vivir DENTRO de un `<form action={serverAction}>` — el hook lee el
- * status del form padre. Si lo ponés afuera, `pending` siempre es false.
+ * status del form padre. Si lo pones afuera, `pending` siempre es false.
  *
  * Variantes:
  *   - `shape`: "rounded" (default, rounded-xl) vs "pill" (rounded-full)
@@ -52,6 +52,10 @@ export function SubmitButton({
     <button
       type="submit"
       disabled={isDisabled}
+      // `aria-busy` anuncia a screen readers que el botón está en estado
+      // "busy/loading" sin que el usuario tenga que volver a leerlo. Sin
+      // esto, el cambio visual (spinner + label) es invisible para AT.
+      aria-busy={pending || undefined}
       className={cn(
         "press inline-flex items-center justify-center gap-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60",
         shape === "pill" ? "rounded-full" : "rounded-xl",

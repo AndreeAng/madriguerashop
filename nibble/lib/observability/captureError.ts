@@ -24,11 +24,26 @@ export function captureError(error: unknown, context?: ErrorContext): void {
   // Logging local — siempre. Sirve incluso con Sentry activo.
   console.error("[captureError]", { message, stack, ...context });
 
+  // Promovemos campos clave a TAGS (indexados, searchables en Sentry UI)
+  // en lugar de `extras` (no indexados). Sin esto era imposible filtrar
+  // errores por tenant en el dashboard de Sentry.
+  const INDEXED_KEYS = new Set([
+    "storeId",
+    "actorId",
+    "action",
+    "tenantSlug",
+    "route",
+  ]);
+
   // Sentry (no-op si no hay DSN)
   Sentry.withScope((scope) => {
     if (context) {
       for (const [k, v] of Object.entries(context)) {
-        scope.setExtra(k, v);
+        if (INDEXED_KEYS.has(k) && (typeof v === "string" || typeof v === "number")) {
+          scope.setTag(k, String(v));
+        } else {
+          scope.setExtra(k, v);
+        }
       }
     }
     if (error instanceof Error) {

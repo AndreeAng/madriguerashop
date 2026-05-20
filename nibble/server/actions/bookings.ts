@@ -26,7 +26,7 @@ export type CreateBookingState = {
 const createSchema = z.object({
   productId: z.string().min(1),
   storeSlug: z.string().min(1),
-  startsAt: z.string().min(1, "Elegí un horario"),
+  startsAt: z.string().min(1, "Elige un horario"),
   customerName: z
     .string()
     .trim()
@@ -148,12 +148,21 @@ export async function createBookingAction(
   try {
     created = await db.$transaction(async (tx) => {
       // Buscamos cualquier booking activa que cruza con [startsAt, endsAt).
+      // El guard `endsAt: { gt: now }` previene que una PENDING booking
+      // del pasado (cliente nunca confirmado por el owner, ya pasó la hora)
+      // bloquee slots futuros indefinidamente. Sin esto un servicio
+      // popular que recibe 10 PENDING al día y nunca se gestionan
+      // bloquea progresivamente los slots futuros sin que el owner sepa.
+      const now = new Date();
       const conflict = await tx.booking.findFirst({
         where: {
           productId: product.id,
           status: { in: ["PENDING", "CONFIRMED"] },
           startsAt: { lt: endsAt },
           endsAt: { gt: startsAt },
+          // Solo bloquean slots futuros: una PENDING/CONFIRMED del pasado
+          // ya no tiene sentido como conflicto.
+          AND: { endsAt: { gt: now } },
         },
         select: { id: true },
       });
@@ -217,15 +226,19 @@ export async function createBookingAction(
   if (!created) return { error: "No pudimos crear la reserva." };
 
   await audit({
-    action: "order.created",
+    action: "booking.created",
+    storeId: product.storeId,
     target: created.id,
-    metadata: { bookingCreated: true, productId: product.id, storeId: product.storeId },
+    metadata: { productId: product.id },
   });
 
   // Mensaje de WhatsApp pre-armado para el cliente al merchant.
+  // `timeZone: America/La_Paz` evita que el server en UTC formatee la hora
+  // 4 horas adelantada de lo que el cliente percibe en su pantalla.
   const dateFmt = startsAt.toLocaleString("es-BO", {
     dateStyle: "full",
     timeStyle: "short",
+    timeZone: "America/La_Paz",
   });
   const wa = buildWhatsAppUrl(
     product.store.whatsappPhone,
@@ -280,10 +293,11 @@ export async function confirmBookingAction(
   }
 
   await audit({
-    action: "order.status_changed",
+    action: "booking.confirmed",
     actorId: userId,
+    storeId,
     target: parsed.data.bookingId,
-    metadata: { bookingConfirmed: true, storeId },
+    metadata: {},
   });
   revalidatePath("/dashboard/reservas");
   return {};
@@ -298,6 +312,21 @@ export async function cancelBookingAction(
     cancelReason: (formData.get("cancelReason") as string) ?? "",
   });
   if (!parsed.success) return { error: INVALID_INPUT_ERROR };
+
+  // Para cancelar una booking CONFIRMED (el cliente ya tiene compromiso)
+  // exigimos razón con mínimo 3 chars, igual que `changeOrderStatusAction`.
+  // PENDING puede cancelarse sin razón (todavía no hay compromiso real).
+  const target = await db.booking.findFirst({
+    where: { id: parsed.data.bookingId, storeId },
+    select: { status: true },
+  });
+  if (!target) return { error: "Reserva no encontrada." };
+  if (
+    target.status === BookingStatus.CONFIRMED &&
+    (!parsed.data.cancelReason || parsed.data.cancelReason.trim().length < 3)
+  ) {
+    return { error: "Indica el motivo de la cancelación (mínimo 3 caracteres)." };
+  }
 
   const updated = await db.booking.updateMany({
     where: {
@@ -316,10 +345,11 @@ export async function cancelBookingAction(
   }
 
   await audit({
-    action: "order.status_changed",
+    action: "booking.cancelled",
     actorId: userId,
+    storeId,
     target: parsed.data.bookingId,
-    metadata: { bookingCancelled: true, storeId, reason: parsed.data.cancelReason },
+    metadata: { reason: parsed.data.cancelReason },
   });
   revalidatePath("/dashboard/reservas");
   return {};
@@ -332,17 +362,30 @@ export async function markBookingCompletedAction(
   const id = String(formData.get("bookingId") ?? "");
   if (!id) return { error: INVALID_INPUT_ERROR };
 
+  // Solo se puede marcar COMPLETED después de que comenzó la reserva.
+  // Antes era posible "completar" una reserva CONFIRMED programada para
+  // mañana — UI bug que podía corromper métricas de cumplimiento.
   const updated = await db.booking.updateMany({
-    where: { id, storeId, status: BookingStatus.CONFIRMED },
+    where: {
+      id,
+      storeId,
+      status: BookingStatus.CONFIRMED,
+      startsAt: { lte: new Date() },
+    },
     data: { status: BookingStatus.COMPLETED, completedAt: new Date() },
   });
-  if (updated.count === 0) return { error: "Reserva no confirmada." };
+  if (updated.count === 0) {
+    return {
+      error: "Reserva no confirmada o aún no comenzó.",
+    };
+  }
 
   await audit({
-    action: "order.status_changed",
+    action: "booking.completed",
     actorId: userId,
+    storeId,
     target: id,
-    metadata: { bookingCompleted: true, storeId },
+    metadata: {},
   });
   revalidatePath("/dashboard/reservas");
   return {};
@@ -370,10 +413,11 @@ export async function markBookingNoShowAction(
   if (updated.count === 0) return { error: "Reserva no confirmada." };
 
   await audit({
-    action: "order.status_changed",
+    action: "booking.no_show",
     actorId: userId,
+    storeId,
     target: id,
-    metadata: { bookingNoShow: true, storeId },
+    metadata: {},
   });
   revalidatePath("/dashboard/reservas");
   return {};

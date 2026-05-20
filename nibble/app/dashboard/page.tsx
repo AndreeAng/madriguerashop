@@ -22,17 +22,15 @@ import {
 import { formatBob } from "@/lib/utils";
 import { STATUS_COLORS } from "@/lib/orders/status";
 import { OrderStatusPill } from "@/components/ui/OrderStatusPill";
+import { startOfDay, addDays } from "@/lib/i18n/dates";
 
 export const metadata = { title: "Inicio · Madriguera Shop" };
 
-function startOfDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
-}
-
+// `startOfDay` (TZ Bolivia) ya vive en `lib/i18n/dates`. Antes había una
+// copia local con la misma lógica — riesgo de divergencia futura. La
+// versión de `dates` ahora maneja TZ Bolivia internamente.
 function startOfYesterday(now: Date): Date {
-  const y = new Date(now);
-  y.setDate(y.getDate() - 1);
-  return startOfDay(y);
+  return startOfDay(addDays(now, -1));
 }
 
 function pctChange(curr: number, prev: number): number {

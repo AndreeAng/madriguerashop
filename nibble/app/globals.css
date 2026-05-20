@@ -1,8 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: "Fraunces", Georgia, serif;
+  /* `next/font` registra `--font-inter` y `--font-fraunces` apuntando a
+     la font-face local optimizada (subset + swap). Sin `var(...)` el
+     browser cae al string literal "Inter" y, si Google Fonts no cargó,
+     descarta el preload de Next y va al fallback genérico. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
 
   --color-cream-50: #fdfaf3;

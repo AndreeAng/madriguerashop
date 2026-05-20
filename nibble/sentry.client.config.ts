@@ -11,7 +11,11 @@ const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 if (dsn) {
   Sentry.init({
     dsn,
-    environment: process.env.NODE_ENV,
+    // `NEXT_PUBLIC_APP_ENV` distingue staging de prod (en staging Vercel
+    // setea NODE_ENV=production igual que en prod). Sin esto, errores de
+    // staging contaminan las alertas de prod en Sentry.
+    environment:
+      process.env.NEXT_PUBLIC_APP_ENV ?? process.env.NODE_ENV ?? "unknown",
 
     // Sample rate de errores. 100% — un SaaS chico con pocos usuarios
     // no puede darse el lujo de perder 80% de errores. Si llegamos al

@@ -54,7 +54,7 @@ export function BookingBlocksClient({ blocks }: { blocks: Block[] }) {
             <h2 className="font-display text-lg">Días u horas bloqueadas</h2>
           </div>
           <p className="mt-1 text-xs text-[color:var(--muted)]">
-            Marcá vacaciones, feriados o ratos donde no atendés. Los
+            Marca vacaciones, feriados o ratos donde no atiendes. Los
             clientes no van a poder reservar en esos horarios.
           </p>
         </div>
@@ -229,7 +229,7 @@ function BlockForm({ onDone }: { onDone: () => void }) {
           } bg-[color:var(--card)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]`}
         />
         <p className="mt-1 text-xs text-[color:var(--muted)]">
-          Sólo lo ves vos. Sirve para acordarte por qué bloqueaste el rato.
+          Solo lo ves tú. Sirve para acordarte por qué bloqueaste el rato.
         </p>
       </label>
 

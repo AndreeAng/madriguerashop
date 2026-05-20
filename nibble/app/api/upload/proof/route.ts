@@ -25,27 +25,38 @@ export async function POST(request: Request) {
   // Sin esta exigencia, un atacante con `curl` (que omite Origin por default)
   // bypassea el check porque `null !== expectedOrigin` cae en condición falsy
   // cuando se mezcla con `&& origin`.
+  //
+  // Rechazamos también `Origin: null` literal (string "null"): algunos
+  // browsers en iframes sandbox o tras un redirect cross-site mandan el
+  // header con valor "null", lo cual matchea `!!origin` y pasaría el
+  // check estricto si `expectedOrigin` también fuera "null" (escenario
+  // teórico, pero el rechazo explícito documenta la intención).
   if (process.env.NODE_ENV === "production") {
     const origin = request.headers.get("origin");
     const expectedOrigin = process.env.APP_URL?.replace(/\/$/, "");
-    if (!expectedOrigin || !origin || origin !== expectedOrigin) {
+    if (
+      !expectedOrigin ||
+      !origin ||
+      origin === "null" ||
+      origin !== expectedOrigin
+    ) {
       return NextResponse.json({ error: "Origin no permitido" }, { status: 403 });
     }
   }
 
-  // Rate limit por IP — 20 uploads / 10 min es suficiente para flujos legítimos
-  // y bloquea bots subiendo basura masiva.
+  const { searchParams } = new URL(request.url);
+  const slug = searchParams.get("slug");
+  // Rate limit POR IP+SLUG — un cliente atacante que quema requests
+  // contra slug A no debe bloquear los uploads legítimos hacia slug B
+  // desde la misma IP (NAT corporativa, oficinas, etc).
   const ip = getClientIpFromRequest(request);
-  const rl = await rateLimit(`upload-proof:${ip}`, 20, 10 * 60 * 1000);
+  const rl = await rateLimit(`upload-proof:${ip}:${slug ?? "_"}`, 20, 10 * 60 * 1000);
   if (!rl.success) {
     return NextResponse.json(
       { error: rateLimitErrorMessage(rl.retryAfter) },
       { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfter / 1000)) } },
     );
   }
-
-  const { searchParams } = new URL(request.url);
-  const slug = searchParams.get("slug");
   if (!slug) {
     return NextResponse.json({ error: "Slug requerido" }, { status: 400 });
   }

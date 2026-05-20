@@ -1,8 +1,15 @@
 import "server-only";
 import { cache } from "react";
-import { Role } from "@prisma/client";
+import { Role, Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { dateInBolivia, inBolivia } from "@/lib/booking/timezone";
+
+// Prisma's transaction client type (`tx` callback arg). Aceptamos cualquiera
+// de los dos para que callers que necesitan correr el check dentro de un
+// advisory lock puedan pasar `tx` y la query ocurra en la misma conexión
+// que tiene el lock. Sin esto el lock no protege nada (la query corre en
+// el pool y otra request puede leer count stale).
+export type TxClient = Prisma.TransactionClient | typeof db;
 
 /**
  * Plan limits enforcement.
@@ -82,16 +89,22 @@ const getStorePlanLimits = cache(
 
 // ============== Checks individuales ==============
 
-export async function checkProductLimit(storeId: string): Promise<LimitStatus> {
+export async function checkProductLimit(
+  storeId: string,
+  client: TxClient = db,
+): Promise<LimitStatus> {
   const plan = await getStorePlanLimits(storeId);
   const limit = plan?.maxProducts ?? null;
-  const current = await db.product.count({
+  const current = await client.product.count({
     where: { storeId, isActive: true },
   });
   return statusFrom(current, limit);
 }
 
-export async function checkStaffLimit(storeId: string): Promise<LimitStatus> {
+export async function checkStaffLimit(
+  storeId: string,
+  client: TxClient = db,
+): Promise<LimitStatus> {
   const plan = await getStorePlanLimits(storeId);
   // `maxStaff` cuenta usuarios CASHIER (el owner no consume slot — el
   // plan starter tiene `maxStaff=1` que significa "1 cashier además del
@@ -99,7 +112,7 @@ export async function checkStaffLimit(storeId: string): Promise<LimitStatus> {
   // puede invitar a nadie y el feature de equipo queda escondido detrás
   // del upgrade.
   const limit = plan?.maxStaff ?? null;
-  const current = await db.user.count({
+  const current = await client.user.count({
     where: { storeId, role: Role.CASHIER, isActive: true },
   });
   return statusFrom(current, limit);

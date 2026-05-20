@@ -111,8 +111,8 @@ export function MapPicker({
       (err) => {
         setGeoError(
           err.code === err.PERMISSION_DENIED
-            ? "Permiso de ubicación denegado. Marcá el punto manualmente en el mapa."
-            : "No pudimos obtener tu ubicación. Marcala manualmente.",
+            ? "Permiso de ubicación denegado. Marca el punto manualmente en el mapa."
+            : "No pudimos obtener tu ubicación. Márcala manualmente.",
         );
         setGeoLoading(false);
       },

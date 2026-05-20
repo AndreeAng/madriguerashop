@@ -59,7 +59,7 @@ const baseSchema = z
       .max(30, "Máximo 30 caracteres")
       .regex(/^[A-Z0-9_-]+$/, "Sólo MAYÚSCULAS, números, guión y guión bajo"),
     description: z.string().trim().max(160).optional().default(""),
-    type: z.nativeEnum(CouponType, { message: "Elegí un tipo de cupón" }),
+    type: z.nativeEnum(CouponType, { message: "Elige un tipo de cupón" }),
     value: z
       .string()
       .trim()

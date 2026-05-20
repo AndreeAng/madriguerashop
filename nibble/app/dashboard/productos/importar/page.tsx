@@ -25,7 +25,7 @@ export default async function ImportProductsPage() {
 
         <h1 className="font-display mt-3 text-3xl">Importar productos</h1>
         <p className="mt-1 text-sm text-[color:var(--muted)]">
-          Subí un CSV para crear muchos productos de una. Útil para migrar
+          Sube un CSV para crear muchos productos de una. Útil para migrar
           desde otra plataforma o cargar un catálogo nuevo.
         </p>
 
@@ -37,9 +37,9 @@ export default async function ImportProductsPage() {
           <table className="mt-3 w-full text-xs">
             <thead className="text-[color:var(--muted)]">
               <tr className="border-b border-[color:var(--line)]">
-                <th className="py-2 text-left font-medium">Columna</th>
-                <th className="py-2 text-left font-medium">Requerido</th>
-                <th className="py-2 text-left font-medium">Ejemplo</th>
+                <th scope="col" className="py-2 text-left font-medium">Columna</th>
+                <th scope="col" className="py-2 text-left font-medium">Requerido</th>
+                <th scope="col" className="py-2 text-left font-medium">Ejemplo</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[color:var(--line)]">

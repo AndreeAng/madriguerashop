@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { ensureGuestToken, readGuestToken } from "@/lib/cart/cookies";
 import { getStoreBySlug } from "@/lib/tenant/resolve";
@@ -230,36 +231,89 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   // se recalcula server-side igualmente). Sin esto, la UI mostraba el
   // precio viejo guardado al insertar y el cobro final no coincidía —
   // fuente directa de chargebacks.
-  const updated = await db.cartItem.updateMany({
-    where: {
-      cartId: cart.id,
-      productId: product.id,
-      variantId: variantId ?? null,
-    },
-    data: {
-      quantity: { increment: data.quantity },
-      notes: data.notes ?? undefined,
-      unitPrice,
-    },
-  });
-  if (updated.count === 0) {
-    await db.cartItem.create({
-      data: {
-        cartId: cart.id,
-        productId: product.id,
-        variantId,
-        quantity: data.quantity,
-        notes: data.notes ?? null,
-        unitPrice,
-      },
+  // Transacción atómica: updateMany + create + refresh expiresAt.
+  //
+  // Race que se cierra acá:
+  //   1. Doble-tap en mobile (mismo cliente, dos requests simultáneas).
+  //      Ambas hacen updateMany → ambas obtienen count=0 → ambas hacen
+  //      create → la segunda fallaba con P2002 (unique [cartId, productId,
+  //      variantId]) no manejado.
+  //   2. Cron de cleanup borra el Cart entre el `getOrCreateCart` y el
+  //      cartItem.create → FK violation P2003 no manejada. El refresh
+  //      del expiresAt aquí dentro de la tx protege contra el cron del
+  //      cleanup, que solo borra `expiresAt < now`.
+  //
+  // El P2002 se atrapa como "ya existe", se reintenta el updateMany dentro
+  // de la misma transacción.
+  try {
+    await db.$transaction(async (tx) => {
+      // Renovar `expiresAt` PRIMERO — si el cleanup cron está corriendo,
+      // movemos la línea de borrado lejos antes de tocar items.
+      await tx.cart.update({
+        where: { id: cart.id },
+        data: { expiresAt: new Date(Date.now() + CART_TTL_MS) },
+      });
+      const updated = await tx.cartItem.updateMany({
+        where: {
+          cartId: cart.id,
+          productId: product.id,
+          variantId: variantId ?? null,
+        },
+        data: {
+          quantity: { increment: data.quantity },
+          notes: data.notes ?? undefined,
+          unitPrice,
+        },
+      });
+      if (updated.count === 0) {
+        try {
+          await tx.cartItem.create({
+            data: {
+              cartId: cart.id,
+              productId: product.id,
+              variantId,
+              quantity: data.quantity,
+              notes: data.notes ?? null,
+              unitPrice,
+            },
+          });
+        } catch (err) {
+          // Si una request hermana creó el item entre el updateMany y el
+          // create (P2002 en unique), reintentamos el updateMany — ahora
+          // sí existe y suma la quantity.
+          if (
+            err instanceof Prisma.PrismaClientKnownRequestError &&
+            err.code === "P2002"
+          ) {
+            await tx.cartItem.updateMany({
+              where: {
+                cartId: cart.id,
+                productId: product.id,
+                variantId: variantId ?? null,
+              },
+              data: {
+                quantity: { increment: data.quantity },
+                notes: data.notes ?? undefined,
+                unitPrice,
+              },
+            });
+          } else {
+            throw err;
+          }
+        }
+      }
     });
+  } catch (err) {
+    // P2003: el Cart fue borrado por el cron de cleanup entre
+    // `getOrCreateCart` y la transacción. Mensaje claro al cliente.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2003"
+    ) {
+      return { error: "Tu carrito expiró. Recarga la página e intenta de nuevo." };
+    }
+    throw err;
   }
-
-  // Refresh expiración
-  await db.cart.update({
-    where: { id: cart.id },
-    data: { expiresAt: new Date(Date.now() + CART_TTL_MS) },
-  });
 
   revalidatePath(`/${store.slug}`);
   return getCartSnapshot(store.slug);

@@ -116,6 +116,8 @@ export default async function SearchPage({
         <form
           action={`/${slug}/buscar`}
           method="get"
+          role="search"
+          aria-label={`Buscar productos en ${store.name}`}
           className="mt-4 flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2"
         >
           <Search className="size-4 text-[color:var(--muted)]" aria-hidden="true" />
@@ -137,7 +139,7 @@ export default async function SearchPage({
 
         <div className="mt-6">
           <h1 className="font-display text-2xl">
-            {q ? `Resultados para "${q}"` : "Buscá un producto"}
+            {q ? `Resultados para "${q}"` : "Busca un producto"}
           </h1>
           {q && (
             <p className="mt-1 text-sm text-[color:var(--muted)]">

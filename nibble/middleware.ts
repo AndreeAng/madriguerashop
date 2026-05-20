@@ -13,6 +13,7 @@ import authConfig from "@/auth.config";
 const { auth } = NextAuth(authConfig);
 
 const VISITOR_COOKIE = "mv_visitor";
+const CONSENT_COOKIE = "mv_consent";
 const SESSION_COOKIE = "mv_session";
 const VISITOR_TTL_S = 60 * 60 * 24 * 180; // 6 meses
 const SESSION_TTL_S = 60 * 30; // 30 min sliding
@@ -65,13 +66,20 @@ function imgSrcSources(): string {
 }
 
 function buildCsp(nonce: string): string {
+  // El tunnelRoute de Sentry (`/monitoring`) envía la mayoría de eventos
+  // a través de same-origin, pero Replay y el envelope inicial pueden
+  // golpear *.ingest.sentry.io directamente. Sin estos hosts en
+  // connect-src, los errores de cliente se pierden silenciosamente.
+  const connectSrc = process.env.NEXT_PUBLIC_SENTRY_DSN
+    ? "'self' https://*.ingest.sentry.io https://*.sentry.io"
+    : "'self'";
   const directives: Record<string, string> = {
     "default-src": "'self'",
     "script-src": `'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src": "'self' https://fonts.gstatic.com data:",
     "img-src": imgSrcSources(),
-    "connect-src": "'self'",
+    "connect-src": connectSrc,
     "frame-ancestors": "'none'",
     "base-uri": "'self'",
     "form-action": "'self'",
@@ -106,30 +114,35 @@ export default auth((req) => {
   // CSP en response headers — esto es lo que el browser realmente lee.
   res.headers.set("Content-Security-Policy", csp);
 
-  // Bootstrap de cookies de analytics. Antes esto vivía en `trackPageView`
-  // (Server Component) y fallaba silenciosamente — Next.js 15 no permite
-  // `cookies().set()` en RSC. Acá en middleware sí podemos escribir.
+  // Bootstrap de cookies de analytics SOLO si el visitante dio consent.
+  // La cookie `mv_consent="yes"` la setea el `<CookieConsent>` banner del
+  // storefront cuando el cliente acepta. Sin consentimiento explícito no
+  // creamos visitor/session — alinea el comportamiento con la política de
+  // privacidad publicada.
   const cookies = req.cookies;
+  const hasConsent = cookies.get(CONSENT_COOKIE)?.value === "yes";
 
-  if (!cookies.get(VISITOR_COOKIE)?.value) {
-    res.cookies.set(VISITOR_COOKIE, crypto.randomUUID(), {
-      maxAge: VISITOR_TTL_S,
+  if (hasConsent) {
+    if (!cookies.get(VISITOR_COOKIE)?.value) {
+      res.cookies.set(VISITOR_COOKIE, crypto.randomUUID(), {
+        maxAge: VISITOR_TTL_S,
+        path: "/",
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+      });
+    }
+    // Sesión sliding: renovar cada hit para que 30 min sea "tiempo de
+    // inactividad", no "tiempo desde primer pageview".
+    const sessionToken = cookies.get(SESSION_COOKIE)?.value ?? crypto.randomUUID();
+    res.cookies.set(SESSION_COOKIE, sessionToken, {
+      maxAge: SESSION_TTL_S,
       path: "/",
       httpOnly: true,
       sameSite: "lax",
       secure: process.env.NODE_ENV === "production",
     });
   }
-  // Sesión sliding: renovar cada hit para que 30 min sea "tiempo de
-  // inactividad", no "tiempo desde primer pageview".
-  const sessionToken = cookies.get(SESSION_COOKIE)?.value ?? crypto.randomUUID();
-  res.cookies.set(SESSION_COOKIE, sessionToken, {
-    maxAge: SESSION_TTL_S,
-    path: "/",
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-  });
 
   return res;
 });

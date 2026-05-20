@@ -1,4 +1,5 @@
 import "server-only";
+import { inBolivia } from "@/lib/booking/timezone";
 
 /**
  * Algoritmo CUF (Código Único de Factura) — determinista.
@@ -77,15 +78,21 @@ export function unsafeComputeCUF(input: CufInput): string {
 }
 
 function formatFecha(d: Date): string {
+  // El CUF requiere fecha-hora en hora Bolivia (UTC-4). Si usáramos
+  // `d.getHours()` directo, el cálculo dependería de la TZ del proceso
+  // (Vercel corre en UTC) — una factura emitida 21:00 BOT generaría un
+  // CUF con fecha del día siguiente, lo que el SIN rechaza con 905/970
+  // y deja el correlativo gastado sin posibilidad de re-emisión.
+  const b = inBolivia(d);
   const pad = (n: number, w = 2) => String(n).padStart(w, "0");
   return [
-    d.getFullYear(),
-    pad(d.getMonth() + 1),
-    pad(d.getDate()),
-    pad(d.getHours()),
-    pad(d.getMinutes()),
-    pad(d.getSeconds()),
-    pad(d.getMilliseconds(), 3),
+    b.year,
+    pad(b.month + 1),
+    pad(b.day),
+    pad(b.hours),
+    pad(b.minutes),
+    pad(b.seconds),
+    pad(b.milliseconds, 3),
   ].join("");
 }
 

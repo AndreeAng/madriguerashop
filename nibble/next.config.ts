@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 /**
  * `remotePatterns` para `next/image`. Lo armamos dinámicamente desde
@@ -69,4 +70,23 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// `withSentryConfig` inyecta el Sentry webpack plugin que sube source maps
+// en build y tunneliza eventos para esquivar ad-blockers. Sin este wrapper
+// los stack traces de producción quedan minificados e inútiles para debug.
+//
+// `SENTRY_AUTH_TOKEN` se setea solo en CI/Vercel (NUNCA en el repo). Sin
+// token, Sentry omite el upload de source maps pero no rompe el build.
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  // Tunneliza eventos de Sentry a través de un endpoint del propio dominio
+  // para evitar ad-blockers que filtran ingest.sentry.io. La ruta se
+  // genera automáticamente por @sentry/nextjs.
+  tunnelRoute: "/monitoring",
+  // Configura el plugin de webpack que sube source maps y luego los oculta
+  // del bundle público; valores default funcionan bien para Vercel.
+  sourcemaps: { deleteSourcemapsAfterUpload: true },
+  disableLogger: true,
+});

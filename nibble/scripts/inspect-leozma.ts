@@ -58,7 +58,22 @@ async function main() {
     where: { storeId: store.id, role: "STORE_OWNER" },
     select: { username: true, email: true, fullName: true },
   });
-  console.log("\nOwner:", JSON.stringify(owner, null, 2));
+  // Redactamos email/username para evitar dumpear PII a stdout — si este
+  // script corre en CI con logging centralizado, el email completo queda
+  // en los logs indefinidamente.
+  const redact = (s: string | null | undefined): string | null => {
+    if (!s) return null;
+    if (s.includes("@")) {
+      const [local, domain] = s.split("@");
+      return `${local?.[0] ?? ""}***@${domain ?? ""}`;
+    }
+    return `***${s.slice(-4)}`;
+  };
+  console.log("\nOwner:", {
+    username: redact(owner?.username),
+    email: redact(owner?.email ?? null),
+    fullName: owner?.fullName,
+  });
 
   await db.$disconnect();
 }

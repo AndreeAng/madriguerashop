@@ -1,6 +1,20 @@
 import "server-only";
 
 /**
+ * Sanitiza un valor controlado por el cliente antes de interpolarlo en
+ * el `Subject:` del mensaje SMTP. Sin esto, un `customerName` que contenga
+ * `\r\n` puede inyectar headers adicionales (Bcc, To, Content-Type) y
+ * convertir el servidor en un relay de spam. Truncamos a 100 chars para
+ * evitar abuse con Subjects gigantes que rompen MTAs.
+ *
+ * TODOS los templates de `lib/email/templates/*` que interpolan input
+ * dinámico en `subject` deben pasar el valor por aquí.
+ */
+export function safeSubjectField(raw: string, maxLen = 100): string {
+  return raw.replace(/[\r\n\t]+/g, " ").trim().slice(0, maxLen);
+}
+
+/**
  * Layout HTML compartido por todos los emails.
  *
  * Diseño: tabla-based (única forma confiable cross-client), inline styles
@@ -18,15 +32,15 @@ export type EmailLayoutInput = {
    *
    * ⚠️ CONTRATO: el caller es RESPONSABLE de escapar todas las variables
    * user-controlled antes de armar este string. `renderEmail` lo inserta
-   * raw (no escapa, no sanitiza). Usá `escapeHtml(value)` sobre cada
+   * raw (no escapa, no sanitiza). Usa `escapeHtml(value)` sobre cada
    * variable que venga del usuario (customerName, customerNotes,
    * productName, storeName, etc.).
    *
-   * Por qué no auto-escapar: el body es composable — armás `<p>${escapeHtml(name)}</p>`
-   * y necesitás que los tags `<p>` queden literales. Auto-escape rompería
+   * Por qué no auto-escapar: el body es composable — armas `<p>${escapeHtml(name)}</p>`
+   * y necesitas que los tags `<p>` queden literales. Auto-escape rompería
    * el HTML. La convención en todos los templates de `lib/email/templates/`
-   * es escapar variables individualmente; si agregás un nuevo template,
-   * seguí esa misma convención.
+   * es escapar variables individualmente; si agregas un nuevo template,
+   * sigue esa misma convención.
    */
   body: string;
   /** Texto del CTA principal (opcional). */

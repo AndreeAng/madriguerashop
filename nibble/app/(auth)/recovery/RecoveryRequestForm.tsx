@@ -20,25 +20,13 @@ export function RecoveryRequestForm() {
         <div className="flex items-start gap-3">
           <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-[color:var(--color-leaf-600)]" />
           <div>
-            {state.noticeKey === "no_email" ? (
-              <>
-                <p className="font-medium">
-                  Tu cuenta usa teléfono, no email.
-                </p>
-                <p className="mt-1 text-[color:var(--muted)]">
-                  No podemos enviar un link por SMS todavía. Escribinos al
-                  WhatsApp de soporte y te ayudamos a recuperarla.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="font-medium">Revisá tu casilla.</p>
-                <p className="mt-1 text-[color:var(--muted)]">
-                  Si encontramos una cuenta con ese email, te enviamos un link
-                  para restablecer la contraseña. El link es válido por 1 hora.
-                </p>
-              </>
-            )}
+            <p className="font-medium">Revisa tu casilla.</p>
+            <p className="mt-1 text-[color:var(--muted)]">
+              Si encontramos una cuenta con ese email, te enviamos un link
+              para restablecer la contraseña. El link es válido por 1 hora.
+              Si usas solo teléfono, escríbenos al WhatsApp de soporte para
+              recuperar tu cuenta.
+            </p>
           </div>
         </div>
 

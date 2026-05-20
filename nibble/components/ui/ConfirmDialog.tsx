@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { AlertTriangle } from "lucide-react";
 
 /**
@@ -43,17 +43,26 @@ export function ConfirmDialog({
   onCancel: () => void;
 }) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
 
-  // Cerrar con Escape; foco al botón confirmar al abrir.
+  // Foco inicial: si el dialog es destructive, enfocamos el botón Cancelar
+  // (WCAG 3.3.4 Error Prevention) — un Enter accidental no debe ejecutar
+  // la acción destructiva. Para diálogos no-destructivos, foco al confirm
+  // es la convención que acelera el happy path.
   useEffect(() => {
     if (!open) return;
-    confirmRef.current?.focus();
+    if (destructive) {
+      cancelRef.current?.focus();
+    } else {
+      confirmRef.current?.focus();
+    }
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancel();
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open, onCancel]);
+  }, [open, onCancel, destructive]);
 
   if (!open) return null;
 
@@ -61,7 +70,7 @@ export function ConfirmDialog({
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="confirm-dialog-title"
+      aria-labelledby={titleId}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={onCancel}
     >
@@ -77,10 +86,7 @@ export function ConfirmDialog({
             />
           )}
           <div className="flex-1">
-            <h2
-              id="confirm-dialog-title"
-              className="font-display text-lg leading-snug"
-            >
+            <h2 id={titleId} className="font-display text-lg leading-snug">
               {title}
             </h2>
             {message && (
@@ -91,6 +97,7 @@ export function ConfirmDialog({
 
         <div className="mt-6 flex justify-end gap-2">
           <button
+            ref={cancelRef}
             type="button"
             onClick={onCancel}
             className="rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-4 py-2 text-sm font-medium hover:bg-[color:var(--card)]"

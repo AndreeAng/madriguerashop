@@ -93,15 +93,35 @@ export function isStoreOpenNow(hours: StoreHours[], now: Date = new Date()): boo
     return true;
   }
   const bot = inBolivia(now);
-  const today = hours.find((h) => h.dayOfWeek === bot.weekday);
-  if (!today || today.isClosed) return false;
-
   const hhmm = toHHMM(bot.hours, bot.minutes);
-  const from = today.openTime;
-  const to = today.closeTime;
-  if (to >= from) {
-    return hhmm >= from && hhmm <= to;
+
+  // Caso 1: el día de hoy tiene rango. Validamos contra él (con soporte
+  // de rango overnight via from > to, half-open en el borde de cierre).
+  const today = hours.find((h) => h.dayOfWeek === bot.weekday);
+  if (today && !today.isClosed) {
+    const from = today.openTime;
+    const to = today.closeTime;
+    if (to >= from) {
+      if (hhmm >= from && hhmm < to) return true;
+    } else {
+      // Overnight: 22:00–03:00 — el rango "del día" cubre [22:00, 23:59]
+      // del día actual Y [00:00, 03:00] del día siguiente. Acá nos importa
+      // la cobertura de hoy hasta la medianoche.
+      if (hhmm >= from) return true;
+    }
   }
-  // Cruza medianoche
-  return hhmm >= from || hhmm <= to;
+
+  // Caso 2: estamos en la madrugada y el día ANTERIOR tenía un rango
+  // overnight (ej. viernes 22:00–03:00). Sábado 02:00 BOT debe contar
+  // como abierto porque la sesión del viernes sigue activa. Antes este
+  // caso rechazaba el pedido y un food truck perdía sus mejores horas.
+  const yesterdayDow = (bot.weekday + 6) % 7;
+  const yesterday = hours.find((h) => h.dayOfWeek === yesterdayDow);
+  if (yesterday && !yesterday.isClosed) {
+    const yFrom = yesterday.openTime;
+    const yTo = yesterday.closeTime;
+    if (yTo < yFrom && hhmm < yTo) return true;
+  }
+
+  return false;
 }

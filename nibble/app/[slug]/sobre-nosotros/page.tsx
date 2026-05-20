@@ -17,10 +17,16 @@ export async function generateMetadata({
   const { slug } = await params;
   const store = await getStoreBySlug(slug);
   if (!store) return {};
+  const description = store.description ?? `Conoce a ${store.name}.`;
   return {
     title: `Sobre nosotros · ${store.name}`,
-    description: store.description ?? `Conocé a ${store.name}.`,
+    description,
     alternates: { canonical: `/${slug}/sobre-nosotros` },
+    openGraph: {
+      title: `Sobre nosotros · ${store.name}`,
+      description,
+      ...(store.ogImageUrl ? { images: [store.ogImageUrl] } : {}),
+    },
   };
 }
 

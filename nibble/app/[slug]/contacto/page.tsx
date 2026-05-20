@@ -83,15 +83,17 @@ export default async function ContactPage({
           La forma más rápida es WhatsApp.
         </p>
 
-        <Link
-          href={waUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="press mt-6 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#20BD5A]"
-        >
-          <MessageCircle className="size-4" aria-hidden="true" />
-          {formatWaPhone(store.whatsapp)}
-        </Link>
+        {store.whatsapp && (
+          <Link
+            href={waUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="press mt-6 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#20BD5A]"
+          >
+            <MessageCircle className="size-4" aria-hidden="true" />
+            {formatWaPhone(store.whatsapp)}
+          </Link>
+        )}
 
         <div className="mt-10 grid gap-4 md:grid-cols-2">
           {store.email && (
@@ -129,7 +131,7 @@ export default async function ContactPage({
             </div>
             {store.hoursGroups.length === 0 ? (
               <p className="mt-2 text-sm text-[color:var(--muted)]">
-                Escribinos para coordinar.
+                Escríbenos para coordinar.
               </p>
             ) : (
               <ul className="mt-2 space-y-1 text-sm">

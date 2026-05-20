@@ -292,7 +292,7 @@ function BannerForm({
         value={mobileImageUrl}
         onChange={setMobileImageUrl}
         error={fe.mobileImageUrl}
-        hint="Recomendado: 800×800 px (1:1). Si no la subís, se usa la principal."
+        hint="Recomendado: 800×800 px (1:1). Si no la subes, se usa la principal."
       />
 
       <Field
@@ -320,7 +320,7 @@ function BannerForm({
         categories={pickerContext.categories}
         products={pickerContext.products}
         error={fe.linkUrl}
-        hint="Elegí una categoría, un producto o WhatsApp. Si dejas 'Sin enlace', la imagen se muestra sola."
+        hint="Elige una categoría, un producto o WhatsApp. Si dejas 'Sin enlace', la imagen se muestra sola."
       />
 
       <div className="grid gap-4 sm:grid-cols-2">

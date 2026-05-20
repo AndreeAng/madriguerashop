@@ -41,7 +41,7 @@ export function SeoForm({ store }: { store: Store }) {
           name="metaDescription"
           label="Descripción SEO"
           defaultValue={store.metaDescription}
-          placeholder="Wings que no te dejan parar. Pedí por WhatsApp, pagamos con QR."
+          placeholder="Wings que no te dejan parar. Pide por WhatsApp, pagamos con QR."
           hint="Aparece debajo del título en Google. Máx. 160 caracteres."
           rows={2}
           error={fe.metaDescription}

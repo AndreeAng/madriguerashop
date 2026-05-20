@@ -74,6 +74,10 @@ export async function sendInvoiceReminders(opts: { now?: Date } = {}): Promise<{
 
   let sent = 0;
   let skipped = 0;
+  // Acumulamos IDs y al final hacemos un solo `updateMany` batch en lugar
+  // de N UPDATEs seriales. Sin esto, 50 invoices en la ventana → 50
+  // round-trips a la DB en cada cron run.
+  const sentInvoiceIds: string[] = [];
 
   for (const inv of invoices) {
     const daysUntilDue = Math.ceil(
@@ -122,30 +126,47 @@ export async function sendInvoiceReminders(opts: { now?: Date } = {}): Promise<{
     }
 
     const ownerEmail = ownerEmailByStore.get(inv.storeId);
-    if (ownerEmail) {
-      sendEmailBackground(
-        invoiceReminderEmail({
-          to: ownerEmail,
-          storeName: inv.store.name,
-          invoiceNumber: inv.invoiceNumber,
-          amount: Number(inv.amount),
-          dueDate: inv.dueDate,
-          daysUntilDue,
-          kind,
-        }),
+    if (!ownerEmail) {
+      // Sin email NO consumimos del counter ni marcamos `reminderSentAt`:
+      // antes lo hacíamos para "no reintentar", pero el resultado es que
+      // la tienda llegaba a SUSPENDED sin que nadie supiera que el owner
+      // estaba incomunicado. Ahora actualizamos solo el throttle (para no
+      // re-loguear todos los días) y dejamos huella en stdout para que
+      // ops detecte el caso y agregue el email.
+      console.warn(
+        `[sendReminders] store ${inv.storeId} sin email — skipping invoice ${inv.invoiceNumber} (kind=${kind})`,
       );
+      skipped++;
+      continue;
     }
 
-    // Marcar como enviado (incluso si owner no tiene email — para no reintentar)
-    await db.invoice.update({
-      where: { id: inv.id },
+    sendEmailBackground(
+      invoiceReminderEmail({
+        to: ownerEmail,
+        storeName: inv.store.name,
+        invoiceNumber: inv.invoiceNumber,
+        amount: Number(inv.amount),
+        dueDate: inv.dueDate,
+        daysUntilDue,
+        kind,
+      }),
+    );
+
+    // Acumulamos el id para el batch update al final del loop. El
+    // contador real se incrementa después con `updateMany` para evitar
+    // N round-trips seriales contra Postgres.
+    sentInvoiceIds.push(inv.id);
+    sent++;
+  }
+
+  if (sentInvoiceIds.length > 0) {
+    await db.invoice.updateMany({
+      where: { id: { in: sentInvoiceIds } },
       data: {
         reminderSentAt: now,
         remindersCount: { increment: 1 },
       },
     });
-
-    sent++;
   }
 
   return {

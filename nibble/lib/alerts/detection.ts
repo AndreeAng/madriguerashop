@@ -173,6 +173,17 @@ async function detectLoginAttacks(now: Date): Promise<AlertCandidate[]> {
   // que dejaba evadir alarmas distribuyendo los intentos a caballo de buckets.
   // Ahora la condición es "20+ fails en los últimos 10 min", evaluada al
   // instante del cron — una ráfaga real cae siempre dentro de la ventana.
+  //
+  // LIMITACIÓN CONOCIDA: la columna `AuditLog.ip` contiene un hash SHA-256
+  // con salt diaria rotada en HORA BOLIVIA (ver `lib/crypto/hashIp.ts`).
+  // Por eso:
+  //   1. El "IP" en el título es un hash inutilizable para bloquear en
+  //      WAF/firewall — se muestra como ID corto para deduplicar visualmente.
+  //   2. Ataques que cruzan 00:00 BOT (cambio de salt diaria) aparecen
+  //      como DOS alertas distintas del mismo atacante. La ventana es 10
+  //      min así que el split solo ocurre en el borde exacto.
+  //   3. Para bloqueo real de IPs se debe consultar logs del proxy/CDN
+  //      (Vercel Logs / Cloudflare) por la ventana indicada.
   const windowStart = new Date(now.getTime() - 10 * 60 * 1000);
   type Row = { ip: string; count: bigint; lastFail: Date };
   const rows = await db.$queryRaw<Row[]>`
@@ -192,19 +203,22 @@ async function detectLoginAttacks(now: Date): Promise<AlertCandidate[]> {
   const hourBucket = new Date(now);
   hourBucket.setUTCMinutes(0, 0, 0);
   const bucketKey = hourBucket.toISOString().slice(0, 13); // YYYY-MM-DDTHH
-  return rows.map((r) => ({
-    type: "LOGIN_ATTACK" as const,
-    severity: Number(r.count) > 100 ? "CRITICAL" : "HIGH",
-    title: `${Number(r.count)} intentos de login fallidos desde ${r.ip}`,
-    description: `Detectados en ventana de 10 minutos terminando ${now.toISOString()}. Posible credential stuffing o brute force.`,
-    data: {
-      ip: r.ip,
-      windowEnd: now.toISOString(),
-      lastFailAt: r.lastFail.toISOString(),
-      failedCount: Number(r.count),
-    },
-    dedupeKey: `login_attack:${r.ip}:${bucketKey}`,
-  }));
+  return rows.map((r) => {
+    const ipHashShort = r.ip.slice(0, 12);
+    return {
+      type: "LOGIN_ATTACK" as const,
+      severity: Number(r.count) > 100 ? "CRITICAL" : "HIGH",
+      title: `${Number(r.count)} intentos de login fallidos (origen #${ipHashShort})`,
+      description: `Detectados en ventana de 10 minutos terminando ${now.toISOString()}. Posible credential stuffing o brute force. La IP cruda no se persiste — revisa los logs del CDN/proxy para identificarla y bloquearla.`,
+      data: {
+        ipHash: r.ip,
+        windowEnd: now.toISOString(),
+        lastFailAt: r.lastFail.toISOString(),
+        failedCount: Number(r.count),
+      },
+      dedupeKey: `login_attack:${r.ip}:${bucketKey}`,
+    };
+  });
 }
 
 // ============== STORE_TRAFFIC_DROP ==============

@@ -17,7 +17,11 @@ const dsn = process.env.SENTRY_DSN;
 if (dsn) {
   Sentry.init({
     dsn,
-    environment: process.env.NODE_ENV,
+    environment:
+      process.env.APP_ENV ??
+      process.env.NEXT_PUBLIC_APP_ENV ??
+      process.env.NODE_ENV ??
+      "unknown",
     // Edge corre el middleware de NextAuth — errores acá afectan a TODOS
     // los requests autenticados. Capturamos al 100%.
     sampleRate: 1.0,

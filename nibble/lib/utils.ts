@@ -67,23 +67,32 @@ export function formatNumber(n: number): string {
 
 /** Construye un link `https://wa.me/<phone>?text=<encoded>` listo para
  *  abrirse desde el browser. Limpia caracteres no numéricos del phone
- *  y aplica `encodeURIComponent` al mensaje. */
-export function buildWhatsAppUrl(phone: string, message: string): string {
+ *  y aplica `encodeURIComponent` al mensaje. Si el phone es null/undefined
+ *  (tienda sin WhatsApp configurado), devuelve string vacío — los callers
+ *  son responsables de no renderizar el link en ese caso. */
+export function buildWhatsAppUrl(
+  phone: string | null | undefined,
+  message: string,
+): string {
+  if (!phone) return "";
   return `https://wa.me/${formatWaPhone(phone)}?text=${encodeURIComponent(message)}`;
 }
 
-/** Suma `days` días a una fecha. No muta el argumento. */
-export function addDays(d: Date, days: number): Date {
-  const next = new Date(d);
-  next.setDate(next.getDate() + days);
-  return next;
-}
+// `addDays` se exporta desde `lib/i18n/dates` para que las copias no se
+// desincronicen entre módulos. Re-exportamos acá para no romper consumers
+// existentes (billing) que importan desde `lib/utils`.
+export { addDays } from "@/lib/i18n/dates";
 
 /**
  * Limpia caracteres no numéricos de un teléfono para armar links wa.me.
  * Ej: "+591-72201700" → "59172201700".
+ *
+ * Acepta `null`/`undefined` y devuelve `""` para que callers que reciban
+ * un teléfono opcional no tengan que null-guard antes de invocar. La UI
+ * debe omitir el render del link/CTA cuando el resultado sea string vacío.
  */
-export function formatWaPhone(phone: string): string {
+export function formatWaPhone(phone: string | null | undefined): string {
+  if (!phone) return "";
   return phone.replace(/\D/g, "");
 }
 
