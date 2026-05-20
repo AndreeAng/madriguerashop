@@ -146,7 +146,7 @@ export default async function ProductsPage({
             page={page}
             totalPages={totalPages}
             total={total}
-            itemLabel="producto"
+            itemLabel={copy.productSingular}
             buildPageHref={buildPageHref}
           />
       </main>

@@ -917,6 +917,7 @@ export async function createOrderAction(
         paymentMethod: data.paymentMethod as PaymentMethod,
         awaitingVerification: paymentStatus === "AWAITING_VERIFICATION",
         itemsCount: lines.length,
+        vertical: store.vertical,
       }),
     );
   }
