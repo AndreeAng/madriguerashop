@@ -28,6 +28,22 @@ export type StorefrontCopy = {
   productNotesLabel: string;
   /** Placeholder del mismo campo. */
   productNotesPlaceholder: string;
+  /** aria-label del botón hamburguesa del header mobile. Restaurante "Menú",
+   * retail "Catálogo", servicios "Servicios", panadería "Carta". */
+  menuAriaLabel: string;
+  /** Texto visible del botón de carrito en el header.
+   * Restaurante/comida: "Tu pedido" o "Carrito". Retail: "Carrito".
+   * Servicios: "Tu solicitud". */
+  cartLabel: string;
+  /** Singular y plural del sustantivo de ítem ("producto"/"plato"/
+   * "servicio"/"artículo"). Se usa en aria-labels dinámicos y placeholders. */
+  itemSingular: string;
+  itemPlural: string;
+  /** Singular y plural del sustantivo de pedido ("pedido"/"orden"/
+   * "solicitud"/"reserva"). Se usa en headings de páginas como
+   * /sobre-nosotros y mensajes de tracking del cliente. */
+  orderSingular: string;
+  orderPlural: string;
 };
 
 const RESTAURANT_LIKE: StorefrontCopy = {
@@ -40,6 +56,12 @@ const RESTAURANT_LIKE: StorefrontCopy = {
   deliveryHint: "Entrega 30–45 min",
   productNotesLabel: "Notas para la cocina",
   productNotesPlaceholder: "Sin cebolla, término medio, etc.",
+  menuAriaLabel: "Menú",
+  cartLabel: "Tu pedido",
+  itemSingular: "plato",
+  itemPlural: "platos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const RETAIL_LIKE: StorefrontCopy = {
@@ -52,6 +74,12 @@ const RETAIL_LIKE: StorefrontCopy = {
   deliveryHint: "Entrega en el día",
   productNotesLabel: "Notas para el pedido",
   productNotesPlaceholder: "Color, talla, preferencias…",
+  menuAriaLabel: "Catálogo",
+  cartLabel: "Carrito",
+  itemSingular: "producto",
+  itemPlural: "productos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const HARDWARE: StorefrontCopy = {
@@ -64,6 +92,12 @@ const HARDWARE: StorefrontCopy = {
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Especificaciones",
   productNotesPlaceholder: "Marca preferida, calibre, longitud…",
+  menuAriaLabel: "Catálogo",
+  cartLabel: "Carrito",
+  itemSingular: "artículo",
+  itemPlural: "artículos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const SERVICES: StorefrontCopy = {
@@ -76,6 +110,12 @@ const SERVICES: StorefrontCopy = {
   deliveryHint: "Coordinamos por WhatsApp",
   productNotesLabel: "Detalles del servicio",
   productNotesPlaceholder: "Horario preferido, dirección, otros detalles…",
+  menuAriaLabel: "Servicios",
+  cartLabel: "Tu solicitud",
+  itemSingular: "servicio",
+  itemPlural: "servicios",
+  orderSingular: "solicitud",
+  orderPlural: "solicitudes",
 };
 
 const BAKERY: StorefrontCopy = {
@@ -88,6 +128,12 @@ const BAKERY: StorefrontCopy = {
   deliveryHint: "Entrega en el día",
   productNotesLabel: "Notas para la pastelería",
   productNotesPlaceholder: "Mensaje en la torta, sin azúcar, alergias…",
+  menuAriaLabel: "Carta",
+  cartLabel: "Tu pedido",
+  itemSingular: "producto",
+  itemPlural: "productos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const GROCERY: StorefrontCopy = {
@@ -100,6 +146,12 @@ const GROCERY: StorefrontCopy = {
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para el pedido",
   productNotesPlaceholder: "Marca preferida, sustitutos permitidos…",
+  menuAriaLabel: "Catálogo",
+  cartLabel: "Carrito",
+  itemSingular: "producto",
+  itemPlural: "productos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const BEAUTY: StorefrontCopy = {
@@ -112,6 +164,12 @@ const BEAUTY: StorefrontCopy = {
   deliveryHint: "Entrega en el día",
   productNotesLabel: "Notas",
   productNotesPlaceholder: "Tipo de piel, alergias, preferencias…",
+  menuAriaLabel: "Catálogo",
+  cartLabel: "Carrito",
+  itemSingular: "producto",
+  itemPlural: "productos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const HEALTH: StorefrontCopy = {
@@ -124,6 +182,12 @@ const HEALTH: StorefrontCopy = {
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas",
   productNotesPlaceholder: "Receta, dosis, marca específica…",
+  menuAriaLabel: "Catálogo",
+  cartLabel: "Carrito",
+  itemSingular: "producto",
+  itemPlural: "productos",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const OTHER: StorefrontCopy = {
@@ -136,6 +200,12 @@ const OTHER: StorefrontCopy = {
   deliveryHint: "Coordinamos por WhatsApp",
   productNotesLabel: "Notas",
   productNotesPlaceholder: "Detalles adicionales o instrucciones…",
+  menuAriaLabel: "Menú",
+  cartLabel: "Carrito",
+  itemSingular: "ítem",
+  itemPlural: "ítems",
+  orderSingular: "pedido",
+  orderPlural: "pedidos",
 };
 
 const COPY_BY_VERTICAL: Record<StoreVertical, StorefrontCopy> = {

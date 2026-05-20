@@ -5,6 +5,7 @@ import { requireOwnerOnly } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { ProductsTable } from "@/components/dashboard/productos/ProductsTable";
 import { Pagination } from "@/components/ui/Pagination";
+import { dashboardCopy } from "@/lib/dashboard/copy";
 
 export const metadata = {
   title: "Productos · Madriguera Shop",
@@ -18,6 +19,7 @@ export default async function ProductsPage({
   searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   const { store } = await requireOwnerOnly();
+  const copy = dashboardCopy(store.vertical);
   const sp = await searchParams;
   const q = (sp.q ?? "").trim();
   const page = Math.max(1, Number(sp.page) || 1);
@@ -96,9 +98,9 @@ export default async function ProductsPage({
               <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
                 Catálogo
               </p>
-              <h1 className="font-display mt-1 text-3xl">Productos</h1>
+              <h1 className="font-display mt-1 text-3xl">{copy.productsLabel}</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
-                {total} {total === 1 ? "producto" : "productos"} ·{" "}
+                {total} {total === 1 ? copy.productSingular : copy.productsLabel.toLowerCase()} ·{" "}
                 {activeCount} activos
                 {q && (
                   <span className="ml-1.5 text-[color:var(--color-amber-600)]">
