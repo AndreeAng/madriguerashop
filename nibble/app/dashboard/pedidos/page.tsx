@@ -9,6 +9,7 @@ import { STATUS_COLORS, PAYMENT_LABELS } from "@/lib/orders/status";
 import { OrderStatusPill } from "@/components/ui/OrderStatusPill";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Pagination } from "@/components/ui/Pagination";
+import { dashboardCopy } from "@/lib/dashboard/copy";
 
 const PAGE_SIZE = 50;
 
@@ -45,6 +46,7 @@ export default async function OrdersPage({
   searchParams: Promise<{ filter?: string; q?: string; page?: string }>;
 }) {
   const { store } = await requireStoreOwner();
+  const copy = dashboardCopy(store.vertical);
   const sp = await searchParams;
   const filter = sp.filter ?? "active";
   const q = (sp.q ?? "").trim();
@@ -127,7 +129,7 @@ export default async function OrdersPage({
               <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
                 Operación
               </p>
-              <h1 className="font-display mt-1 text-3xl">Pedidos</h1>
+              <h1 className="font-display mt-1 text-3xl">{copy.ordersLabel}</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {activeCount} activos · {awaitingCount} con pago por verificar
               </p>

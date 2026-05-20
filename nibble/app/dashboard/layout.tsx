@@ -43,6 +43,7 @@ export default async function DashboardLayout({
           slug: store.slug,
           primaryColor: store.primaryColor,
           logoUrl: store.logoUrl,
+          vertical: store.vertical,
         }}
         // `requireStoreOwner` ya garantiza que role ∈ {STORE_OWNER, CASHIER,
         // SUPER_ADMIN} (cualquier otra cosa redirige). El tipo crudo es

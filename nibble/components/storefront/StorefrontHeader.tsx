@@ -2,14 +2,16 @@ import Link from "next/link";
 import Image from "next/image";
 import { ShoppingBag, User, Menu, MapPin, Search } from "lucide-react";
 import type { StoreView } from "@/lib/storefront/types";
+import { storefrontCopy } from "@/lib/storefront/copy";
 
 export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; cartCount?: number }) {
+  const copy = storefrontCopy(store.vertical);
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--line)] glass">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
         <button
           className="grid size-10 place-items-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--card-soft)] md:hidden"
-          aria-label="Menú"
+          aria-label={copy.menuAriaLabel}
         >
           <Menu className="size-5" />
         </button>
@@ -52,7 +54,7 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
           className="ml-2 hidden h-10 flex-1 items-center gap-2 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3 text-sm text-[color:var(--muted)] transition hover:border-[color:var(--color-bark-300)] md:inline-flex md:max-w-md"
         >
           <Search className="size-4" />
-          <span>Buscar productos…</span>
+          <span>{copy.searchPlaceholder}</span>
         </Link>
 
         <div className="ml-auto flex items-center gap-1.5">
@@ -73,13 +75,13 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
             href={`/${store.slug}/checkout`}
             aria-label={
               cartCount > 0
-                ? `Carrito con ${cartCount} ${cartCount === 1 ? "producto" : "productos"}`
-                : "Carrito vacío"
+                ? `${copy.cartLabel} con ${cartCount} ${cartCount === 1 ? copy.itemSingular : copy.itemPlural}`
+                : `${copy.cartLabel} vacío`
             }
             className="relative inline-flex h-10 items-center gap-2 overflow-hidden rounded-full bg-[color:var(--color-bark-900)] pl-4 pr-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-[color:var(--color-bark-800)] hover:scale-[1.02] active:scale-95"
           >
             <ShoppingBag aria-hidden className="size-4" />
-            <span className="hidden sm:inline">Carrito</span>
+            <span className="hidden sm:inline">{copy.cartLabel}</span>
             {cartCount > 0 && (
               <span
                 aria-hidden

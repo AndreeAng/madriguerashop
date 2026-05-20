@@ -14,12 +14,14 @@ import {
   UserPlus,
   CalendarClock,
 } from "lucide-react";
+import type { StoreVertical } from "@prisma/client";
 import { NibbleLogo } from "@/components/shared/Logo";
 import {
   AppSidebarShell,
   type SidebarItem,
 } from "@/components/shared/AppSidebarShell";
 import { SignOutButton } from "@/components/shared/SignOutButton";
+import { dashboardCopy } from "@/lib/dashboard/copy";
 import { nameToInitials } from "@/lib/utils";
 
 // Items que CASHIER puede ver. Los demás (productos, categorías, facturación,
@@ -36,20 +38,26 @@ const CASHIER_ALLOWED = new Set([
 // referencias de componentes a Client Components (sólo data serializable
 // + elementos React ya construidos).
 const ICON_CLS = "size-4";
-const ALL_ITEMS: SidebarItem[] = [
-  { href: "/dashboard", icon: <LayoutDashboard className={ICON_CLS} />, label: "Inicio" },
-  { href: "/dashboard/pedidos", icon: <ShoppingBag className={ICON_CLS} />, label: "Pedidos" },
-  { href: "/dashboard/reservas", icon: <CalendarClock className={ICON_CLS} />, label: "Reservas" },
-  { href: "/dashboard/productos", icon: <Package className={ICON_CLS} />, label: "Productos" },
-  { href: "/dashboard/categorias", icon: <Tags className={ICON_CLS} />, label: "Categorías" },
-  { href: "/dashboard/promociones", icon: <Megaphone className={ICON_CLS} />, label: "Promociones" },
-  { href: "/dashboard/clientes", icon: <Users className={ICON_CLS} />, label: "Clientes" },
-  { href: "/dashboard/delivery", icon: <Map className={ICON_CLS} />, label: "Delivery" },
-  { href: "/dashboard/analytics", icon: <BarChart3 className={ICON_CLS} />, label: "Analytics" },
-  { href: "/dashboard/equipo", icon: <UserPlus className={ICON_CLS} />, label: "Equipo" },
-  { href: "/dashboard/facturacion", icon: <CreditCard className={ICON_CLS} />, label: "Facturación" },
-  { href: "/dashboard/settings", icon: <Settings className={ICON_CLS} />, label: "Configuración" },
-];
+
+// Los labels que VARÍAN por vertical (Pedidos/Productos) se inyectan desde
+// dashboardCopy(vertical). Los que no varían quedan literales acá.
+function buildItems(vertical: StoreVertical | undefined): SidebarItem[] {
+  const copy = vertical ? dashboardCopy(vertical) : null;
+  return [
+    { href: "/dashboard", icon: <LayoutDashboard className={ICON_CLS} />, label: "Inicio" },
+    { href: "/dashboard/pedidos", icon: <ShoppingBag className={ICON_CLS} />, label: copy?.ordersLabel ?? "Pedidos" },
+    { href: "/dashboard/reservas", icon: <CalendarClock className={ICON_CLS} />, label: "Reservas" },
+    { href: "/dashboard/productos", icon: <Package className={ICON_CLS} />, label: copy?.productsLabel ?? "Productos" },
+    { href: "/dashboard/categorias", icon: <Tags className={ICON_CLS} />, label: "Categorías" },
+    { href: "/dashboard/promociones", icon: <Megaphone className={ICON_CLS} />, label: "Promociones" },
+    { href: "/dashboard/clientes", icon: <Users className={ICON_CLS} />, label: "Clientes" },
+    { href: "/dashboard/delivery", icon: <Map className={ICON_CLS} />, label: "Delivery" },
+    { href: "/dashboard/analytics", icon: <BarChart3 className={ICON_CLS} />, label: "Analytics" },
+    { href: "/dashboard/equipo", icon: <UserPlus className={ICON_CLS} />, label: "Equipo" },
+    { href: "/dashboard/facturacion", icon: <CreditCard className={ICON_CLS} />, label: "Facturación" },
+    { href: "/dashboard/settings", icon: <Settings className={ICON_CLS} />, label: "Configuración" },
+  ];
+}
 
 export function DashboardSidebar({
   store,
@@ -60,6 +68,7 @@ export function DashboardSidebar({
     slug: string;
     primaryColor: string;
     logoUrl: string | null;
+    vertical: StoreVertical;
   };
   // Antes `userRole?: string` con default undefined → mostraba TODOS los items
   // si el caller olvidaba pasarlo, exponiendo navegación a CASHIER a páginas
@@ -67,10 +76,11 @@ export function DashboardSidebar({
   // el typechecker falle si un layout nuevo no lo provee.
   userRole: "STORE_OWNER" | "CASHIER" | "SUPER_ADMIN";
 }) {
+  const allItems = buildItems(store?.vertical);
   const items =
     userRole === "CASHIER"
-      ? ALL_ITEMS.filter((it) => CASHIER_ALLOWED.has(it.href))
-      : ALL_ITEMS;
+      ? allItems.filter((it) => CASHIER_ALLOWED.has(it.href))
+      : allItems;
   const initials = nameToInitials(store?.name);
 
   return (
