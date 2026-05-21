@@ -859,9 +859,16 @@ model AuditLog {
   @@index([storeId])
   @@index([actorId])
   // Índice compuesto para paginación de `/admin/auditoria` que filtra por
-  // `action` (prefijo) + ORDER BY createdAt DESC. Reemplaza los dos
-  // separados que requerían sort en memoria.
+  // `action` (prefijo) + ORDER BY createdAt DESC. Reemplazó al ex
+  // `AuditLog_action_idx` (single column) que requería sort en memoria.
   @@index([action, createdAt(sort: Desc)])
+  // Índice simple sobre createdAt — necesario para consultas "últimos N
+  // globalmente" sin filtro por action. El compound `(action, createdAt)`
+  // NO sirve acá: action es el primer columna del B-tree, así que ORDER BY
+  // createdAt sin WHERE action obliga a full scan. Este índice existe en
+  // la DB desde la migration `init` y nunca se dropeó; el schema lo declara
+  // explícitamente para mantener `prisma migrate diff` limpio.
+  @@index([createdAt])
 }
 
 // ============== CRON LOCK ==============
