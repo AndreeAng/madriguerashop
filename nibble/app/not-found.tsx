@@ -1,5 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { ArrowLeft, Compass } from "lucide-react";
+
+// Defensivo: aunque rutas inexistentes a nivel app router devuelven 404
+// real (no caen en el soft-404 quirk del [slug]/page.tsx), un crawler que
+// llegue por accidente igual debe ver noindex. Coste cero, blindaje
+// extra contra SEO indexando 404s.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
   return (

@@ -35,35 +35,30 @@ test.describe("Storefront público", () => {
     await expect(page.getByText(/Bs/i).first()).toBeVisible();
   });
 
-  test("tienda inexistente muestra página de not-found", async ({ page }) => {
+  test("tienda inexistente muestra not-found con noindex (SEO blindado)", async ({
+    page,
+  }) => {
     await page.goto("/tienda-inexistente-xyz");
-    // Validamos UX (el [slug]/not-found.tsx renderea con su heading
-    // específico). NO chequeamos el status HTTP por una limitación
-    // conocida de Next.js 15 RSC streaming:
-    //
-    //   Cuando una page server-rendered llama `notFound()`, Next ya
-    //   empezó a streamear el árbol RSC (con status 200 enviado en el
-    //   primer chunk). Por más que el page resuelva a la not-found UI,
-    //   el status no se puede cambiar mid-stream. Verificado contra el
-    //   deploy de Vercel:
-    //     $ curl -sI https://madriguerashop.vercel.app/<slug-fake>
-    //     HTTP/1.1 200 OK    ← debería ser 404
-    //
-    //   Probé: mover el check a layout.tsx (renderea root not-found, no
-    //   el de [slug]); borrar loading.tsx (mismo 200); ambos juntos
-    //   (mismo 200). El bug es del framework, no del código de la app.
-    //
-    //   TODO(seo): cuando Next.js 15.x ship una fix para `notFound()` +
-    //   RSC streaming, o cuando upgradeemos a 16.x, restaurar el
-    //   assertion de status. Mientras tanto:
-    //     - Google sí ve "noindex" implícito por la falta de canonical
-    //       válido cuando getStoreBySlug retorna null en generateMetadata.
-    //     - Otra mitigación posible: middleware con Redis cache de slugs
-    //       válidos para 404-ear en Edge antes de Next router (ver
-    //       roadmap; requiere maintenance de la cache).
+
+    // 1. UX: el [slug]/not-found.tsx debe renderear con su heading.
     await expect(
       page.getByRole("heading", { name: /no está disponible/i }),
     ).toBeVisible();
+
+    // 2. SEO: el meta robots debe decirle a Googlebot "no indexes esto".
+    //
+    // El status HTTP en sí queda en 200 por un quirk de Next.js 15 RSC
+    // streaming (los headers se envían en el primer chunk, antes de que
+    // `notFound()` resuelva). El status correcto sería 404, pero lo que
+    // realmente importa para SEO es que Google no indexe páginas falsas
+    // como válidas — el `<meta name="robots" content="noindex">` lo
+    // garantiza independientemente del status.
+    //
+    // Cuando Next publique fix del status, este assertion sigue válido
+    // (el meta queda como cinturón + tirantes). Probé el meta empíricamente
+    // contra el deploy: `curl -s /<slug-fake> | grep robots`.
+    const robotsMeta = page.locator('meta[name="robots"]');
+    await expect(robotsMeta).toHaveAttribute("content", /noindex/i);
   });
 });
 
