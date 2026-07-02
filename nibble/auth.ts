@@ -3,8 +3,9 @@ import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import authConfig from "./auth.config";
 import { db } from "@/lib/db";
-import { verifyPassword } from "@/lib/auth/password";
+import { verifyPassword, verifyPasswordDummy } from "@/lib/auth/password";
 import { normalizeIdentifier } from "@/lib/auth/identifiers";
+import { rateLimit, getClientIp } from "@/lib/security/rateLimit";
 import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 import type { Role } from "@prisma/client";
 
@@ -69,7 +70,7 @@ const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
 if (!authSecret && process.env.NODE_ENV === "production") {
   throw new Error(
     "AUTH_SECRET (o NEXTAUTH_SECRET) es obligatorio en producción. " +
-      "Generá uno con: openssl rand -base64 32",
+      "Genera uno con: openssl rand -base64 32",
   );
 }
 
@@ -94,6 +95,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { kind, value } = normalizeIdentifier(username);
         if (kind === "unknown") return null;
 
+        // Backstop de rate limit DENTRO del authorize — este callback es el
+        // único punto que atraviesan AMBOS caminos de login: la server action
+        // `loginAction` (que ya tiene su propio rate limit con mensajes UX) y
+        // el POST directo a `/api/auth/callback/credentials` (que el middleware
+        // NO cubre — su matcher excluye `api/auth`). Sin este backstop, un
+        // atacante saltea el throttle de `loginAction` yendo directo al
+        // endpoint de NextAuth. Los límites acá son más holgados que los de
+        // `loginAction` (50 IP / 30 identifier por 15min) para que un usuario
+        // legítimo del formulario — ya capado a 10/20 por `loginAction` — nunca
+        // los toque; solo muerden cuando alguien evade la action.
+        const ip = await getClientIp();
+        const ipRl = await rateLimit(`login-authorize:ip:${ip}`, 50, 15 * 60 * 1000);
+        if (!ipRl.success) return null;
+        const idRl = await rateLimit(`login-authorize:id:${value}`, 30, 15 * 60 * 1000);
+        if (!idRl.success) return null;
+
         const user = await db.user.findUnique({
           where: { username: value },
           select: {
@@ -110,7 +127,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           },
         });
 
-        if (!user || !user.isActive) return null;
+        // Usuario inexistente/inactivo: quemamos el mismo costo bcrypt que el
+        // path válido para no exponer un timing oracle de enumeración.
+        if (!user || !user.isActive) {
+          await verifyPasswordDummy(password);
+          return null;
+        }
 
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
