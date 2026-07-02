@@ -57,7 +57,12 @@ test.describe("Storefront público", () => {
     // Cuando Next publique fix del status, este assertion sigue válido
     // (el meta queda como cinturón + tirantes). Probé el meta empíricamente
     // contra el deploy: `curl -s /<slug-fake> | grep robots`.
-    const robotsMeta = page.locator('meta[name="robots"]');
+    // `.first()`: en dev, Next 15 renderiza el meta robots dos veces (uno en
+    // <head> y otro en <body> durante el streaming RSC) — ambos con noindex.
+    // En el build de producción sale una sola vez. `.first()` hace la
+    // aserción robusta en ambos entornos (sin `.first()`, el locator matchea
+    // 2 elementos y viola strict mode contra el dev server).
+    const robotsMeta = page.locator('meta[name="robots"]').first();
     await expect(robotsMeta).toHaveAttribute("content", /noindex/i);
   });
 });
