@@ -41,7 +41,7 @@ export type QuickProduct = {
   id: number;
   name: string;
   description: string | null; // HTML
-  price: number;
+  price: number | null;
   special_price: number | null;
   banner: string | null;
   state: number; // 1 = activo

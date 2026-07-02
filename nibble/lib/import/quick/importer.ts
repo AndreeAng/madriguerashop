@@ -179,6 +179,22 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     return { storeId: store.id };
   });
 
+  // Helper: si algo falla después de la transacción, borra la tienda para
+  // no dejar un registro huérfano sin productos ni owner funcional.
+  async function rollbackStore(reason: string): Promise<never> {
+    try {
+      await db.productImage.deleteMany({ where: { product: { storeId } } });
+      await db.product.deleteMany({ where: { storeId } });
+      await db.category.deleteMany({ where: { storeId } });
+      await db.storeHours.deleteMany({ where: { storeId } });
+      await db.user.deleteMany({ where: { storeId } });
+      await db.store.delete({ where: { id: storeId } });
+    } catch {
+      // Si el rollback mismo falla, igual propagamos el error original
+    }
+    throw new Error(reason);
+  }
+
   // 4. Branding: descargar logo, banner, favicon EN PARALELO.
   //    Para branding sí usamos `saveImage` (con sharp) porque son 3 imágenes
   //    que se ven mucho — vale la calidad. Para productos abajo usamos
@@ -256,6 +272,9 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
     // Primera tanda viene embebida
     for (const p of qCat.products ?? []) {
       if (p.state !== 1) continue;
+      if (p.price == null) {
+        warnings.push(`"${p.name}" importado sin precio (quedará inactivo — ponle precio en el dashboard)`);
+      }
       if (!productsByQuickId.has(p.id)) {
         productsByQuickId.set(p.id, { product: p, categoryQuickId: qCat.id });
       }
@@ -267,6 +286,9 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
         const rest = await fetchCategoryProducts(qCat.id, 2);
         for (const p of rest) {
           if (p.state !== 1) continue;
+          if (p.price == null) {
+            warnings.push(`"${p.name}" importado sin precio (quedará inactivo — ponle precio en el dashboard)`);
+          }
           if (!productsByQuickId.has(p.id)) {
             productsByQuickId.set(p.id, { product: p, categoryQuickId: qCat.id });
           }
@@ -359,22 +381,29 @@ export async function importQuickStore(input: ImportInput): Promise<ImportResult
       sku: p.quickProduct.code || null,
       description: cleanDescription || null,
       shortDescription: shortDescription || null,
-      basePrice: new Prisma.Decimal(p.quickProduct.price),
+      basePrice: new Prisma.Decimal(p.quickProduct.price ?? 0),
       comparePrice:
         p.quickProduct.special_price && p.quickProduct.special_price > 0
           ? new Prisma.Decimal(p.quickProduct.special_price)
           : null,
       manageStock: false,
-      isActive: true,
+      // Sin precio → inactivo: no aparece en el storefront pero sí en el
+      // dashboard para que el owner le asigne precio y lo active.
+      isActive: p.quickProduct.price != null,
     };
   });
 
   // 1 query para los 90+ productos en lugar de 92 INSERTs secuenciales.
   // En Neon ahorra ~5-9s solo en network roundtrips.
-  const createdProducts = await db.product.createManyAndReturn({
-    data: productCreateData,
-    select: { id: true, slug: true },
-  });
+  // `.catch(rollbackStore)` funciona porque rollbackStore retorna Promise<never>
+  // → TypeScript infiere que el resultado siempre es el tipo del try, no undefined.
+  const createdProducts = await db.product
+    .createManyAndReturn({ data: productCreateData, select: { id: true, slug: true } })
+    .catch((err: unknown) =>
+      rollbackStore(
+        `Falló el bulk insert de productos: ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
   const productsCreated = createdProducts.length;
 
   // Mapeo `productId` por `slug` (no por índice). createManyAndReturn de
