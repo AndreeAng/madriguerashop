@@ -31,6 +31,7 @@ import { appUrl } from "@/lib/email/client";
 import { isAcceptedProofUrl } from "@/lib/storage/blob";
 import { captureError } from "@/lib/observability/captureError";
 import { EMAIL_RE } from "@/lib/validation/email";
+import { computeOrderPricing, type CouponForPricing } from "@/lib/orders/pricing";
 
 // ============== Tipos ==============
 
@@ -511,9 +512,10 @@ export async function createOrderAction(
   // FREE_SHIPPING (el ahorro de envío se contabiliza acá para que el
   // historial de la orden refleje el beneficio del cupón, no solo el total).
   let discountAmount = 0;
-  let deliveryDiscountAmount = 0;
   let couponId: string | null = null;
   let couponCode: string | null = null;
+  // Cupón validado mapeado a primitivos para el cálculo puro de precios.
+  let pricingCoupon: CouponForPricing | null = null;
   if (data.couponCode) {
     const coupon = await db.coupon.findUnique({
       where: { storeId_code: { storeId: store.id, code: data.couponCode.toUpperCase() } },
@@ -561,65 +563,33 @@ export async function createOrderAction(
       }
     }
 
-    if (coupon.type === "PERCENTAGE") {
-      discountAmount = subtotal * (Number(coupon.value) / 100);
-    } else if (coupon.type === "FIXED_AMOUNT") {
-      discountAmount = Number(coupon.value);
-    } else if (coupon.type === "FREE_SHIPPING") {
-      // Aplica solo si hay envío con costo. Sin delivery o con envío gratis
-      // por umbral, el cupón no aporta nada.
-      deliveryDiscountAmount = deliveryFee ?? 0;
-    }
-    // maxDiscountAmount es el tope DEL CUPÓN, sin importar de dónde venga el
-    // ahorro. Antes lo aplicábamos sólo a `discountAmount`, dejando que un
-    // FREE_SHIPPING cubriera el 100% del envío incluso con maxDiscount=10.
-    if (coupon.maxDiscountAmount) {
-      const maxDiscount = Number(coupon.maxDiscountAmount);
-      discountAmount = Math.min(discountAmount, maxDiscount);
-      deliveryDiscountAmount = Math.min(deliveryDiscountAmount, maxDiscount);
-    }
-    // NOTA: el clamp `discountAmount <= subtotal` se aplica después de
-    // sumar `deliveryDiscountAmount` (más abajo, tras el bloque de
-    // FREE_SHIPPING) — sin esto el descuento puede inflarse por encima
-    // del subtotal cuando un FREE_SHIPPING agrega su valor.
+    // La aritmética del descuento (tipo de cupón, maxDiscount, freeDelivery,
+    // clamp y total) vive en `computeOrderPricing` — abajo. Acá solo
+    // capturamos el cupón ya validado como primitivos.
     couponId = coupon.id;
     couponCode = coupon.code;
+    pricingCoupon = {
+      type: coupon.type,
+      value: Number(coupon.value),
+      maxDiscountAmount:
+        coupon.maxDiscountAmount != null ? Number(coupon.maxDiscountAmount) : null,
+    };
   }
 
-  // 9. freeDeliveryAbove se evalúa después del descuento del cupón sobre
-  // producto. Si aplica, anula tanto el deliveryFee como cualquier
-  // FREE_SHIPPING que ya hubiéramos contabilizado (no doble-descontamos).
-  if (
-    data.deliveryMethod === "delivery" &&
-    store.freeDeliveryAbove &&
-    deliveryFee !== null &&
-    subtotal - discountAmount >= Number(store.freeDeliveryAbove)
-  ) {
-    deliveryFee = 0;
-    deliveryDiscountAmount = 0;
-  }
-
-  // Reflejar el FREE_SHIPPING como descuento real: el envío final se cobra
-  // en cero y el ahorro va a discountAmount.
-  if (deliveryDiscountAmount > 0 && deliveryFee !== null) {
-    deliveryFee = Math.max(0, deliveryFee - deliveryDiscountAmount);
-    discountAmount = discountAmount + deliveryDiscountAmount;
-  }
-
-  // Clamp definitivo: descuento total no puede exceder subtotal. Aplicado
-  // DESPUÉS de sumar deliveryDiscountAmount para cubrir el caso donde un
-  // cupón con tope alto + FREE_SHIPPING llevan `discountAmount` por
-  // encima del subtotal y dejan al total negativo aunque deliveryFee=0.
-  discountAmount = Math.min(discountAmount, subtotal);
-
-  // Clampeamos a 0 en vez de devolver error: un cupón válido (ej.
-  // FIXED_AMOUNT que cubre exactamente subtotal + deliveryFee, o
-  // combinaciones de redondeo en el último centavo) puede dejar total
-  // negativo en el cálculo intermedio. Devolver error a un cliente con
-  // un cupón legítimo confunde y rompe conversión. Total 0 es perfectamente
-  // válido — significa "pago totalmente cubierto por el descuento".
-  const total =
-    Math.max(0, Math.round((subtotal - discountAmount + (deliveryFee ?? 0)) * 100) / 100);
+  // 9. Descuentos, envío gratis por umbral y total — aritmética pura
+  // extraída a `computeOrderPricing` (testeada exhaustivamente en unit).
+  // Ver ese módulo para el orden crítico de las operaciones.
+  const pricing = computeOrderPricing({
+    subtotal,
+    deliveryFee,
+    deliveryMethod: data.deliveryMethod,
+    coupon: pricingCoupon,
+    freeDeliveryAbove:
+      store.freeDeliveryAbove != null ? Number(store.freeDeliveryAbove) : null,
+  });
+  discountAmount = pricing.discountAmount;
+  deliveryFee = pricing.deliveryFee;
+  const total = pricing.total;
 
   // 9. Decide initial status & paymentStatus
   // QR_STATIC arranca en PENDING_PAYMENT (cliente subió comprobante, owner aún
