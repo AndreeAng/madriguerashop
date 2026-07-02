@@ -36,11 +36,13 @@ export async function generateMetadata({
   // la page, comparte una sola query por render.
   const store = await getStoreBySlug(slug);
   if (!store) return {};
+  const faviconUrl = store.faviconUrl ?? store.logoUrl ?? null;
   return {
-    title: store.metaTitle ?? `${store.name}${store.city ? ` · ${store.city}` : ""}`,
+    title: store.metaTitle ?? store.name,
     description: store.metaDescription ?? store.description ?? `Pide en línea en ${store.name}.`,
     openGraph: store.ogImageUrl ? { images: [store.ogImageUrl] } : undefined,
     alternates: { canonical: `/${slug}` },
+    icons: faviconUrl ? { icon: faviconUrl, shortcut: faviconUrl } : undefined,
   };
 }
 
@@ -72,6 +74,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
         category: { select: { id: true, name: true, sortOrder: true } },
       },
       orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
+      take: 1000,
     }),
     db.order.count({
       where: { storeId: storeData.id, createdAt: { gte: monthStart } },
