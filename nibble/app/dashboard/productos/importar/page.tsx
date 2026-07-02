@@ -71,7 +71,7 @@ Empanada de carne,12.00,,EM-001,Empanadas,,Frita al momento`}</pre>
           <p>
             <strong>Importante:</strong> los productos con slug duplicado se
             omiten (no se actualizan). Para editar productos existentes,
-            usá la UI del catálogo. Las imágenes se cargan después manualmente
+            usa la UI del catálogo. Las imágenes se cargan después manualmente
             desde cada producto.
           </p>
         </div>

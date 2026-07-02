@@ -20,7 +20,7 @@ export default async function RecoveryPage() {
         <div className="mx-auto w-full max-w-sm">
           <h1 className="font-display text-4xl">Recuperar acceso</h1>
           <p className="mt-2 text-[color:var(--muted)]">
-            Ingresá el email asociado a tu cuenta y te mandamos un link para
+            Ingresa el email asociado a tu cuenta y te mandamos un link para
             crear una nueva contraseña.
           </p>
 

@@ -41,7 +41,7 @@ export function InvoiceProofForm({
         label="Comprobante de pago"
         kind="proof"
         initialUrl={initialProofUrl}
-        hint="Tomá foto del comprobante de transferencia o escaneo del QR pagado."
+        hint="Toma foto del comprobante de transferencia o escaneo del QR pagado."
         error={state.fieldErrors?.proofUrl}
         aspect="square"
         onChange={(url) => setHasProof(Boolean(url))}

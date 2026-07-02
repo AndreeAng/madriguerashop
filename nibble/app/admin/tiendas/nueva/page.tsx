@@ -36,8 +36,8 @@ export default async function AdminNewStorePage() {
 
       <h1 className="font-display mt-3 text-3xl">Nueva tienda</h1>
       <p className="mt-1 text-sm text-[color:var(--muted)]">
-        Creá una tienda para mostrar a un cliente potencial. Dejá los
-        campos de owner vacíos y, cuando acepte, asignás owner desde el
+        Crea una tienda para mostrar a un cliente potencial. Deja los
+        campos de owner vacíos y, cuando acepte, asigna el owner desde el
         detalle.
       </p>
 

@@ -69,7 +69,7 @@ export async function GET(request: Request) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[cleanup-carts-cron] failed", { message });
     return NextResponse.json(
-      { error: "cleanup_failed", ranAt: now.toISOString(), message },
+      { error: "cleanup_failed", ranAt: now.toISOString() },
       { status: 500 },
     );
   }

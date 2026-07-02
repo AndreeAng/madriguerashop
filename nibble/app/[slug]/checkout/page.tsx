@@ -9,6 +9,7 @@ import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { CheckoutForm } from "@/components/storefront/CheckoutForm";
 import { readCircleShape } from "@/lib/delivery/geometry";
 import { storefrontCopy } from "@/lib/storefront/copy";
+import { trackPageView } from "@/lib/analytics/track";
 
 // Página privada (carrito personal). No queremos que Google la indexe ni que
 // se comparta con preview.
@@ -35,6 +36,8 @@ export default async function CheckoutPage({
   const storeData = await getStorefrontData(slug);
   if (!storeData) notFound();
   const store = toStoreView(storeData, { hours: storeData.storeHours });
+
+  void trackPageView({ storeId: storeData.id, path: `/${slug}/checkout` });
 
   const cart = await getCartSnapshot(slug);
   if (!cart || cart.items.length === 0) {

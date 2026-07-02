@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -8,6 +8,7 @@ import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
+import { captureError } from "@/lib/observability/captureError";
 
 export type DeliveryZoneFormState = {
   ok?: true;
@@ -117,7 +118,12 @@ export async function upsertDeliveryZoneAction(
 
   try {
     if (data.id) {
-      // Update — chequeo de pertenencia incluido en el `where` (storeId).
+      const before = await db.deliveryZone.findFirst({
+        where: { id: data.id, storeId },
+        select: { name: true, fee: true, estimatedTime: true, isActive: true },
+      });
+      if (!before) return { error: "Zona no encontrada (o no pertenece a tu tienda)." };
+
       const updated = await db.deliveryZone.updateMany({
         where: { id: data.id, storeId },
         data: {
@@ -135,7 +141,11 @@ export async function upsertDeliveryZoneAction(
         action: "delivery_zone.updated",
         actorId: userId,
         target: data.id,
-        metadata: { storeId, name: data.name },
+        metadata: {
+          storeId,
+          before: { name: before.name, fee: before.fee.toString(), estimatedTime: before.estimatedTime, isActive: before.isActive },
+          after: { name: data.name, fee: data.fee, estimatedTime: data.estimatedTime || null, isActive: data.isActive },
+        },
       });
     } else {
       // Create — sortOrder por defecto al final.
@@ -165,11 +175,16 @@ export async function upsertDeliveryZoneAction(
       });
     }
   } catch (err) {
-    console.error("[delivery-zones] upsert failed", err);
+    captureError(err, { action: "delivery-zones.upsert", storeId });
     return { error: "No pudimos guardar la zona. Prueba de nuevo." };
   }
 
   revalidatePath("/dashboard/delivery");
+  const store = await db.store.findUnique({ where: { id: storeId }, select: { slug: true } });
+  if (store) {
+    revalidatePath(`/${store.slug}`);
+    revalidateTag(`store:${store.slug}`);
+  }
   return { ok: true };
 }
 
@@ -211,7 +226,7 @@ export async function deleteDeliveryZoneAction(
       },
     });
   } else {
-    await db.deliveryZone.delete({ where: { id: zone.id } });
+    await db.deliveryZone.delete({ where: { id: zone.id, storeId } });
     await audit({
       action: "delivery_zone.deleted",
       actorId: userId,
@@ -221,5 +236,10 @@ export async function deleteDeliveryZoneAction(
   }
 
   revalidatePath("/dashboard/delivery");
+  const store = await db.store.findUnique({ where: { id: storeId }, select: { slug: true } });
+  if (store) {
+    revalidatePath(`/${store.slug}`);
+    revalidateTag(`store:${store.slug}`);
+  }
   return {};
 }

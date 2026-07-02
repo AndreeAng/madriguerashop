@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
 import { Inter, Fraunces } from "next/font/google";
+import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 // CSS de Leaflet: cargado global porque los mapas pueden aparecer en
@@ -55,28 +55,17 @@ export const viewport: Viewport = {
 // dev tuvo OTRO proyecto en localhost que registraba SW; el SW queda
 // activo cross-app porque vive por origen, no por proyecto, y empieza a
 // interceptar requests devolviendo HTML cacheado de la app anterior.
-// Síntoma típico: "subí código nuevo pero el browser muestra la versión
-// vieja". El script vive como archivo estático (no inline) para que la
-// CSP pueda prohibir scripts inline sin excepción — un XSS futuro no
-// puede inyectar `<script>` y ejecutarse.
+// Se carga vía <Script strategy="afterInteractive"> (inyección dinámica por
+// el bundle React ya autenticado) — 'strict-dynamic' propaga el trust al
+// elemento creado, sin necesitar nonce propio ni causar hydration mismatch.
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // El nonce viene del middleware (lib/middleware.ts → x-nonce header).
-  // Lo pasamos explícito al <script> custom porque con CSP `strict-dynamic`
-  // el browser solo confía en scripts con nonce o cargados por uno.
-  // Fallback "": en dev sin middleware activo, el script falla silenciosa
-  // — el unregister-sw es defensa contra SW residual, no crítico.
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
-
   return (
     <html lang="es-BO" className={`${inter.variable} ${fraunces.variable}`}>
-      <head>
-        <script src="/unregister-sw.js" defer nonce={nonce} />
-      </head>
       <body>
         {/* WCAG 2.4.1: Skip link al inicio del body. Permite a usuarios
             de teclado y screen reader saltar la nav repetida (header
@@ -89,13 +78,11 @@ export default async function RootLayout({
           Saltar al contenido
         </a>
         {children}
-        {/* Vercel Speed Insights: RUM (Real User Monitoring) que captura
-            Core Web Vitals (LCP, CLS, INP, FCP, TTFB) directamente del
-            navegador del cliente. Sin esto, las métricas de performance
-            que vemos en el dashboard de Vercel son sintéticas (Lighthouse
-            corriendo en US-East), no reflejan la latencia real de
-            usuarios bolivianos. Habilitar el feature "Speed Insights" en
-            el proyecto de Vercel para que aparezca data. */}
+        {/* Desregistra Service Workers residuales de otros proyectos en el mismo
+            origen (common en dev con localhost). Cargado afterInteractive para
+            que `strict-dynamic` propague el trust del bundle ya autenticado —
+            no necesita nonce propio y no causa hydration mismatch. */}
+        <Script src="/unregister-sw.js" strategy="afterInteractive" />
         <SpeedInsights />
       </body>
     </html>

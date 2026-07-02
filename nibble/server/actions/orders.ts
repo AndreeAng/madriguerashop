@@ -14,7 +14,10 @@ import { db } from "@/lib/db";
 import { getStoreBySlug } from "@/lib/tenant/resolve";
 import { readGuestToken } from "@/lib/cart/cookies";
 import { sendEmailBackground } from "@/lib/email/send";
-import { orderCreatedOwnerEmail } from "@/lib/email/templates/order";
+import {
+  orderCreatedOwnerEmail,
+  orderCreatedCustomerEmail,
+} from "@/lib/email/templates/order";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 import { normalizePhoneBO, PHONE_BO_RE } from "@/lib/auth/identifiers";
@@ -25,6 +28,9 @@ import {
 } from "@/lib/storefront/availability";
 import { buildWhatsAppUrl, formatBobAmount, formatDateLong } from "@/lib/utils";
 import { appUrl } from "@/lib/email/client";
+import { isAcceptedProofUrl } from "@/lib/storage/blob";
+import { captureError } from "@/lib/observability/captureError";
+import { EMAIL_RE } from "@/lib/validation/email";
 
 // ============== Tipos ==============
 
@@ -49,30 +55,7 @@ export type CreateOrderState = {
 
 // ============== Schema ==============
 
-// La regex `PHONE_BO_RE` vive en `lib/auth/identifiers.ts` — fuente única.
 const phoneRefiner = (v: string) => PHONE_BO_RE.test(v.replace(/[\s-]/g, ""));
-
-/**
- * Acepta una URL de comprobante si vino de nuestro propio sistema de upload:
- *   - Modo filesystem (dev): path bajo `/api/uploads/proof/`.
- *   - Modo Vercel Blob (prod): URL absoluta del bucket de Madriguera con
- *     prefix `/proof/`. El hostname del bucket es estable por proyecto
- *     (`*.public.blob.vercel-storage.com`), y el path `/proof/` es nuestro
- *     namespace — un atacante no puede inyectar una URL externa que matchee.
- */
-function isAcceptedProofUrl(v: string): boolean {
-  if (v.startsWith("/api/uploads/proof/")) return true;
-  try {
-    const u = new URL(v);
-    return (
-      u.protocol === "https:" &&
-      u.hostname.endsWith(".public.blob.vercel-storage.com") &&
-      u.pathname.startsWith("/proof/")
-    );
-  } catch {
-    return false;
-  }
-}
 
 const createOrderSchema = z
   .object({
@@ -87,11 +70,7 @@ const createOrderSchema = z
       .trim()
       .max(120)
       .refine(
-        // Patrón bounded para evitar ReDoS: `[^\s@]+\.[^\s@]+` solapaba
-        // dos cuantificadores con sufijo común (catastrophic backtracking
-        // en inputs como `a@aaaa....!`). Acotamos cada segmento con un
-        // upper bound y enforced exactly-one dot.
-        (v) => v === "" || /^[^\s@]{1,64}@[^\s@]{1,63}\.[^\s@.]{1,63}$/.test(v),
+        (v) => v === "" || EMAIL_RE.test(v),
         "Email inválido",
       ),
 
@@ -169,8 +148,6 @@ const createOrderSchema = z
   );
 
 // ============== Helpers ==============
-
-const normalizePhone = normalizePhoneBO;
 
 function generateTrackingToken(): string {
   // 22 caracteres URL-safe ~= 132 bits de entropía
@@ -298,7 +275,7 @@ export async function createOrderAction(
     };
   }
   const data = parsed.data;
-  const customerPhone = normalizePhone(data.customerPhone);
+  const customerPhone = normalizePhoneBO(data.customerPhone);
 
   // 2. Resolve store
   const store = await getStoreBySlug(data.storeSlug);
@@ -747,7 +724,7 @@ export async function createOrderAction(
           couponId,
           couponCode,
           status: orderStatus,
-          paymentMethod: data.paymentMethod as PaymentMethod,
+          paymentMethod: data.paymentMethod,
           paymentStatus,
           paymentProofUrl: data.paymentProofUrl || null,
           customerNotes: data.customerNotes || null,
@@ -947,7 +924,7 @@ export async function createOrderAction(
     subtotal,
     discountAmount,
     total,
-    paymentMethod: data.paymentMethod as PaymentMethod,
+    paymentMethod: data.paymentMethod,
     paymentProofUrl: data.paymentProofUrl || null,
     customerNotes: data.customerNotes || null,
     scheduledFor: scheduled,
@@ -963,7 +940,7 @@ export async function createOrderAction(
       data: { whatsappMessage: message },
     })
     .catch((err) =>
-      console.error("[orders] whatsappMessage snapshot failed", err),
+      captureError(err, { action: "orders.whatsappMessageSnapshot" }),
     );
 
   // 11.5 Notificar al owner por email (fire-and-forget)
@@ -983,9 +960,26 @@ export async function createOrderAction(
         customerName: data.customerName,
         customerPhone,
         total,
-        paymentMethod: data.paymentMethod as PaymentMethod,
+        paymentMethod: data.paymentMethod,
         awaitingVerification: paymentStatus === "AWAITING_VERIFICATION",
         itemsCount: lines.length,
+        vertical: store.vertical,
+      }),
+    );
+  }
+
+  // 11.6 Email de confirmación al cliente (fire-and-forget)
+  if (data.customerEmail) {
+    sendEmailBackground(
+      orderCreatedCustomerEmail({
+        to: data.customerEmail,
+        storeName: store.name,
+        storeSlug: store.slug,
+        orderNumber: createdOrder.orderNumber,
+        trackingToken: createdOrder.trackingToken,
+        total,
+        paymentMethod: data.paymentMethod,
+        awaitingVerification: paymentStatus === "AWAITING_VERIFICATION",
         vertical: store.vertical,
       }),
     );
@@ -1035,6 +1029,6 @@ export async function markWhatsAppOpened(
       data: { whatsappOpenedAt: new Date() },
     });
   } catch (err) {
-    console.error("[markWhatsAppOpened] failed:", err);
+    captureError(err, { action: "orders.markWhatsAppOpened" });
   }
 }

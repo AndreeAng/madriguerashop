@@ -124,7 +124,7 @@ export function MapPicker({
     <div className="space-y-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-[color:var(--muted)]">
-          Tocá el mapa o usá tu ubicación actual para marcar dónde entregar.
+          Toca el mapa o usa tu ubicación actual para marcar dónde entregar.
         </p>
         <button
           type="button"

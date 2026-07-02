@@ -481,7 +481,7 @@ export async function deleteProductAction(formData: FormData): Promise<ActionSta
     };
   }
 
-  await db.product.delete({ where: { id } });
+  await db.product.delete({ where: { id, storeId } });
   invalidate(await getStoreSlugById(storeId));
   await audit({
     action: "product.deleted",

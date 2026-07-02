@@ -152,7 +152,7 @@ export default async function SearchPage({
           {!q ? (
             <EmptyState
               icon={<Search className="size-8" />}
-              description="Escribí qué buscás en el cuadro de arriba — buscamos en nombre, descripción y código de producto."
+              description="Escribe qué buscas en el cuadro de arriba — buscamos en nombre, descripción y código de producto."
             />
           ) : products.length === 0 ? (
             <EmptyState

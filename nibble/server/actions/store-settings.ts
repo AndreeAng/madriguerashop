@@ -7,14 +7,14 @@ import { db } from "@/lib/db";
 import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { normalizePhoneBO, PHONE_BO_RE } from "@/lib/auth/identifiers";
+import { EMAIL_RE } from "@/lib/validation/email";
 import { audit } from "@/lib/audit/log";
+import { sendEmailBackground } from "@/lib/email/send";
+import { emailVerificationEmail } from "@/lib/email/templates/email-verification";
+import { generateEmailVerificationToken } from "@/lib/auth/email-verification-token";
+import { appUrl } from "@/lib/email/client";
+import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 
-// ============== Tipos comunes ==============
-
-// `ActionState` vive en `lib/validation/actionState.ts` — re-exportado acá
-// solo para no romper imports históricos. Los nuevos consumidores deben
-// importar desde `@/lib/validation/actionState` directamente.
-export type { ActionState } from "@/lib/validation/actionState";
 import type { ActionState } from "@/lib/validation/actionState";
 
 // ============== Helpers ==============
@@ -33,8 +33,6 @@ const PHONE_BO = z
     const stripped = v.replace(/[\s-]/g, "");
     return PHONE_BO_RE.test(stripped);
   }, "Teléfono inválido. Formato: +591XXXXXXXX");
-
-const normalizePhone = normalizePhoneBO;
 
 /** Convierte FormData en objeto plano leyendo sólo las claves dadas. */
 function readForm<K extends string>(fd: FormData, keys: K[]): Record<K, string> {
@@ -83,7 +81,8 @@ const identityFields = [
 type IdentityField = (typeof identityFields)[number];
 
 const identitySchema = z.object({
-  name: z.string().trim().min(2, "Nombre muy corto").max(60),
+  name: z.string().trim().min(2, "Nombre muy corto").max(60)
+    .transform((v) => v.replace(/[\r\n\t]+/g, " ")),
   description: z.string().trim().max(500).optional().nullable(),
 
   primaryColor: z.string().regex(HEX_COLOR, "Color hex inválido (ej. #dc2626)"),
@@ -100,7 +99,7 @@ const identitySchema = z.object({
     .string()
     .trim()
     .max(120)
-    .refine((v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v), "Email inválido"),
+    .refine((v) => v === "" || EMAIL_RE.test(v), "Email inválido"),
   addressText: z.string().trim().max(200),
   city: z.string().trim().min(2, "Ingresa tu ciudad").max(60),
 
@@ -135,7 +134,7 @@ export async function updateIdentityAction(
       logoUrl: data.logoUrl || null,
       bannerUrl: data.bannerUrl || null,
       faviconUrl: data.faviconUrl || null,
-      whatsappPhone: normalizePhone(data.whatsappPhone),
+      whatsappPhone: normalizePhoneBO(data.whatsappPhone),
       email: data.email || null,
       addressText: data.addressText || null,
       city: data.city,
@@ -420,5 +419,53 @@ export async function updateSeoAction(
     storeId,
     metadata: { section: "seo" },
   });
+  return { ok: true };
+}
+
+// ============== Reenviar verificación de email ==============
+
+/**
+ * Genera y envía un nuevo link de verificación de email al owner.
+ * Idempotente: si el email ya está verificado devuelve ok sin enviar nada.
+ * Rate limit: 3 reenvíos por IP por hora.
+ */
+export async function resendEmailVerificationAction(
+  _prev: ActionState,
+  _formData: FormData,
+): Promise<ActionState> {
+  const { userId } = await requireOwnerOnlyIds();
+
+  const ip = await getClientIp();
+  const rl = await rateLimit(`resend-verification:${ip}`, 3, 60 * 60 * 1000);
+  if (!rl.success) {
+    return { error: rateLimitErrorMessage(rl.retryAfter) };
+  }
+
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { email: true, emailVerifiedAt: true, storeId: true },
+  });
+
+  if (!user?.email) {
+    return { error: "Tu cuenta no tiene email registrado. Agrega uno en configuración." };
+  }
+
+  if (user.emailVerifiedAt) {
+    return { ok: true };
+  }
+
+  const store = user.storeId
+    ? await db.store.findUnique({ where: { id: user.storeId }, select: { name: true } })
+    : null;
+
+  const token = generateEmailVerificationToken(userId, user.email);
+  sendEmailBackground(
+    emailVerificationEmail({
+      to: user.email,
+      verifyUrl: `${appUrl()}/verify-email/${token}`,
+      storeName: store?.name ?? "tu tienda",
+    }),
+  );
+
   return { ok: true };
 }

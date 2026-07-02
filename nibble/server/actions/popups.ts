@@ -8,6 +8,7 @@ import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 import { deleteBlobIfHosted } from "@/lib/storage/upload";
+import { captureError } from "@/lib/observability/captureError";
 
 export type PopupFormState = {
   ok?: true;
@@ -152,7 +153,7 @@ export async function upsertPopupAction(
       // imágenes huérfanas indefinidamente.
       const previous = await db.popup.findFirst({
         where: { id: data.id, storeId },
-        select: { imageUrl: true },
+        select: { title: true, imageUrl: true, validFrom: true, validTo: true, isActive: true },
       });
       const updated = await db.popup.updateMany({
         where: { id: data.id, storeId },
@@ -166,7 +167,11 @@ export async function upsertPopupAction(
         action: "popup.updated",
         actorId,
         target: data.id,
-        metadata: { storeId, title: data.title },
+        metadata: {
+          storeId,
+          before: previous ? { title: previous.title, validFrom: previous.validFrom, validTo: previous.validTo, isActive: previous.isActive } : null,
+          after: { title: data.title, validFrom: data.validFrom, validTo: data.validTo, isActive: data.isActive },
+        },
       });
     } else {
       const created = await db.popup.create({
@@ -181,7 +186,7 @@ export async function upsertPopupAction(
       });
     }
   } catch (err) {
-    console.error("[popups] upsert failed", err);
+    captureError(err, { action: "popups.upsert", storeId });
     return { error: "No pudimos guardar el popup." };
   }
 

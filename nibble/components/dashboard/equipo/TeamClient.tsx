@@ -135,7 +135,7 @@ export function TeamClient({
       )}
 
       <p className="text-xs text-[color:var(--muted)]">
-        Cuando suspendés un cajero pierde acceso inmediatamente. Si vuelves
+        Cuando suspendes un cajero pierde acceso inmediatamente. Si vuelves
         a reactivarlo, mantiene su misma contraseña — no hace falta crear
         de cero.
       </p>

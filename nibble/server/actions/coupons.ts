@@ -8,6 +8,7 @@ import { requireOwnerOnlyIds } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
+import { captureError } from "@/lib/observability/captureError";
 
 export type CouponFormState = {
   ok?: true;
@@ -154,33 +155,41 @@ export async function upsertCouponAction(
 
   try {
     if (data.id) {
-      // Defensa: si el owner baja `usageLimit` por debajo del `usedCount`
-      // real, el cupón queda con todos los usos futuros fallando en
-      // silencio (`usedCount >= usageLimit` rechaza cada orden sin
-      // mensaje claro). Rechazamos el edit antes de aplicarlo.
-      if (data.usageLimit !== null) {
-        const existing = await db.coupon.findFirst({
-          where: { id: data.id, storeId },
-          select: { usedCount: true },
-        });
-        if (existing && data.usageLimit < existing.usedCount) {
-          return {
-            fieldErrors: {
-              usageLimit: `Este cupón ya tiene ${existing.usedCount} usos. El tope no puede ser menor a ese número.`,
-            },
-          };
-        }
-      }
-      const updated = await db.coupon.updateMany({
+      // Pre-fetch: estado anterior para el delta del audit log y para
+      // distinguir "no encontrado" de "límite violado" en el path de error.
+      const before = await db.coupon.findFirst({
         where: { id: data.id, storeId },
+        select: { code: true, type: true, value: true, validFrom: true, validTo: true, usageLimit: true, isActive: true, usedCount: true },
+      });
+      if (!before) return { error: "Cupón no encontrado." };
+
+      // Test-and-set atómico: el WHERE incluye la condición de negocio para
+      // evitar la ventana TOCTOU de un "read → validate → write" separado.
+      const updated = await db.coupon.updateMany({
+        where: {
+          id: data.id,
+          storeId,
+          ...(data.usageLimit !== null ? { usedCount: { lte: data.usageLimit } } : {}),
+        },
         data: payload,
       });
-      if (updated.count === 0) return { error: "Cupón no encontrado." };
+      if (updated.count === 0) {
+        return {
+          fieldErrors: {
+            usageLimit: `Este cupón ya tiene ${before.usedCount} usos. El tope no puede ser menor a ese número.`,
+          },
+        };
+      }
       await audit({
         action: "coupon.updated",
         actorId,
         target: data.id,
-        metadata: { storeId, code: data.code },
+        metadata: {
+          storeId,
+          code: data.code,
+          before: { type: before.type, value: before.value.toString(), validFrom: before.validFrom, validTo: before.validTo, usageLimit: before.usageLimit, isActive: before.isActive },
+          after: { type: data.type, value: data.value, validFrom: data.validFrom, validTo: data.validTo, usageLimit: data.usageLimit, isActive: data.isActive },
+        },
       });
     } else {
       const created = await db.coupon.create({
@@ -203,7 +212,7 @@ export async function upsertCouponAction(
         },
       };
     }
-    console.error("[coupons] upsert failed", err);
+    captureError(err, { action: "coupons.upsert", storeId });
     return { error: "No pudimos guardar el cupón." };
   }
 
@@ -246,7 +255,7 @@ export async function deleteCouponAction(
       },
     });
   } else {
-    await db.coupon.delete({ where: { id: coupon.id } });
+    await db.coupon.delete({ where: { id: coupon.id, storeId } });
     await audit({
       action: "coupon.deleted",
       actorId,

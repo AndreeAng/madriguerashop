@@ -310,7 +310,7 @@ function CouponForm({
         placeholder="Para clientes que vuelven después de 30 días"
         defaultValue={coupon?.description ?? ""}
         error={fe.description}
-        hint="Para que recordés qué hace este cupón. El cliente no la ve."
+        hint="Para que recuerdes qué hace este cupón. El cliente no la ve."
       />
 
       {type !== "FREE_SHIPPING" && (

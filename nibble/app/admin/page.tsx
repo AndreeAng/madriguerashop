@@ -9,16 +9,25 @@ import {
   AlertTriangle,
   ShoppingBag,
   ExternalLink,
+  FileText,
 } from "lucide-react";
 import { db } from "@/lib/db";
+import { requireSuperAdmin } from "@/lib/auth/session";
 import { formatBob } from "@/lib/utils";
 import { KpiCardCompact } from "@/components/shared/KpiCardCompact";
 
 export const metadata = { title: "Inicio · Admin" };
 
-export default async function AdminHome() {
+export default async function AdminHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  await requireSuperAdmin();
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const sp = await searchParams;
+  const q = (sp.q ?? "").trim();
 
   const [
     storeCount,
@@ -88,6 +97,59 @@ export default async function AdminHome() {
     `,
   ]);
 
+  // Búsqueda global cross-table cuando hay query
+  let searchResults: {
+    stores: { id: string; slug: string; name: string; status: string }[];
+    users: { id: string; fullName: string | null; email: string | null; phone: string | null; role: string }[];
+    invoices: { id: string; invoiceNumber: string; amount: number; status: string; store: { name: string; slug: string } }[];
+  } | null = null;
+
+  if (q.length >= 2) {
+    const [matchStores, matchUsers, matchInvoices] = await Promise.all([
+      db.store.findMany({
+        where: {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { slug: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        take: 8,
+        select: { id: true, slug: true, name: true, status: true },
+      }),
+      db.user.findMany({
+        where: {
+          OR: [
+            { fullName: { contains: q, mode: "insensitive" } },
+            { email: { contains: q, mode: "insensitive" } },
+            { phone: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        take: 8,
+        select: { id: true, fullName: true, email: true, phone: true, role: true },
+      }),
+      db.invoice.findMany({
+        where: { invoiceNumber: { contains: q, mode: "insensitive" } },
+        take: 8,
+        select: {
+          id: true,
+          invoiceNumber: true,
+          amount: true,
+          status: true,
+          store: { select: { name: true, slug: true } },
+        },
+      }),
+    ]);
+
+    searchResults = {
+      stores: matchStores,
+      users: matchUsers,
+      invoices: matchInvoices.map((inv) => ({
+        ...inv,
+        amount: Number(inv.amount),
+      })),
+    };
+  }
+
   const topNameById = new Map(
     topStoresByGmv.map((t) => [t.storeId, { slug: t.slug, name: t.name }]),
   );
@@ -96,19 +158,16 @@ export default async function AdminHome() {
     <>
       <header className="sticky top-0 z-20 border-b border-[color:var(--line)] bg-[color:var(--bg)]/85 backdrop-blur">
           <div className="flex h-16 items-center gap-3 px-6">
-            {/* Búsqueda global pendiente — requiere índice cross-table
-                (tiendas + usuarios + facturas). Hasta que esté, el input
-                queda disabled para no prometer funcionalidad inexistente.
-                Mientras tanto, hay buscadores por sección en /admin/tiendas
-                y /admin/usuarios. */}
-            <div className="relative w-72 max-w-full">
-              <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--muted)]/50" />
+            <form method="GET" action="/admin" className="relative w-72 max-w-full">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[color:var(--muted)]" />
               <input
-                disabled
-                placeholder="Búsqueda global — próximamente"
-                className="w-full cursor-not-allowed rounded-full border border-[color:var(--line)] bg-[color:var(--card)]/50 py-2 pl-9 pr-3 text-sm text-[color:var(--muted)]/60 outline-none"
+                name="q"
+                defaultValue={q}
+                placeholder="Buscar tienda, usuario o factura…"
+                autoComplete="off"
+                className="w-full rounded-full border border-[color:var(--line)] bg-[color:var(--card)] py-2 pl-9 pr-3 text-sm outline-none transition-colors focus:border-[color:var(--color-amber-400)] focus:ring-2 focus:ring-[color:var(--color-amber-200)]/40"
               />
-            </div>
+            </form>
             <div className="ml-auto text-xs text-[color:var(--muted)]">
               {now.toLocaleDateString("es-BO", { dateStyle: "long" })}
             </div>
@@ -116,6 +175,102 @@ export default async function AdminHome() {
         </header>
 
         <main className="p-6 lg:p-8">
+
+          {/* Resultados de búsqueda */}
+          {searchResults && (
+            <section className="mb-8 rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
+              <h2 className="font-semibold">
+                Resultados para <span className="font-mono text-[color:var(--color-amber-600)]">&ldquo;{q}&rdquo;</span>
+              </h2>
+
+              {searchResults.stores.length === 0 &&
+                searchResults.users.length === 0 &&
+                searchResults.invoices.length === 0 && (
+                  <p className="mt-4 text-sm text-[color:var(--muted)]">
+                    Sin resultados. Prueba con otro término.
+                  </p>
+                )}
+
+              {searchResults.stores.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-widest text-[color:var(--muted)]">
+                    Tiendas
+                  </p>
+                  <ul className="divide-y divide-[color:var(--line)]">
+                    {searchResults.stores.map((s) => (
+                      <li key={s.id}>
+                        <Link
+                          href={`/admin/tiendas/${s.id}`}
+                          className="flex items-center gap-3 py-2.5 -mx-2 px-2 rounded-lg hover:bg-[color:var(--bg)] transition"
+                        >
+                          <StoreIcon className="size-4 shrink-0 text-[color:var(--muted)]" />
+                          <span className="flex-1 text-sm font-medium">{s.name}</span>
+                          <span className="font-mono text-xs text-[color:var(--muted)]">{s.slug}</span>
+                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                            {s.status}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {searchResults.users.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-widest text-[color:var(--muted)]">
+                    Usuarios
+                  </p>
+                  <ul className="divide-y divide-[color:var(--line)]">
+                    {searchResults.users.map((u) => (
+                      <li key={u.id}>
+                        <Link
+                          href={`/admin/usuarios?q=${encodeURIComponent(u.email ?? u.phone ?? u.fullName ?? u.id)}`}
+                          className="flex items-center gap-3 py-2.5 -mx-2 px-2 rounded-lg hover:bg-[color:var(--bg)] transition"
+                        >
+                          <Users className="size-4 shrink-0 text-[color:var(--muted)]" />
+                          <span className="flex-1 text-sm font-medium">{u.fullName ?? "—"}</span>
+                          <span className="text-xs text-[color:var(--muted)]">
+                            {u.email ?? u.phone ?? "—"}
+                          </span>
+                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                            {u.role}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {searchResults.invoices.length > 0 && (
+                <div className="mt-4">
+                  <p className="mb-2 text-xs font-medium uppercase tracking-widest text-[color:var(--muted)]">
+                    Facturas
+                  </p>
+                  <ul className="divide-y divide-[color:var(--line)]">
+                    {searchResults.invoices.map((inv) => (
+                      <li key={inv.id}>
+                        <Link
+                          href="/admin/cobranzas"
+                          className="flex items-center gap-3 py-2.5 -mx-2 px-2 rounded-lg hover:bg-[color:var(--bg)] transition"
+                        >
+                          <FileText className="size-4 shrink-0 text-[color:var(--muted)]" />
+                          <span className="flex-1 text-sm font-medium">{inv.invoiceNumber}</span>
+                          <span className="text-xs text-[color:var(--muted)]">{inv.store.name}</span>
+                          <span className="text-xs font-medium">{formatBob(inv.amount)}</span>
+                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                            {inv.status}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </section>
+          )}
+
           <div>
             <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
               Vista global
@@ -279,4 +434,3 @@ export default async function AdminHome() {
     </>
   );
 }
-

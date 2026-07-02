@@ -17,31 +17,9 @@ import {
   INVALID_INPUT_ERROR,
   type ActionState,
 } from "@/lib/validation/actionState";
+import { isAcceptedProofUrl } from "@/lib/storage/blob";
 
 // ============== Owner: subir comprobante ==============
-
-/**
- * Mismo predicate que `createOrderAction` para proof URLs. Acepta:
- *   - Modo filesystem (dev): /api/uploads/proof/...
- *   - Modo Vercel Blob (prod): https://<id>.public.blob.vercel-storage.com/proof/...
- *
- * Mantenemos esta función duplicada en lugar de extraerla a `lib/` para
- * evitar acoplamiento entre orders.ts e invoices.ts — ambas server actions
- * son independientes y la duplicación es trivial.
- */
-function isAcceptedProofUrl(v: string): boolean {
-  if (v.startsWith("/api/uploads/proof/")) return true;
-  try {
-    const u = new URL(v);
-    return (
-      u.protocol === "https:" &&
-      u.hostname.endsWith(".public.blob.vercel-storage.com") &&
-      u.pathname.startsWith("/proof/")
-    );
-  } catch {
-    return false;
-  }
-}
 
 const uploadProofSchema = z.object({
   invoiceId: z.string().min(1),

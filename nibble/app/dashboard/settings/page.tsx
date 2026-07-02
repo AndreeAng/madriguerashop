@@ -8,6 +8,7 @@ import { PaymentsForm } from "@/components/dashboard/settings/PaymentsForm";
 import { DeliveryForm } from "@/components/dashboard/settings/DeliveryForm";
 import { HoursForm } from "@/components/dashboard/settings/HoursForm";
 import { SeoForm } from "@/components/dashboard/settings/SeoForm";
+import { EmailVerificationBanner } from "@/components/dashboard/settings/EmailVerificationBanner";
 
 export const metadata = {
   title: "Configuración · Madriguera Shop",
@@ -22,11 +23,18 @@ const SECTIONS = [
 ];
 
 export default async function SettingsPage() {
-  const { store } = await requireOwnerOnly();
-  const hours = await db.storeHours.findMany({
-    where: { storeId: store.id },
-    orderBy: { dayOfWeek: "asc" },
-  });
+  const { user, store } = await requireOwnerOnly();
+
+  const [hours, owner] = await Promise.all([
+    db.storeHours.findMany({
+      where: { storeId: store.id },
+      orderBy: { dayOfWeek: "asc" },
+    }),
+    db.user.findUnique({
+      where: { id: user.id },
+      select: { email: true, emailVerifiedAt: true },
+    }),
+  ]);
 
   return (
     <>
@@ -64,6 +72,13 @@ export default async function SettingsPage() {
               </p>
             </div>
           </div>
+
+          {/* Banner de verificación de email — solo si tiene email y no está verificado */}
+          {owner?.email && !owner.emailVerifiedAt && (
+            <div className="mt-6">
+              <EmailVerificationBanner email={owner.email} />
+            </div>
+          )}
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[200px_1fr]">
             {/* Anchor nav */}

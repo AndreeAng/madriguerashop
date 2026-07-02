@@ -204,7 +204,7 @@ export function ProductImagesField({
       />
 
       <p className="mt-2 text-xs text-[color:var(--muted)]">
-        La primera imagen es la principal. Arrastrá para reordenar.
+        La primera imagen es la principal. Arrastra para reordenar.
       </p>
       {error && (
         <p role="alert" className="mt-1.5 text-xs text-[color:var(--color-tomato-600)]">

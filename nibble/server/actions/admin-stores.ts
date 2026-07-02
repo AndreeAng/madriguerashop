@@ -32,6 +32,7 @@ import {
 } from "@/lib/auth/impersonation";
 import { proofUploadDir } from "@/lib/storage/upload";
 import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
+import { captureError } from "@/lib/observability/captureError";
 
 // ============== Tipos ==============
 
@@ -266,7 +267,7 @@ export async function adminCreateStoreAction(
   }
   if (!templateId) {
     return {
-      error: `No hay template activo para ${data.vertical}. Creá uno en /admin/plantillas.`,
+      error: `No hay template activo para ${data.vertical}. Crea uno en /admin/plantillas.`,
     };
   }
 
@@ -731,7 +732,7 @@ export async function adminToggleStoreStatusAction(
       return { error: "La tienda ya está suspendida." };
     }
     if (store.status === StoreStatus.CANCELLED) {
-      return { error: "Tienda cancelada — usá eliminar en su lugar." };
+      return { error: "Tienda cancelada — usa eliminar en su lugar." };
     }
     if (!reason) {
       return { fieldErrors: { reason: "Escribe la razón de la suspensión." } };
@@ -979,7 +980,7 @@ export async function adminDeleteStoreAction(
   if (confirmSlug !== store.slug) {
     return {
       fieldErrors: {
-        confirmSlug: `Escribí "${store.slug}" exacto para confirmar.`,
+        confirmSlug: `Escribe "${store.slug}" exacto para confirmar.`,
       },
     };
   }
@@ -1025,8 +1026,8 @@ export async function adminDeleteStoreAction(
   } catch (err) {
     // Si el delete falla, la DB queda intacta y el admin puede reintentar.
     // No tocamos blobs todavía — solo después del commit exitoso.
-    const message = err instanceof Error ? err.message : String(err);
-    return { error: `No pudimos eliminar la tienda: ${message}` };
+    captureError(err, { action: "admin-stores.deleteStore", storeId });
+    return { error: "No pudimos eliminar la tienda. Revisa los logs del servidor." };
   }
 
   // Post-tx: cleanup de storage. Best-effort — si falla loguea pero no

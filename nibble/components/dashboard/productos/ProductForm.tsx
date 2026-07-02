@@ -241,7 +241,7 @@ export function ProductForm({
           />
           <Field
             label="Avisar cuando queden menos de"
-            hint="Te avisamos en el dashboard. Dejá vacío para no recibir alerta."
+            hint="Te avisamos en el dashboard. Deja vacío para no recibir alerta."
             error={fe.lowStockAlert}
             input={
               <input

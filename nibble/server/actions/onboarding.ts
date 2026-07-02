@@ -20,6 +20,7 @@ import { appUrl } from "@/lib/email/client";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
+import { captureError } from "@/lib/observability/captureError";
 
 // ============== Constantes de producto ==============
 //
@@ -100,7 +101,6 @@ export async function registerStoreAction(
   // Devolvemos OK silencioso para no darle señal al bot.
   const honeypot = formData.get("company_role");
   if (typeof honeypot === "string" && honeypot.trim() !== "") {
-    console.log("[register] honeypot triggered");
     // Hacemos timeout artificial para no diferenciar respuesta de un registro real
     await new Promise((r) => setTimeout(r, 800));
     return { error: "No pudimos completar el registro. Prueba de nuevo." };
@@ -300,7 +300,7 @@ export async function registerStoreAction(
     } catch (err) {
       // No bloqueamos el registro si la primera factura falla — el cron
       // diario la generará en su próxima corrida.
-      console.error("[onboarding] first invoice failed", err);
+      captureError(err, { action: "onboarding.firstInvoice", storeId: createdStoreId });
     }
   }
 
@@ -351,7 +351,7 @@ export async function registerStoreAction(
     // pero ese campo dejó de ser estable. `isRedirectError` de next/navigation
     // es API interna, así que inspeccionamos el digest directamente.
     if (isNextRedirectError(err)) throw err;
-    console.error("[onboarding] auto-login fallo, redirigiendo a /login", err);
+    captureError(err, { action: "onboarding.autoLogin", storeId: createdStoreId });
     return {
       ok: true,
       autoLoginFailed: true,

@@ -12,6 +12,7 @@ import {
   type CartProductInfo,
   type CartWithItems,
 } from "@/lib/cart/snapshot";
+import { captureError } from "@/lib/observability/captureError";
 
 // ============== Types ==============
 
@@ -138,7 +139,7 @@ async function buildSnapshot(
     db.cartItem
       .deleteMany({ where: { id: { in: orphanIds } } })
       .catch((err) =>
-        console.error("[cart] orphan cleanup failed", err),
+        captureError(err, { action: "cart.orphanCleanup" }),
       );
   }
 

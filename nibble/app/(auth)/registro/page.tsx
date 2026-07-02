@@ -12,7 +12,7 @@ export const metadata = {
 
 const PERKS = [
   "Tu URL propia: madrigueras.shop/tutienda",
-  "Cobrás por QR de tu banco — sin comisión",
+  "Cobras por QR de tu banco — sin comisión",
   "Pedidos directo a WhatsApp con todo el detalle",
   "Diseño según tu rubro, no un template global",
 ];

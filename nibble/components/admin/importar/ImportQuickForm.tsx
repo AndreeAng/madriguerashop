@@ -269,7 +269,7 @@ function SelectField({
         className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
       >
         <option value="" disabled>
-          Seleccioná…
+          Selecciona…
         </option>
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

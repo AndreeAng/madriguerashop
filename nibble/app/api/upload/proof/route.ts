@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   // contra slug A no debe bloquear los uploads legítimos hacia slug B
   // desde la misma IP (NAT corporativa, oficinas, etc).
   const ip = getClientIpFromRequest(request);
-  const rl = await rateLimit(`upload-proof:${ip}:${slug ?? "_"}`, 20, 10 * 60 * 1000);
+  const rl = await rateLimit(`upload-proof:${ip}:${slug ?? "_"}`, 10, 10 * 60 * 1000);
   if (!rl.success) {
     return NextResponse.json(
       { error: rateLimitErrorMessage(rl.retryAfter) },

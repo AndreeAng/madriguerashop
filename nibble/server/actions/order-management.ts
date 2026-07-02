@@ -11,6 +11,7 @@ import { sendEmailBackground } from "@/lib/email/send";
 import {
   paymentRejectedCustomerEmail,
   paymentVerifiedCustomerEmail,
+  orderStatusChangedCustomerEmail,
 } from "@/lib/email/templates/order";
 import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
@@ -239,6 +240,8 @@ export async function changeOrderStatusAction(
       paymentMethod: true,
       paymentStatus: true,
       deliveryAddress: true,
+      customerEmail: true,
+      store: { select: { name: true, slug: true, vertical: true } },
     },
   });
   if (!order) return { error: "Pedido no encontrado" };
@@ -368,6 +371,27 @@ export async function changeOrderStatusAction(
       reason: reason ?? null,
     },
   });
+
+  // Email al cliente en transiciones relevantes (fire-and-forget)
+  const STATUS_WITH_EMAIL = ["CONFIRMED", "IN_DELIVERY", "DELIVERED", "CANCELLED"] as const;
+  type EmailableStatus = typeof STATUS_WITH_EMAIL[number];
+  if (
+    order.customerEmail &&
+    (STATUS_WITH_EMAIL as readonly string[]).includes(toStatus)
+  ) {
+    sendEmailBackground(
+      orderStatusChangedCustomerEmail({
+        to: order.customerEmail,
+        storeName: order.store.name,
+        storeSlug: order.store.slug,
+        orderNumber: order.orderNumber,
+        trackingToken: order.trackingToken,
+        newStatus: toStatus as EmailableStatus,
+        cancelReason: toStatus === "CANCELLED" ? (reason ?? null) : null,
+        vertical: order.store.vertical,
+      }),
+    );
+  }
 
   const storeSlug = await getStoreSlugById(storeId);
   if (storeSlug) {

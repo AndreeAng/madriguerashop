@@ -16,7 +16,7 @@ import { proofUploadDir } from "@/lib/storage/upload";
  *   - STORE_OWNER / CASHIER pueden ver si su sesión está scoped al `storeId`.
  *   - CUSTOMER del pedido puede ver pasando `?t=<trackingToken>` (el mismo
  *     token que protege /[slug]/orden/[token]). El token es unguessable y
- *     único por pedido — equivale a "demostrar que sos el dueño del pedido".
+ *     único por pedido — equivale a "demostrar que eres el dueño del pedido".
  *   - Resto: 403.
  */
 

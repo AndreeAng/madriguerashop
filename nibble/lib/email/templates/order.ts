@@ -73,6 +73,115 @@ export function orderCreatedOwnerEmail(opts: {
 }
 
 /**
+ * Email al cliente cuando su pedido acaba de crearse.
+ * Solo se envía si el cliente proporcionó email en el checkout.
+ */
+export function orderCreatedCustomerEmail(opts: {
+  to: string;
+  storeName: string;
+  storeSlug: string;
+  orderNumber: number;
+  trackingToken: string;
+  total: number;
+  paymentMethod: "QR_STATIC" | "QR_DYNAMIC" | "CASH_ON_DELIVERY";
+  awaitingVerification: boolean;
+  vertical: StoreVertical;
+}): SendInput {
+  const noun = orderNounCapitalized(opts.vertical);
+  const nounLower = storefrontCopy(opts.vertical).orderSingular;
+  const isF = nounLower === "solicitud";
+
+  const paymentNote = opts.awaitingVerification
+    ? `<p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
+        Estamos verificando tu comprobante de pago. Te avisamos cuando esté confirmado.
+      </p>`
+    : opts.paymentMethod === "CASH_ON_DELIVERY"
+      ? `<p style="font-size: 14px; color: #6b6b6b;">El pago se cobra al momento de la entrega.</p>`
+      : "";
+
+  const body = `
+    <p>Recibimos ${isF ? "tu" : "tu"} ${nounLower} en <strong>${escapeHtml(opts.storeName)}</strong>.</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0; border: 1px solid #e7e3d8; border-radius: 12px;">
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b;">${noun}</td><td style="padding: 12px 16px; font-size: 14px; font-weight: 600; text-align: right;">#${opts.orderNumber}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Total</td><td style="padding: 12px 16px; font-size: 18px; font-weight: 600; text-align: right; border-top: 1px solid #e7e3d8;">${formatBob(opts.total)}</td></tr>
+    </table>
+    ${paymentNote}
+    <p style="font-size: 13px; color: #6b6b6b;">Puedes seguir el estado de tu ${nounLower} con el botón de abajo.</p>
+  `;
+
+  return {
+    to: opts.to,
+    subject: `${noun} #${opts.orderNumber} recibido · ${safeSubjectField(opts.storeName)}`,
+    html: renderEmail({
+      title: `${isF ? "Solicitud" : "Pedido"} recibid${isF ? "a" : "o"} ✓`,
+      body,
+      ctaText: `Seguir mi ${nounLower}`,
+      ctaUrl: `${appUrl()}/${opts.storeSlug}/orden/${opts.trackingToken}`,
+      footnote: `Este email fue enviado porque realizaste un ${nounLower} en ${opts.storeName} a través de Madriguera Shop.`,
+    }),
+  };
+}
+
+/**
+ * Email al cliente cuando el owner cambia el estado del pedido.
+ * Se envía para CONFIRMED, IN_DELIVERY, DELIVERED y CANCELLED.
+ */
+export function orderStatusChangedCustomerEmail(opts: {
+  to: string;
+  storeName: string;
+  storeSlug: string;
+  orderNumber: number;
+  trackingToken: string;
+  newStatus: "CONFIRMED" | "IN_DELIVERY" | "DELIVERED" | "CANCELLED";
+  cancelReason?: string | null;
+  vertical: StoreVertical;
+}): SendInput {
+  const nounLower = storefrontCopy(opts.vertical).orderSingular;
+  const isF = nounLower === "solicitud";
+
+  const configs = {
+    CONFIRMED: {
+      title: `${isF ? "Solicitud confirmada" : "Pedido confirmado"} ✓`,
+      subject: `Confirmad${isF ? "a" : "o"} · ${isF ? "Solicitud" : "Pedido"} #${opts.orderNumber}`,
+      body: `<p>${isF ? "Tu solicitud" : "Tu pedido"} <strong>#${opts.orderNumber}</strong> en <strong>${escapeHtml(opts.storeName)}</strong> fue confirmad${isF ? "a" : "o"}. Ya lo estamos preparando.</p>`,
+    },
+    IN_DELIVERY: {
+      title: `${isF ? "Tu solicitud está en camino" : "Tu pedido está en camino"} 🛵`,
+      subject: `En camino · ${isF ? "Solicitud" : "Pedido"} #${opts.orderNumber}`,
+      body: `<p>${isF ? "Tu solicitud" : "Tu pedido"} <strong>#${opts.orderNumber}</strong> de <strong>${escapeHtml(opts.storeName)}</strong> ya salió para entregarse. Pronto llega.</p>`,
+    },
+    DELIVERED: {
+      title: `${isF ? "Solicitud entregada" : "Pedido entregado"} 🎉`,
+      subject: `Entregad${isF ? "a" : "o"} · ${isF ? "Solicitud" : "Pedido"} #${opts.orderNumber}`,
+      body: `<p>${isF ? "Tu solicitud" : "Tu pedido"} <strong>#${opts.orderNumber}</strong> de <strong>${escapeHtml(opts.storeName)}</strong> fue entregad${isF ? "a" : "o"}. ¡Gracias por tu compra!</p>`,
+    },
+    CANCELLED: {
+      title: `${isF ? "Solicitud cancelada" : "Pedido cancelado"}`,
+      subject: `Cancelad${isF ? "a" : "o"} · ${isF ? "Solicitud" : "Pedido"} #${opts.orderNumber}`,
+      body: `
+        <p>${isF ? "Tu solicitud" : "Tu pedido"} <strong>#${opts.orderNumber}</strong> en <strong>${escapeHtml(opts.storeName)}</strong> fue cancelad${isF ? "a" : "o"}.</p>
+        ${opts.cancelReason ? `<p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 14px;"><strong>Motivo:</strong> ${escapeHtml(opts.cancelReason)}</p>` : ""}
+        <p style="font-size: 13px; color: #6b6b6b;">Si tienes dudas, contacta directamente a la tienda.</p>
+      `,
+    },
+  };
+
+  const cfg = configs[opts.newStatus];
+
+  return {
+    to: opts.to,
+    subject: cfg.subject,
+    html: renderEmail({
+      title: cfg.title,
+      body: cfg.body,
+      ctaText: `Ver mi ${nounLower}`,
+      ctaUrl: `${appUrl()}/${opts.storeSlug}/orden/${opts.trackingToken}`,
+      footnote: `Este email fue enviado porque tienes un ${nounLower} activo en ${opts.storeName} a través de Madriguera Shop.`,
+    }),
+  };
+}
+
+/**
  * Email al cliente cuando el owner rechaza el pago (ej. comprobante ilegible).
  */
 export function paymentRejectedCustomerEmail(opts: {

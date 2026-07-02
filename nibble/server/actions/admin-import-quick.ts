@@ -38,7 +38,7 @@ export type ImportQuickState = {
 const QUICK_HOST_RE = /(?:https?:\/\/)?cat\.quick\.com\.bo\/([a-z0-9-]+)\/?$/i;
 
 const schema = z.object({
-  sourceUrl: z.string().min(1, "Pegá la URL de la tienda de Quick"),
+  sourceUrl: z.string().min(1, "Pega la URL de la tienda de Quick").max(2048),
   slug: z.string().min(1),
   storeName: z.string().trim().min(2).max(60),
   vertical: z.nativeEnum(StoreVertical),

@@ -102,7 +102,7 @@ export function BannersClient({
       {banners.length === 0 ? (
         <EmptyState
           icon={<Megaphone className="size-8" />}
-          description="Sin banners todavía. Anunciá una promo, un evento o lo que quieras que el cliente vea al entrar a tu tienda."
+          description="Sin banners todavía. Anuncia una promo, un evento o lo que quieras que el cliente vea al entrar a tu tienda."
         />
       ) : (
         <ul className="space-y-3">

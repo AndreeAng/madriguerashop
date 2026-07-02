@@ -81,13 +81,11 @@ export async function requestPasswordResetAction(
   // de envío. No es perfecto (el SMTP del happy path agrega varianza
   // de red) pero cierra el oracle más obvio.
   if (!user || !user.isActive) {
-    console.log("[recovery] no-user-for", ident.kind);
     await hashPassword(`__timing_dummy_${ident.value}__`);
     return { ok: true, noticeKey: "sent" };
   }
 
   if (!user.email) {
-    console.log("[recovery] user-without-email");
     // Devolvemos `sent` (no `no_email`) para no leakear que existe una cuenta
     // sin email — un atacante que prueba teléfonos no debe poder distinguir
     // "no existe la cuenta" de "existe pero es phone-only". Quien realmente
@@ -144,9 +142,7 @@ export async function requestPasswordResetAction(
     }),
   );
 
-  // El audit se emite SIEMPRE (intento de envío). Si SMTP fallara, queda en
-  // `console.error` desde `sendEmailBackground` y Sentry lo recoge; perdemos
-  // el `delivered: true/false` en el audit pero ganamos cerrar el oracle.
+  // El audit se emite siempre, independientemente del resultado SMTP.
   await audit({
     action: "auth.password_reset.requested",
     actorId: user.id,

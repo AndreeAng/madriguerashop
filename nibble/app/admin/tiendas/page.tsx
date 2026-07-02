@@ -235,7 +235,7 @@ export default async function AdminTiendasPage({
                           {s._count.users === 0 && (
                             <span
                               className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700"
-                              title="Esta tienda no tiene owner activo — asigná uno desde el detalle."
+                              title="Esta tienda no tiene owner activo — asigna uno desde el detalle."
                             >
                               Sin owner
                             </span>

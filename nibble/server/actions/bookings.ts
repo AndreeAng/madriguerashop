@@ -10,6 +10,7 @@ import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 import { normalizePhoneBO, PHONE_BO_RE } from "@/lib/auth/identifiers";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { EMAIL_RE } from "@/lib/validation/email";
 import { buildWhatsAppUrl } from "@/lib/utils";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 
@@ -44,7 +45,7 @@ const createSchema = z.object({
     .trim()
     .max(120)
     .refine(
-      (v) => v === "" || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v),
+      (v) => v === "" || EMAIL_RE.test(v),
       "Email inválido",
     )
     .optional()

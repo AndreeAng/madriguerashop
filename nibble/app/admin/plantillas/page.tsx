@@ -43,7 +43,7 @@ export default async function AdminPlantillasPage() {
             <EmptyState
               className="mt-8 border-solid"
               icon={<LayoutIcon className="size-8" />}
-              description="Todavía no hay plantillas. Creá la primera."
+              description="Todavía no hay plantillas. Crea la primera."
             />
           ) : (
             <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">

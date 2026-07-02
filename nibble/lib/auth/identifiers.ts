@@ -3,7 +3,7 @@
  * Username puede ser email o teléfono boliviano (+591XXXXXXXX).
  */
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { EMAIL_RE } from "@/lib/validation/email";
 /**
  * Regex canónica de teléfono boliviano. Acepta `+591XXXXXXXX` o
  * `591XXXXXXXX` (8 dígitos posteriores al código de país).

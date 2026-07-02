@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
 import { db } from "@/lib/db";
-import { pickFirstIp } from "@/lib/security/rateLimit";
+import { pickFirstIp, rateLimit } from "@/lib/security/rateLimit";
 import { hashIp } from "@/lib/crypto/hashIp";
 
 /**
@@ -100,6 +100,16 @@ export async function trackPageView(opts: {
     const ip =
       pickFirstIp(h.get("x-forwarded-for")) ??
       pickFirstIp(h.get("x-real-ip"));
+
+    // Protección contra flood: máx 30 pageviews/minuto por IP+tienda.
+    // Bots que spoofean un UA real y fuerzan mv_consent=yes quedarían
+    // bloqueados antes de llenar la tabla PageView.
+    const rl = await rateLimit(
+      `pageview:${ip ?? "noip"}:${opts.storeId}`,
+      30,
+      60 * 1000,
+    );
+    if (!rl.success) return;
 
     // El middleware ya bootstrappeó estas cookies. Si por algún motivo
     // faltan (request que no pasó por middleware), generamos un token

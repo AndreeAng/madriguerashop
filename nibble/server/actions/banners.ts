@@ -8,6 +8,7 @@ import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 import { deleteBlobIfHosted } from "@/lib/storage/upload";
+import { captureError } from "@/lib/observability/captureError";
 
 export type BannerFormState = {
   ok?: true;
@@ -133,7 +134,7 @@ export async function upsertBannerAction(
       // anterior acumulada en Vercel Blob para siempre.
       const previous = await db.banner.findFirst({
         where: { id: data.id, storeId },
-        select: { imageUrl: true, mobileImageUrl: true },
+        select: { title: true, imageUrl: true, mobileImageUrl: true, linkUrl: true, validFrom: true, validTo: true, isActive: true },
       });
       const updated = await db.banner.updateMany({
         where: { id: data.id, storeId },
@@ -157,7 +158,11 @@ export async function upsertBannerAction(
         action: "banner.updated",
         actorId,
         target: data.id,
-        metadata: { storeId, title: data.title },
+        metadata: {
+          storeId,
+          before: previous ? { title: previous.title, linkUrl: previous.linkUrl, validFrom: previous.validFrom, validTo: previous.validTo, isActive: previous.isActive } : null,
+          after: { title: data.title, linkUrl: data.linkUrl, validFrom: data.validFrom, validTo: data.validTo, isActive: data.isActive },
+        },
       });
     } else {
       const lastSort = await db.banner.aggregate({
@@ -181,7 +186,7 @@ export async function upsertBannerAction(
       });
     }
   } catch (err) {
-    console.error("[banners] upsert failed", err);
+    captureError(err, { action: "banners.upsert", storeId });
     return { error: "No pudimos guardar el banner. Prueba de nuevo." };
   }
 

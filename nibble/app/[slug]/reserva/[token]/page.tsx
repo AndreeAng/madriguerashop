@@ -6,6 +6,7 @@ import { getStorefrontData } from "@/lib/tenant/resolve";
 import { toStoreView } from "@/lib/storefront/adapter";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
 import { formatWaPhone } from "@/lib/utils";
+import { trackPageView } from "@/lib/analytics/track";
 
 export const metadata = {
   title: "Reserva confirmada",
@@ -78,6 +79,8 @@ export default async function ReservaPage({
   ]);
 
   if (!booking || booking.store.slug !== slug || !storeData) notFound();
+
+  void trackPageView({ storeId: booking.storeId, path: `/${slug}/reserva/${token}` });
 
   const store = toStoreView(storeData, { hours: storeData.storeHours });
   const status = STATUS_COPY[booking.status];

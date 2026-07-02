@@ -127,10 +127,23 @@ export async function rateLimit(
     };
   }
 
-  // Fallback in-memory. Si llegamos acá en producción, Upstash NO está
-  // configurado y el limiter es decorativo en serverless — emitimos un
-  // warn único para que se note en Sentry.
+  // Fallback in-memory. En producción serverless sin Upstash el limiter es
+  // decorativo — cada Lambda arranca con el contador en cero y el atacante
+  // distribuye sus requests entre instancias. Fallamos duro en runtime para
+  // que el problema salte inmediatamente (no en el primer brute force).
+  // Excepción: durante el build de Next.js (`NEXT_PHASE=phase-production-build`)
+  // el runtime se levanta sin Redis para tareas no-críticas — no bloqueamos.
   warnIfMisconfiguredOnce();
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.NEXT_PHASE !== "phase-production-build"
+  ) {
+    throw new Error(
+      "[rateLimit] UPSTASH_REDIS_REST_URL no configurado en producción. " +
+        "El rate limiter in-memory no funciona entre lambdas serverless. " +
+        "Configura Upstash (https://upstash.com) antes de desplegar.",
+    );
+  }
 
   const now = Date.now();
   if (++consumeCounter % SWEEP_EVERY === 0) sweepMemory(now);

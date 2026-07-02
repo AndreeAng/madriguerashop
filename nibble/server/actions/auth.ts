@@ -8,12 +8,13 @@ import { isValidIdentifier, normalizeIdentifier } from "@/lib/auth/identifiers";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
+import { MAX_PASSWORD_LENGTH } from "@/lib/constants";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Ingresa tu email o teléfono").refine(isValidIdentifier, {
     message: "Email o teléfono inválido",
   }),
-  password: z.string().min(1, "Ingresa tu contraseña"),
+  password: z.string().min(1, "Ingresa tu contraseña").max(MAX_PASSWORD_LENGTH),
 });
 
 export type LoginState = {

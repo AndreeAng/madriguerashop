@@ -98,7 +98,7 @@ export function MapZoneEditor({
       (err) => {
         setGeoError(
           err.code === err.PERMISSION_DENIED
-            ? "Permiso denegado. Tocá el mapa para marcar el centro manualmente."
+            ? "Permiso denegado. Toca el mapa para marcar el centro manualmente."
             : "No pudimos obtener tu ubicación.",
         );
         setGeoLoading(false);
@@ -133,7 +133,7 @@ export function MapZoneEditor({
 
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-[color:var(--muted)]">
-          Tocá el mapa donde está tu local. El círculo es el área de cobertura.
+          Toca el mapa donde está tu local. El círculo es el área de cobertura.
         </p>
         <button
           type="button"

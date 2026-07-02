@@ -145,7 +145,7 @@ export async function GET(request: Request) {
     });
     console.error("[billing-cron] failed:", err);
     return NextResponse.json(
-      { error: "Cron failed", message },
+      { error: "Cron failed" },
       { status: 500 },
     );
   }

@@ -29,16 +29,16 @@ export default async function AdminImportPage() {
       </p>
       <h1 className="font-display mt-1 text-3xl">Importar tienda de Quick</h1>
       <p className="mt-2 text-sm text-[color:var(--muted)]">
-        Migrá una tienda de <code className="rounded bg-[color:var(--card)] px-1.5 py-0.5 text-xs">cat.quick.com.bo</code>{" "}
+        Migra una tienda de <code className="rounded bg-[color:var(--card)] px-1.5 py-0.5 text-xs">cat.quick.com.bo</code>{" "}
         a Madriguera Shop. Trae categorías, productos, descripciones e imágenes.
         Las variantes/tallas no se importan (Quick las modela como texto
         libre); el owner las agrega después si quiere.
       </p>
 
       <div className="mt-6 rounded-xl border border-[color:var(--color-amber-300)] bg-[color:var(--color-amber-50)] p-3 text-xs text-[color:var(--color-amber-800)]">
-        <strong>Antes de importar:</strong> asegurate de tener autorización
+        <strong>Antes de importar:</strong> asegúrate de tener autorización
         del dueño de la tienda original. Las imágenes y descripciones son
-        contenido del competidor — solo importás cuando el cliente nos pide
+        contenido del competidor — solo importas cuando el cliente nos pide
         migrar a Madriguera.
       </div>
 

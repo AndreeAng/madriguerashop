@@ -62,7 +62,7 @@ export function SeoForm({ store }: { store: Store }) {
           label="Imagen al compartir (Open Graph)"
           kind="banner"
           initialUrl={store.ogImageUrl}
-          hint="La que aparece cuando compartís tu link en WhatsApp/Facebook (1200×630)."
+          hint="La que aparece cuando compartes tu link en WhatsApp/Facebook (1200×630)."
           error={fe.ogImageUrl}
           aspect="wide"
         />

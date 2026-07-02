@@ -59,6 +59,10 @@ function imgSrcSources(): string {
   if (process.env.BLOB_READ_WRITE_TOKEN) {
     sources.push("https://*.public.blob.vercel-storage.com");
   }
+  // Tiles de OpenStreetMap para los mapas de Leaflet (checkout, delivery zones, analytics).
+  // Incluir el dominio base (tile.openstreetmap.org) además del wildcard de subdominios
+  // (a/b/c.tile.openstreetmap.org) — CSP wildcards no cubren el dominio raíz.
+  sources.push("https://tile.openstreetmap.org", "https://*.tile.openstreetmap.org");
   if (process.env.NODE_ENV !== "production") {
     sources.push("https://images.unsplash.com", "https://picsum.photos");
   }

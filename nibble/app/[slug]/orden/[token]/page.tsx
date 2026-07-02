@@ -27,6 +27,7 @@ import {
   PAYMENT_LABELS,
   trackingStepIndex,
 } from "@/lib/orders/status";
+import { trackPageView } from "@/lib/analytics/track";
 
 const STEP_ICONS = {
   PENDING_PAYMENT: Clock,
@@ -103,6 +104,8 @@ export default async function OrderTrackingPage({
   ]);
 
   if (!order || order.store.slug !== slug) notFound();
+
+  void trackPageView({ storeId: order.storeId, path: `/${slug}/orden/${token}` });
   if (!storeData) notFound();
 
   const store = toStoreView(storeData, { hours: storeData.storeHours });
@@ -309,7 +312,7 @@ export default async function OrderTrackingPage({
               </p>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {order.deliveryAddress === "Recojo en local"
-                  ? "Pasá a recoger en este horario."
+                  ? "Pasa a recoger en este horario."
                   : "Te entregamos en este horario."}
               </p>
             </div>

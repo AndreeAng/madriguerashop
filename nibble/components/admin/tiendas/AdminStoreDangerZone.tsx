@@ -214,7 +214,7 @@ function DeleteBlock({
           <strong className="text-[color:var(--color-tomato-700)]">
             No se puede deshacer.
           </strong>{" "}
-          Para suspender temporalmente sin borrar, usá el botón de suspender arriba.
+          Para suspender temporalmente sin borrar, usa el botón de suspender arriba.
         </p>
 
         <div className="rounded-lg border border-[color:var(--color-tomato-500)]/30 bg-[color:var(--color-tomato-500)]/5 p-3">
