@@ -23,7 +23,7 @@ import {
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { audit } from "@/lib/audit/log";
-import { revertOrderImpact } from "@/server/actions/order-management";
+import { revertOrderImpact } from "@/lib/orders/impact";
 import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import {
   clearImpersonatedStore,
