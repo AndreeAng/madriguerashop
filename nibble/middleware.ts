@@ -69,7 +69,25 @@ function imgSrcSources(): string {
   return sources.join(" ");
 }
 
-function buildCsp(nonce: string): string {
+// Rutas prerenderizadas en BUILD (○ static en `next build`). Su HTML —
+// incluidos los scripts inline de hidratación y el `$RC` que intercambia
+// el shell de streaming por el contenido real— se generó SIN conocer el
+// nonce por-request, así que una CSP con nonce los bloquea todos: la
+// landing quedaba clavada en el fallback "Cargando…" para siempre (el
+// E2E de la landing llevaba semanas rojo por esto, y en producción la
+// página más visitada del producto habría nacido rota).
+//
+// Para estas rutas usamos 'unsafe-inline' sin nonce — trade-off
+// consciente: son páginas de marketing/legales que no reflejan input de
+// usuario, así que el XSS reflejado que la CSP estricta mata no existe.
+// Las rutas dinámicas (storefronts, dashboard, admin) se renderizan por
+// request, reciben el nonce vía `x-nonce` y mantienen la CSP estricta.
+//
+// Si agregas otra página estática nueva (`○` en el build output),
+// inclúyela acá o quedará congelada en "Cargando…".
+const STATIC_PRERENDERED_PATHS = new Set(["/", "/terminos", "/privacidad"]);
+
+function buildCsp(nonce: string, mode: "strict" | "static-inline"): string {
   // El tunnelRoute de Sentry (`/monitoring`) envía la mayoría de eventos
   // a través de same-origin, pero Replay y el envelope inicial pueden
   // golpear *.ingest.sentry.io directamente. Sin estos hosts en
@@ -79,7 +97,10 @@ function buildCsp(nonce: string): string {
     : "'self'";
   const directives: Record<string, string> = {
     "default-src": "'self'",
-    "script-src": `'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    "script-src":
+      mode === "static-inline"
+        ? "'self' 'unsafe-inline'"
+        : `'self' 'nonce-${nonce}' 'strict-dynamic'`,
     "style-src": "'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src": "'self' https://fonts.gstatic.com data:",
     "img-src": imgSrcSources(),
@@ -103,7 +124,10 @@ export default auth((req) => {
   // CSP nonce por request — debe generarse ANTES del NextResponse para
   // poder pasarlo via x-nonce a Next.
   const nonce = crypto.randomUUID().replace(/-/g, "");
-  const csp = buildCsp(nonce);
+  const cspMode = STATIC_PRERENDERED_PATHS.has(req.nextUrl.pathname)
+    ? "static-inline"
+    : "strict";
+  const csp = buildCsp(nonce, cspMode);
 
   // Inyectar nonce en request headers — Next lo lee internamente y lo
   // aplica a sus scripts. Server components también pueden leerlo via
