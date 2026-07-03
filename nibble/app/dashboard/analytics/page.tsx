@@ -21,6 +21,7 @@ import { KpiCard } from "@/components/shared/KpiCard";
 import { formatBob, formatBobAmount } from "@/lib/utils";
 import { dashboardCopy, type DashboardCopy } from "@/lib/dashboard/copy";
 import { dateInBolivia, inBolivia } from "@/lib/booking/timezone";
+import { shortDate, shortDateWithWeekday } from "@/lib/i18n/dates";
 
 export const metadata = { title: "Analytics · Madriguera Shop" };
 
@@ -698,38 +699,11 @@ function pctDelta(current: number, previous: number): number | null {
   return ((current - previous) / previous) * 100;
 }
 
-// Nombres hardcoded de día/mes para formateo DETERMINISTA. `toLocaleDateString`
-// con "es-BO" produce strings ligeramente distintos entre Node (server) y
-// V8 del browser (caps, separadores, no-break-space), causando hydration
-// mismatch en React. Sin librerías ni globalización runtime evitamos
-// ese problema entero.
-const WEEKDAY_ES = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
-const MONTH_ES = [
-  "ene",
-  "feb",
-  "mar",
-  "abr",
-  "may",
-  "jun",
-  "jul",
-  "ago",
-  "sep",
-  "oct",
-  "nov",
-  "dic",
-];
-
-/** "10 abr" — sin día de semana. */
-function shortDate(input: string | Date): string {
-  const d = typeof input === "string" ? new Date(input) : input;
-  return `${d.getDate()} ${MONTH_ES[d.getMonth()] ?? ""}`;
-}
-
-/** "vie, 10 abr" — con día de semana. Usado en tooltips del chart. */
-function shortDateWithWeekday(input: string | Date): string {
-  const d = typeof input === "string" ? new Date(input) : input;
-  return `${WEEKDAY_ES[d.getDay()] ?? ""}, ${d.getDate()} ${MONTH_ES[d.getMonth()] ?? ""}`;
-}
+// NOTA: `shortDate`/`shortDateWithWeekday` vivían duplicadas acá con
+// `getDate()`/`getDay()` del proceso — en Vercel (UTC) mostraban el día
+// equivocado para fechas cerca de medianoche Bolivia. Se usan las de
+// lib/i18n/dates, que convierten a hora Bolivia y son deterministas
+// cross-runtime (sin toLocaleDateString → sin hydration mismatch).
 
 /** Rellena buckets de tamaño fijo (24h / 7 días). Postgres devuelve solo
  *  los slots con datos; el chart necesita el array completo en orden para

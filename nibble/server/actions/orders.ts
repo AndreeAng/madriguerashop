@@ -1,6 +1,5 @@
 "use server";
 
-import crypto from "node:crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
@@ -33,6 +32,7 @@ import { captureError } from "@/lib/observability/captureError";
 import { EMAIL_RE } from "@/lib/validation/email";
 import { computeOrderPricing, type CouponForPricing } from "@/lib/orders/pricing";
 import { validateCouponForOrder } from "@/lib/orders/coupon";
+import { generateTrackingToken } from "@/lib/crypto/tracking-token";
 
 // ============== Tipos ==============
 
@@ -150,11 +150,6 @@ const createOrderSchema = z
   );
 
 // ============== Helpers ==============
-
-function generateTrackingToken(): string {
-  // 22 caracteres URL-safe ~= 132 bits de entropía
-  return crypto.randomBytes(16).toString("base64url");
-}
 
 function buildWhatsAppMessage(opts: {
   storeName: string;

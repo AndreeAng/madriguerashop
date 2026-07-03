@@ -24,26 +24,6 @@ export function formatBobAmount(amount: number | { toNumber: () => number }): st
   });
 }
 
-/** Formato corto "13/05/2026 14:32" para tablas y eventos del dashboard. */
-export function formatDateTimeShort(d: Date): string {
-  return d.toLocaleString("es-BO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-/** Formato corto "13/05/2026" (sin hora). */
-export function formatDateShort(d: Date): string {
-  return d.toLocaleDateString("es-BO", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 /**
  * Formato largo "lunes, 13 de mayo, 14:32" — para mensajes al cliente
  * (WhatsApp, email, página de tracking). Tiene weekday + mes nombrado:
@@ -57,12 +37,6 @@ export function formatDateLong(d: Date): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
-
-/** Formatea un número entero/decimal con separadores de miles es-BO.
- *  Para moneda, usar `formatBob`/`formatBobAmount` en su lugar. */
-export function formatNumber(n: number): string {
-  return n.toLocaleString("es-BO");
 }
 
 /** Construye un link `https://wa.me/<phone>?text=<encoded>` listo para

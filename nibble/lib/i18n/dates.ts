@@ -63,7 +63,7 @@ export const MONTH_ES_SHORT = [
 
 /** Meses completos en minúscula — usado por `longDate` para que "12 de may"
  *  no aparezca en emails y tracking del cliente final. */
-export const MONTH_ES_LONG = [
+const MONTH_ES_LONG = [
   "enero",
   "febrero",
   "marzo",

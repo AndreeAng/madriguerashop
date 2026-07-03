@@ -350,24 +350,6 @@ export async function fetchImageBuffer(url: string): Promise<ImageFetchResult> {
   }
 }
 
-/**
- * Convierte un Buffer en `File` para alimentar el pipeline de `saveImage`.
- * Necesario porque `saveImage` toma `File` del FormData del browser; acá
- * el "archivo" viene de un download HTTP en el server.
- */
-export function bufferToFile(
-  buffer: Buffer,
-  filename: string,
-  mime: string,
-): File {
-  // Node 20+ tiene `File` global. `Buffer` extiende `Uint8Array` pero TS lo
-  // tipa con `ArrayBufferLike`, incompatible con `BlobPart` cuando el target
-  // buffer es `ArrayBuffer` puro — el cast a `Uint8Array` lo alinea sin
-  // copia de datos (misma memoria).
-  const bytes = new Uint8Array(buffer);
-  return new File([bytes], filename, { type: mime });
-}
-
 /** Quick guarda algunas URLs como `null` literal string o vacías. */
 function cleanUrl(value: string | null): string | null {
   if (!value) return null;

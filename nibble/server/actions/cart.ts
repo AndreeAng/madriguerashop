@@ -43,7 +43,7 @@ export type CartLine = {
  * también del DB (lazy cleanup) para que el flag no se reactive en cada
  * lectura sucesiva.
  */
-export type CartNotice = "items_removed";
+type CartNotice = "items_removed";
 
 export type CartSnapshot = {
   cartId: string;
@@ -320,50 +320,11 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   return getCartSnapshot(store.slug);
 }
 
-const updateQtySchema = z.object({
-  storeSlug: z.string().min(1),
-  cartItemId: z.string().min(1),
-  quantity: z.number().int().min(0).max(99),
-});
-
-export async function updateCartItemQuantity(input: z.input<typeof updateQtySchema>) {
-  const data = updateQtySchema.parse(input);
-
-  const store = await getStoreBySlug(data.storeSlug);
-  if (!store) throw new Error("Tienda no encontrada");
-
-  const item = await db.cartItem.findUnique({
-    where: { id: data.cartItemId },
-    include: { cart: true },
-  });
-  if (!item || item.cart.storeId !== store.id) {
-    throw new Error("Item no encontrado");
-  }
-
-  // Validar guest token coincide
-  const token = await readGuestToken();
-  if (item.cart.guestToken !== token) throw new Error("No autorizado");
-
-  if (data.quantity === 0) {
-    await db.cartItem.delete({ where: { id: item.id } });
-  } else {
-    await db.cartItem.update({
-      where: { id: item.id },
-      data: { quantity: data.quantity },
-    });
-  }
-
-  revalidatePath(`/${store.slug}`);
-  return getCartSnapshot(store.slug);
-}
-
-export async function removeCartItem(input: { storeSlug: string; cartItemId: string }) {
-  return updateCartItemQuantity({
-    storeSlug: input.storeSlug,
-    cartItemId: input.cartItemId,
-    quantity: 0,
-  });
-}
+// NOTA: existieron `updateCartItemQuantity` / `removeCartItem` / `clearCart`
+// (edición del carrito con validación de guest token) pero ninguna UI las
+// consume — el flujo actual es PDP → "Agregar" → checkout directo, sin
+// pantalla de edición de carrito. Eliminadas; si se agrega esa UI,
+// recuperarlas de git (validaban tenant + guest token correctamente).
 
 export async function getCartSnapshot(storeSlug: string): Promise<CartSnapshot | null> {
   const store = await getStoreBySlug(storeSlug);
@@ -382,19 +343,3 @@ export async function getCartSnapshot(storeSlug: string): Promise<CartSnapshot |
   return buildSnapshot(cart, store.slug);
 }
 
-export async function clearCart(storeSlug: string) {
-  const store = await getStoreBySlug(storeSlug);
-  if (!store) throw new Error("Tienda no encontrada");
-
-  const token = await readGuestToken();
-  if (!token) return null;
-
-  const cart = await db.cart.findFirst({
-    where: { storeId: store.id, guestToken: token },
-  });
-  if (!cart) return null;
-
-  await db.cartItem.deleteMany({ where: { cartId: cart.id } });
-  revalidatePath(`/${store.slug}`);
-  return null;
-}

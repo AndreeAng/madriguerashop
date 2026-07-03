@@ -31,10 +31,8 @@ export function AdminCreateStoreForm({
   const suggestedSlug = useMemo(() => slugify(storeName), [storeName]);
   const slug = slugTouched ? slugValue : suggestedSlug;
 
-  // Post-éxito: redirige al detalle. Lo manejamos client-side (con router)
-  // porque la action devuelve `createdSlug` y queremos navegar a
-  // /admin/tiendas/<id> usando una query adicional. Si quieres simplificar,
-  // se puede usar `adminCreateStoreAndRedirect` del módulo de actions.
+  // Post-éxito: la action devuelve `createdSlug` y navegamos client-side
+  // al listado filtrado por ese slug (la action no expone el id).
   useEffect(() => {
     if (state.ok && state.createdSlug) {
       router.push(`/admin/tiendas?q=${state.createdSlug}`);

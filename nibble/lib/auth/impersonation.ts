@@ -49,7 +49,6 @@ export async function readImpersonatedStoreId(): Promise<string | null> {
   return c.get(COOKIE_NAME)?.value ?? null;
 }
 
-// El nombre de la cookie se exporta desde `./impersonation-shared` (módulo
-// neutro, sin "server-only") para que Edge/middleware pueda importarlo.
-// Re-exportamos acá para compatibilidad si algún Node import lo busca acá.
-export { IMPERSONATION_COOKIE_NAME } from "./impersonation-shared";
+// El nombre de la cookie vive en `./impersonation-shared` (módulo neutro,
+// sin "server-only") para que Edge/middleware pueda importarlo — impórtalo
+// de ahí. (Hubo un re-export "por compatibilidad" acá que nadie usaba.)

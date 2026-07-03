@@ -17,7 +17,7 @@
 
 const BOM_RE = /^﻿/;
 
-export type CsvRow = Record<string, string>;
+type CsvRow = Record<string, string>;
 export type ParseResult = {
   rows: CsvRow[];
   headers: string[];

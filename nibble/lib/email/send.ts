@@ -24,7 +24,7 @@ type SendResult =
  * En producción, SMTP_HOST/USER/PASS deben estar seteados o los emails
  * críticos (recovery, verificación) van a fallar silenciosamente.
  */
-export async function sendEmail(input: SendInput): Promise<SendResult> {
+async function sendEmail(input: SendInput): Promise<SendResult> {
   const transport = getMailTransport();
   const from = input.from ?? mailFrom();
 

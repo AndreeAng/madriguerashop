@@ -12,7 +12,7 @@
  * proceso, y los slots aparecían 4 h desfasados en producción.
  */
 
-export const BOT_OFFSET_HOURS = -4;
+const BOT_OFFSET_HOURS = -4;
 
 /**
  * Construye un `Date` que representa "esta hora-pared en Bolivia".
@@ -108,6 +108,22 @@ export function parseBoliviaDateTime(s: string): Date | null {
     return null;
   }
   return d;
+}
+
+/**
+ * Inversa de `parseBoliviaDateTime`: convierte un instante (Date/ISO) a
+ * "YYYY-MM-DDTHH:mm" en hora-pared BOLIVIA, el formato que espera un
+ * `<input type="datetime-local">`. Determinística respecto a la TZ del
+ * browser/proceso — imprescindible porque el server parsea ese mismo
+ * string como hora Bolivia: si el form lo renderizara con la TZ del
+ * browser, el round-trip editar→guardar correría la hora.
+ *
+ * Usada por los forms de vigencia (cupones, banners, popups).
+ */
+export function toBoliviaDatetimeLocal(input: Date | string): string {
+  const b = inBolivia(typeof input === "string" ? new Date(input) : input);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${b.year}-${pad(b.month + 1)}-${pad(b.day)}T${pad(b.hours)}:${pad(b.minutes)}`;
 }
 
 /**

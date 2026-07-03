@@ -657,25 +657,6 @@ export async function adminExitStoreAction(): Promise<void> {
   redirect("/admin/tiendas");
 }
 
-// ============== Redirect post-create ==============
-// Wrapper que combina la action con un redirect al detalle. Útil para forms
-// que no quieren manejar el estado de "ok+slug" del lado cliente.
-export async function adminCreateStoreAndRedirect(
-  prev: AdminCreateStoreState,
-  formData: FormData,
-): Promise<AdminCreateStoreState> {
-  const result = await adminCreateStoreAction(prev, formData);
-  if (result.ok && result.createdSlug) {
-    // Buscamos el id por slug porque la action no lo expone (devuelve slug).
-    const store = await db.store.findUnique({
-      where: { slug: result.createdSlug },
-      select: { id: true },
-    });
-    if (store) redirect(`/admin/tiendas/${store.id}`);
-  }
-  return result;
-}
-
 // ============== Suspender / Reactivar tienda ==============
 //
 // Override manual del super admin. Para flujo automático por mora ver

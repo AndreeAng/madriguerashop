@@ -45,7 +45,7 @@ export function mailFrom(): string {
   return process.env.SMTP_FROM || `Madriguera Shop <no-reply@${appHostname()}>`;
 }
 
-export function appHostname(): string {
+function appHostname(): string {
   // `||` para que APP_URL="" no quede como string vacío.
   const url = process.env.APP_URL || "http://localhost:3000";
   try {

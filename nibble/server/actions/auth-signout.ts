@@ -26,9 +26,9 @@ import { audit } from "@/lib/audit/log";
  * tienda") no aparecía en el trail forense.
  */
 export async function signOutAction(): Promise<void> {
+  const session = await auth();
   const impersonatedStoreId = await readImpersonatedStoreId();
   if (impersonatedStoreId) {
-    const session = await auth();
     await audit({
       action: "saas.store_impersonation_ended",
       actorId: session?.user?.id ?? null,
@@ -36,6 +36,12 @@ export async function signOutAction(): Promise<void> {
       metadata: { via: "signout" },
     });
   }
+  // Trail de logout siempre — antes vivía en un `logoutAction` duplicado
+  // (server/actions/auth.ts) que ninguna UI consumía.
+  await audit({
+    action: "auth.logout",
+    actorId: session?.user?.id ?? null,
+  });
   await clearImpersonatedStore();
   await signOut({ redirectTo: "/" });
 }

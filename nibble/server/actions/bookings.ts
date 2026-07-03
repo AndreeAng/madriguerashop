@@ -1,6 +1,5 @@
 "use server";
 
-import crypto from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { BookingStatus, Prisma } from "@prisma/client";
@@ -15,6 +14,7 @@ import { buildWhatsAppUrl } from "@/lib/utils";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 import { getAvailableSlots } from "@/lib/booking/slots";
 import { ymdLocal } from "@/lib/i18n/dates";
+import { generateTrackingToken } from "@/lib/crypto/tracking-token";
 
 export type CreateBookingState = {
   ok?: { trackingToken: string; whatsappUrl: string };
@@ -55,9 +55,6 @@ const createSchema = z.object({
   notes: z.string().trim().max(500).optional().default(""),
 });
 
-function generateTrackingToken(): string {
-  return crypto.randomBytes(16).toString("base64url");
-}
 
 // ============== Crear reserva (cliente público) ==============
 

@@ -76,18 +76,8 @@ export function StatusBadge({
   return null;
 }
 
-/** Botón de submit con spinner. Necesita estar dentro de un <form>. */
-export function SaveButton({ pending, label = "Guardar cambios" }: { pending: boolean; label?: string }) {
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="press inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--color-bark-900)] px-5 py-2.5 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)] disabled:cursor-not-allowed disabled:opacity-60"
-    >
-      {pending ? "Guardando…" : label}
-    </button>
-  );
-}
+// (Hubo un `SaveButton` acá, duplicado de `components/ui/SubmitButton` que
+// es el que usan todos los forms — eliminado.)
 
 /** Input de texto reutilizable con error/hint y aria. */
 export function TextInput({

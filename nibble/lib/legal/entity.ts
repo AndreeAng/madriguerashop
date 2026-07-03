@@ -5,7 +5,7 @@
  * banner de "borrador" mientras alguno de estos campos esté vacío.
  */
 
-export type LegalEntity = {
+type LegalEntity = {
   /** Razón social registrada. */
   name: string;
   /** Dirección legal (calle, número, ciudad). */
@@ -24,7 +24,7 @@ export type LegalEntity = {
  * valor viejo hasta el próximo deploy. Con función, cada request lee
  * el `process.env` actual.
  */
-export function getLegalEntity(): LegalEntity {
+function getLegalEntity(): LegalEntity {
   return {
     name: process.env.LEGAL_ENTITY_NAME ?? "",
     address: process.env.LEGAL_ENTITY_ADDRESS ?? "",

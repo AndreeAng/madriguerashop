@@ -3,7 +3,7 @@
 import { z } from "zod";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { AuthError } from "next-auth";
-import { signIn, signOut } from "@/auth";
+import { signIn } from "@/auth";
 import { isValidIdentifier, normalizeIdentifier } from "@/lib/auth/identifiers";
 import { audit } from "@/lib/audit/log";
 import { rateLimit, getClientIp, rateLimitErrorMessage } from "@/lib/security/rateLimit";
@@ -94,7 +94,6 @@ export async function loginAction(_prev: LoginState, formData: FormData): Promis
   return {};
 }
 
-export async function logoutAction() {
-  await audit({ action: "auth.logout" });
-  await signOut({ redirectTo: "/" });
-}
+// NOTA: el logout vive en `auth-signout.ts` (signOutAction) — acá existía
+// un `logoutAction` duplicado que ninguna UI usaba; su audit de
+// "auth.logout" se movió a signOutAction al eliminarlo.

@@ -17,30 +17,15 @@ export const getStoreBySlug = cache(async (slug: string): Promise<Store | null> 
 });
 
 /**
- * Resuelve y valida que la tienda esté visible al público.
- * Devuelve `null` si: no existe, está suspendida o cancelada.
- * Permite ACTIVE y PAST_DUE.
+ * Resuelve la store visible al público (excluye SUSPENDED/CANCELLED, permite
+ * ACTIVE y PAST_DUE) con las relaciones que el storefront necesita
+ * (template, hours, plan). Devuelve `null` si no existe o está bloqueada.
  *
- * IMPORTANTE: el caller debe llamar `notFound()` si devuelve null. Antes
- * esta función llamaba `notFound()` internamente, pero Next 15 tiene un
- * quirk: `notFound()` dentro de un `cache()` wrapper no propaga el status
- * 404 correctamente — el not-found.tsx renderea OK pero el response queda
- * en 200 (mal para SEO; Google podría indexar slugs inexistentes como
+ * IMPORTANTE: el caller debe llamar `notFound()` si devuelve null. Next 15
+ * tiene un quirk: `notFound()` dentro de un `cache()` wrapper no propaga el
+ * status 404 correctamente — el not-found.tsx renderea OK pero el response
+ * queda en 200 (mal para SEO; Google podría indexar slugs inexistentes como
  * páginas válidas). Mover `notFound()` al caller restaura el 404 real.
- */
-export const getPublicStoreBySlug = cache(async (slug: string): Promise<Store | null> => {
-  const store = await getStoreBySlug(slug);
-  if (!store) return null;
-  if (BLOCKED_STATUSES.includes(store.status)) return null;
-  return store;
-});
-
-/**
- * Versión que devuelve la store con relaciones útiles para el storefront
- * (template, hours). Solo para páginas server-rendered.
- *
- * Mismo contrato que `getPublicStoreBySlug`: devuelve `null` si no
- * existe o está bloqueada. El caller maneja `notFound()`.
  */
 export const getStorefrontData = cache(async (slug: string) => {
   const store = await db.store.findUnique({

@@ -9,7 +9,7 @@ import { getStoreSlugById } from "@/lib/tenant/resolve";
 import { slugify, validateSlug } from "@/lib/validation/slug";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { audit } from "@/lib/audit/log";
-import { INVALID_INPUT_ERROR, type ActionState } from "@/lib/validation/actionState";
+import { type ActionState } from "@/lib/validation/actionState";
 import { isAcceptedUploadUrl } from "@/lib/storage/blob";
 
 // ============== Schemas ==============
@@ -228,51 +228,6 @@ export async function toggleCategoryVisibilityAction(formData: FormData): Promis
   return { ok: true };
 }
 
-// ============== Reorder ==============
-
-const reorderSchema = z.object({
-  ids: z.array(z.string().min(1)).min(1),
-});
-
-export async function reorderCategoriesAction(input: {
-  ids: string[];
-}): Promise<ActionState> {
-  const { storeId, userId } = await requireOwnerOnlyIds();
-  const parsed = reorderSchema.safeParse(input);
-  if (!parsed.success) return { error: INVALID_INPUT_ERROR };
-
-  // Validar que todas las IDs son de esta tienda
-  const found = await db.category.findMany({
-    where: { id: { in: parsed.data.ids }, storeId },
-    select: { id: true },
-  });
-  if (found.length !== parsed.data.ids.length) {
-    return { error: "Una o más categorías no pertenecen a tu tienda" };
-  }
-
-  // Advisory lock per-tenant: dos reorders simultáneos (dos pestañas, dos
-  // drag-drops rápidos) sin lock pueden intercalar sus N updates y dejar
-  // sortOrder mezclados. El lock se libera al commit/rollback.
-  await db.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(
-      `SELECT pg_advisory_xact_lock(42, hashtext($1))`,
-      `category-reorder:${storeId}`,
-    );
-    for (let i = 0; i < parsed.data.ids.length; i++) {
-      const id = parsed.data.ids[i]!;
-      await tx.category.update({
-        where: { id },
-        data: { sortOrder: i },
-      });
-    }
-  });
-
-  invalidate(await getStoreSlugById(storeId));
-  await audit({
-    action: "category.reordered",
-    actorId: userId,
-    storeId,
-    metadata: { count: parsed.data.ids.length },
-  });
-  return { ok: true };
-}
+// NOTA: existió `reorderCategoriesAction` (drag-drop de sortOrder con
+// advisory lock) pero ninguna UI la consumía — eliminada. Si se agrega
+// reordenamiento al dashboard, recuperarla de git y conectar el drag-drop.

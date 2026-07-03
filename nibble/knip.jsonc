@@ -1,0 +1,28 @@
+{
+  "$schema": "https://unpkg.com/knip@latest/schema.json",
+  // Los ignores codifican decisiones DELIBERADAS, no descuidos:
+  //  - lib/billing/siat/** + encrypt.ts: scaffold planeado de facturación
+  //    electrónica (ver lib/billing/siat/README.md). Tiene unit tests.
+  //  - tests/manual/**: flujo E2E local con config propia, fuera de CI.
+  //  - tests/stubs/**: el alias `server-only` de vitest.config lo consume.
+  //  - scripts/prepare.mjs: hook `prepare` de npm (husky).
+  // Si `npx knip` reporta algo FUERA de esta lista, es código muerto real
+  // — bórralo o justifica agregándolo acá.
+  "ignore": [
+    "lib/billing/siat/**",
+    "lib/crypto/encrypt.ts",
+    "tests/manual/**",
+    "tests/stubs/**",
+    "playwright.manual.config.ts",
+    // Referenciado por URL string en app/layout.tsx (<script src=...>),
+    // invisible para el grafo de imports.
+    "public/**"
+  ],
+  "ignoreDependencies": [
+    // Consumidas por hooks de husky/commitlint, invisibles para knip.
+    "@commitlint/cli",
+    "lint-staged",
+    // Consumida por eslint.config.mjs vía FlatCompat (resolución dinámica).
+    "eslint-config-next"
+  ]
+}

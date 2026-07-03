@@ -8,7 +8,7 @@ import "server-only";
  * Fallar-seguro: devuelve null si el token no está o no matchea,
  * y los predicados de URL rechazan cualquier URL absoluta en ese caso.
  */
-export function getBlobHostname(): string | null {
+function getBlobHostname(): string | null {
   const token = process.env.BLOB_READ_WRITE_TOKEN;
   if (!token) return null;
   const m = token.match(/^vercel_blob_rw_([A-Za-z0-9]+)_/);
