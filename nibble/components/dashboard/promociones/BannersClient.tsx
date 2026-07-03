@@ -21,6 +21,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { LinkTargetPicker } from "@/components/dashboard/promociones/LinkTargetPicker";
+import { inBolivia } from "@/lib/booking/timezone";
 
 /** Datos que el LinkTargetPicker necesita para armar el dropdown de
  *  destinos (categorías + productos + WhatsApp del local). */
@@ -517,11 +518,13 @@ function Field({
 
 // ============== Helpers ==============
 
-/** Convierte ISO UTC → "YYYY-MM-DDTHH:mm" en local time para datetime-local. */
+/** Convierte ISO UTC → "YYYY-MM-DDTHH:mm" en hora BOLIVIA para datetime-local.
+ *  El server parsea este valor como hora Bolivia (parseBoliviaDateTime), así
+ *  que renderizarlo con la TZ del browser rompía el round-trip editar→guardar. */
 function toLocalInput(iso: string): string {
-  const d = new Date(iso);
+  const b = inBolivia(new Date(iso));
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${b.year}-${pad(b.month + 1)}-${pad(b.day)}T${pad(b.hours)}:${pad(b.minutes)}`;
 }
 
 /** El banner está "vivo" ahora si está activo Y dentro de la ventana de fechas. */

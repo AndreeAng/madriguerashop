@@ -19,6 +19,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ErrorAlert } from "@/components/ui/Alert";
+import { inBolivia } from "@/lib/booking/timezone";
 import { LinkTargetPicker } from "@/components/dashboard/promociones/LinkTargetPicker";
 import type { PickerContext } from "@/components/dashboard/promociones/BannersClient";
 
@@ -550,10 +551,13 @@ function TextareaField({
   );
 }
 
+// Renderiza en hora BOLIVIA (el server parsea el datetime-local como hora
+// Bolivia — ver parseBoliviaDateTime); con TZ del browser el round-trip
+// editar→guardar corría la ventana de vigencia.
 function toLocalInput(iso: string): string {
-  const d = new Date(iso);
+  const b = inBolivia(new Date(iso));
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${b.year}-${pad(b.month + 1)}-${pad(b.day)}T${pad(b.hours)}:${pad(b.minutes)}`;
 }
 
 function isLiveNow(p: Popup): boolean {

@@ -9,6 +9,7 @@ import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 import { deleteBlobIfHosted } from "@/lib/storage/upload";
 import { captureError } from "@/lib/observability/captureError";
+import { parseBoliviaDateTime } from "@/lib/booking/timezone";
 
 export type BannerFormState = {
   ok?: true;
@@ -81,10 +82,12 @@ const baseSchema = z
     }
   });
 
+// El form envía `datetime-local` naive (hora-pared BOLIVIA). `new Date(v)`
+// lo interpretaba con la TZ del proceso — en Vercel (UTC) la vigencia del
+// banner quedaba corrida 4 h, con drift acumulativo en cada edición.
 function parseDate(v: string): Date | null {
   if (!v) return null;
-  const d = new Date(v);
-  return Number.isFinite(d.getTime()) ? d : null;
+  return parseBoliviaDateTime(v);
 }
 
 // ============== Crear / actualizar ==============

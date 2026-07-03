@@ -20,6 +20,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { formatBob } from "@/lib/utils";
+import { inBolivia } from "@/lib/booking/timezone";
 
 type Coupon = {
   id: string;
@@ -556,10 +557,14 @@ function SelectField({
 
 // ============== Helpers de fecha ==============
 
+// Renderiza el instante guardado como hora-pared BOLIVIA (no la TZ del
+// browser): el server parsea el datetime-local como hora Bolivia
+// (parseBoliviaDateTime), así que el form debe mostrarlo en la misma
+// referencia o el round-trip editar→guardar corre la ventana de vigencia.
 function toLocalInput(iso: string): string {
-  const d = new Date(iso);
+  const b = inBolivia(new Date(iso));
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${b.year}-${pad(b.month + 1)}-${pad(b.day)}T${pad(b.hours)}:${pad(b.minutes)}`;
 }
 
 function formatDate(iso: string): string {

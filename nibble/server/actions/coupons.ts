@@ -9,6 +9,7 @@ import { audit } from "@/lib/audit/log";
 import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
 import { captureError } from "@/lib/observability/captureError";
+import { parseBoliviaDateTime } from "@/lib/booking/timezone";
 
 export type CouponFormState = {
   ok?: true;
@@ -131,6 +132,20 @@ export async function upsertCouponAction(
   }
   const data = parsed.data;
 
+  // El form envía `datetime-local` naive ("2026-07-02T10:00") que representa
+  // hora-pared BOLIVIA. Parsearlo con `new Date(...)` usaba la TZ del proceso:
+  // en Vercel (UTC) la ventana quedaba corrida 4 h, y como el form de edición
+  // re-renderizaba el valor corrido, cada guardado la corría 4 h MÁS
+  // (drift acumulativo). Mismo fix que booking-blocks: parseBoliviaDateTime.
+  const validFrom = parseBoliviaDateTime(data.validFrom);
+  const validTo = parseBoliviaDateTime(data.validTo);
+  if (!validFrom) {
+    return { fieldErrors: { validFrom: "Fecha inválida" } };
+  }
+  if (!validTo) {
+    return { fieldErrors: { validTo: "Fecha inválida" } };
+  }
+
   const payload = {
     code: data.code,
     description: data.description || null,
@@ -148,8 +163,8 @@ export async function upsertCouponAction(
         : null,
     usageLimit: data.usageLimit,
     usageLimitPerUser: data.usageLimitPerUser,
-    validFrom: new Date(data.validFrom),
-    validTo: new Date(data.validTo),
+    validFrom,
+    validTo,
     isActive: data.isActive,
   };
 
