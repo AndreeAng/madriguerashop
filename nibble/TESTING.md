@@ -85,6 +85,32 @@ Neon** vía el secret `TEST_DATABASE_URL`. Setup one-time:
 Sin el secret, el job falla con un mensaje claro desde
 `tests/integration/setup.ts`.
 
+## Flujo manual completo (no corre en CI)
+
+Suite Playwright aparte que recorre la app entera como un humano contra el
+server local: superadmin crea una tienda de test → el owner la configura
+completa (horarios nocturnos, delivery, QR, categorías, productos, banner,
+popup, cupones) → un cliente hace 5 pedidos con todas las variantes
+(delivery/pickup, efectivo/QR con comprobante, con/sin cupón, programado)
+verificando montos exactos → el owner verifica el pago QR.
+
+```bash
+# 1. App corriendo en :3000 (build de producción recomendado)
+RATE_LIMIT_ALLOW_IN_MEMORY=true npm run build && npm run start
+
+# 2. Generar la imagen de prueba para uploads (una vez)
+node tests/manual/make-img.mjs
+
+# 3. Correr el flujo (~3 min; screenshots en tests/manual/shots/)
+npx playwright test -c playwright.manual.config.ts
+
+# 4. Limpiar las tiendas kiosko-test-* que cada corrida deja en la DB local
+node tests/manual/cleanup-test-stores.mjs
+```
+
+Cada corrida crea una tienda con slug único (`kiosko-test-<sufijo>`) a
+propósito, para que las corridas no colisionen — por eso existe el cleanup.
+
 ## Estructura
 
 ```
@@ -96,7 +122,11 @@ tests/
     billing.test.ts
     coupon-toctou.test.ts
     setup.ts      # valida TEST_DATABASE_URL
-  e2e/            # *.spec.ts — Playwright
-    checkout.spec.ts
+  e2e/            # *.spec.ts — Playwright (CI)
+    checkout.spec.ts           # incluye checkout con cupón WINGS10
     storefront.spec.ts
+    dashboard.spec.ts
+  manual/         # *.spec.ts — Playwright (solo local, config propia)
+    flujo-completo.spec.ts     # superadmin → tienda entera → 5 pedidos
+    cleanup-test-stores.mjs
 ```

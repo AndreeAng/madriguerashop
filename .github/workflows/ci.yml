@@ -19,7 +19,9 @@ permissions:
   contents: read
 
 env:
-  NODE_VERSION: "20"
+  # 22 = LTS actual; GitHub deprecó Node 20 en runners (sep-2025) y las
+  # actions ya se fuerzan a 24. Alinea además con el dev local (22.x).
+  NODE_VERSION: "22"
   # NOTA: GitHub Actions no permite referenciar `${{ env.* }}` desde el
   # `env:` de un job (sólo desde steps y `run:`). Los valores ficticios
   # del CI (AUTH_SECRET, APP_URL, DATABASE_URL, ENCRYPTION_KEY) viven

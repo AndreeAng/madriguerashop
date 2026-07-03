@@ -438,6 +438,16 @@ const demoStores: DemoStoreSpec[] = [
     deliveryEnabled: true,
     pickupEnabled: true,
     hours: { openDays: ALL_DAYS, open: "11:00", close: "23:00" },
+    // WINGS10 lo usa el E2E de checkout con cupón (tests/e2e/checkout.spec.ts)
+    // — vigencia dinámica de 30 días como todos los cupones del seed.
+    coupons: [
+      {
+        code: "WINGS10",
+        description: "10% de descuento — cupón demo",
+        type: "PERCENTAGE",
+        value: 10,
+      },
+    ],
     categories: [
       { name: "Wings", slug: "wings" },
       { name: "Combos", slug: "combos" },
