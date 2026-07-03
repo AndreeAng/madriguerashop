@@ -213,9 +213,9 @@ test("flujo completo: superadmin → tienda completa → 5 pedidos", async ({ br
     await admin.locator('select[name="vertical"]').selectOption("RESTAURANT");
     // index 0 es el placeholder deshabilitado; 1 = Starter.
     await admin.locator('select[name="planSlug"]').selectOption({ index: 1 });
-    // El form del admin usa input plano con formato completo +591XXXXXXXX
-    // (a diferencia del checkout, que usa PhoneInputBO con prefijo sticky).
-    await admin.getByRole("textbox", { name: /whatsapp/i }).fill("+59172999888");
+    // PhoneInputBO (prefijo +591 fijo): se tipean solo los 8 dígitos —
+    // unificado con checkout y registro.
+    await admin.getByRole("textbox", { name: /whatsapp/i }).fill("72999888");
     await admin.locator('input[name="city"]').fill("Cochabamba");
     await admin.locator('input[name="ownerName"]').fill("Owner De Prueba");
     await admin.locator('input[name="ownerIdentifier"]').fill(STORE.ownerEmail);
@@ -475,10 +475,8 @@ test("flujo completo: superadmin → tienda completa → 5 pedidos", async ({ br
   // ============================================================
   await gotoHydrated(owner, "/dashboard/pedidos");
   await shot(owner, "D1-pedidos-lista");
-  // El pedido QR está en PENDING_PAYMENT → tab "Por verificar", no "Activos".
-  await owner.getByRole("link", { name: /Por verificar/i }).or(
-    owner.getByRole("button", { name: /Por verificar/i }),
-  ).first().click();
+  // El pedido QR está en PENDING_PAYMENT → tab "Por verificar" (?filter=awaiting).
+  await gotoHydrated(owner, "/dashboard/pedidos?filter=awaiting");
   await expect(owner.getByText(/#4/).first()).toBeVisible({ timeout: 15000 });
   await owner.getByText(/#4/).first().click();
   await expect(owner).toHaveURL(/\/dashboard\/pedidos\/.+/, { timeout: 15000 });

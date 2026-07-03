@@ -12,6 +12,7 @@ import {
 } from "./SectionShell";
 import { ImageUploadField } from "@/components/dashboard/shared/ImageUploadField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { PhoneInputBO } from "@/components/shared/PhoneInputBO";
 
 const initial: ActionState = {};
 
@@ -110,13 +111,13 @@ export function IdentityForm({ store }: { store: Store }) {
         <h3 className="text-sm font-semibold">Contacto</h3>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <TextInput
+          {/* Prefijo +591 fijo (PhoneInputBO): el owner tipea solo los 8
+              dígitos, igual que sus clientes en el checkout. El defaultValue
+              con prefijo se descompone solo. */}
+          <PhoneInputBO
             name="whatsappPhone"
             label="WhatsApp"
             defaultValue={store.whatsappPhone}
-            placeholder="+591 70012345"
-            inputMode="tel"
-            autoComplete="tel"
             required
             hint="Aquí te llegan los pedidos."
             error={fe.whatsappPhone}

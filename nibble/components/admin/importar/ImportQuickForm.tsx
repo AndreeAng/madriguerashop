@@ -10,6 +10,7 @@ import {
 } from "@/server/actions/admin-import-quick";
 import { ErrorAlert } from "@/components/ui/Alert";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { PhoneInputBO } from "@/components/shared/PhoneInputBO";
 import { slugify } from "@/lib/validation/slug";
 
 const initial: ImportQuickState = {};
@@ -147,10 +148,9 @@ export function ImportQuickForm({
           error={fe.city}
           required
         />
-        <Field
+        <PhoneInputBO
           name="whatsappPhone"
           label="WhatsApp de la tienda"
-          placeholder="+59176355469"
           error={fe.whatsappPhone}
           required
         />

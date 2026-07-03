@@ -22,6 +22,7 @@ export function PhoneInputBO({
   error,
   required,
   label,
+  hint,
 }: {
   name: string;
   defaultValue?: string;
@@ -29,6 +30,8 @@ export function PhoneInputBO({
   error?: string;
   required?: boolean;
   label?: string;
+  /** Texto de ayuda bajo el input (se oculta si hay error, para no apilar). */
+  hint?: string;
 }) {
   const initialDigits = useMemo(() => {
     if (!defaultValue) return "";
@@ -82,6 +85,9 @@ export function PhoneInputBO({
         <p className="mt-1 text-xs text-[color:var(--color-tomato-600)]">
           {error}
         </p>
+      )}
+      {!error && hint && (
+        <p className="mt-1 text-xs text-[color:var(--muted)]">{hint}</p>
       )}
     </label>
   );

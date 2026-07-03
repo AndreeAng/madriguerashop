@@ -10,6 +10,7 @@ import {
 } from "@/server/actions/admin-stores";
 import { slugify } from "@/lib/validation/slug";
 import { SubmitButton } from "@/components/ui/SubmitButton";
+import { PhoneInputBO } from "@/components/shared/PhoneInputBO";
 
 const initial: AdminCreateStoreState = {};
 
@@ -103,10 +104,11 @@ export function AdminCreateStoreForm({
             error={fe.planSlug}
             required
           />
-          <Field
+          {/* Mismo input con prefijo +591 fijo que usan checkout y registro
+              — el admin solo tipea los 8 dígitos, sin formato que recordar. */}
+          <PhoneInputBO
             label="WhatsApp"
             name="whatsappPhone"
-            placeholder="+59172345678"
             error={fe.whatsappPhone}
             required
           />
