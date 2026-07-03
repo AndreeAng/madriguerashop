@@ -26,11 +26,11 @@
   "prisma": {
     "seed": "tsx prisma/seed.ts"
   },
-  "//overrides": "next-auth@5 beta lockea nodemailer 7.x vía @auth/core, que tiene CVE GHSA-vvjj-xcjg-gr5g (SMTP CRLF injection via transport name). Forzamos 8.x globalmente — el riesgo real en nuestro código es bajo (no pasamos input de usuario al name del transport) pero el audit del CI lo bloquea.",
+  "//overrides": "next-auth@5 beta lockea nodemailer viejo vía @auth/core. Historial de CVEs que forzaron el override: GHSA-vvjj-xcjg-gr5g (CRLF injection, fix 8.x) y GHSA-p6gq-j5cr-w38f (raw option bypassea disableFileAccess → file read/SSRF, fix 9.0.3). El riesgo real en nuestro código es bajo (armamos los mensajes nosotros, sin raw de usuario) pero el audit del CI bloquea highs.",
   "overrides": {
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.3",
     "@auth/core": {
-      "nodemailer": "^8.0.7"
+      "nodemailer": "^9.0.3"
     }
   },
   "dependencies": {
@@ -46,7 +46,7 @@
     "lucide-react": "^0.469.0",
     "next": "^15.1.6",
     "next-auth": "5.0.0-beta.31",
-    "nodemailer": "^8.0.7",
+    "nodemailer": "^9.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
