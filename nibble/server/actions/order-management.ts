@@ -396,7 +396,7 @@ export async function verifyPaymentAction(
 
 const rejectPaymentSchema = z.object({
   orderId: z.string().min(1),
-  reason: z.string().trim().min(3, "Indicá el motivo del rechazo").max(200),
+  reason: z.string().trim().min(3, "Indica el motivo del rechazo").max(200),
 });
 
 export async function rejectPaymentAction(

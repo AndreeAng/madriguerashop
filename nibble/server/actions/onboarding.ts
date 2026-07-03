@@ -206,7 +206,7 @@ export async function registerStoreAction(
     return {
       fieldErrors: {
         ownerIdentifier:
-          "Ya existe una cuenta con este email/teléfono. Iniciá sesión en su lugar.",
+          "Ya existe una cuenta con este email/teléfono. Inicia sesión en su lugar.",
       },
     };
   }

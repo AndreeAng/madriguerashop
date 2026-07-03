@@ -32,7 +32,7 @@ const uploadProofSchema = z.object({
     .trim()
     .min(1, "Sube el comprobante antes de enviar")
     .max(2048)
-    .refine(isAcceptedProofUrl, "Comprobante inválido. Subilo de nuevo desde el botón."),
+    .refine(isAcceptedProofUrl, "Comprobante inválido. Súbelo de nuevo desde el botón."),
 });
 
 export async function uploadInvoiceProofAction(

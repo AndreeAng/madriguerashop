@@ -114,7 +114,7 @@ const createOrderSchema = z
       // Cualquier otra URL la rechazamos — sería un vector para que un
       // atacante haga que el merchant vea como "comprobante" una imagen
       // que él controla.
-      .refine((v) => v === "" || isAcceptedProofUrl(v), "Comprobante inválido — subilo de nuevo."),
+      .refine((v) => v === "" || isAcceptedProofUrl(v), "Comprobante inválido — súbelo de nuevo."),
 
     customerNotes: z.string().trim().max(500),
     couponCode: z.string().trim().max(40),

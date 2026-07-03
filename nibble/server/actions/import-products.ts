@@ -74,7 +74,7 @@ export async function importProductsAction(
   }
   if (parsed.rows.length > MAX_ROWS) {
     return {
-      error: `Máximo ${MAX_ROWS} filas por import. Dividilo en archivos más chicos.`,
+      error: `Máximo ${MAX_ROWS} filas por import. Divídelo en archivos más chicos.`,
     };
   }
 
@@ -204,7 +204,7 @@ export async function importProductsAction(
         const room = Math.max(0, limit.limit - limit.current);
         return (
           `Tu plan permite ${limit.limit} productos activos. ` +
-          `Tenes ${limit.current} y este CSV agregaría ${toCreate.length}. ` +
+          `Tienes ${limit.current} y este CSV agregaría ${toCreate.length}. ` +
           (room === 0
             ? "Suspende productos o sube de plan antes de importar."
             : `Reduce el archivo a ${room} filas o sube de plan.`)
