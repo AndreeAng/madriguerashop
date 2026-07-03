@@ -94,6 +94,12 @@ export function HoursForm({ hours }: { hours: StoreHours[] }) {
           </table>
         </div>
 
+        <p className="mt-3 text-xs text-[color:var(--muted)]">
+          ¿Atiendes de noche? Si el cierre es menor que la apertura (ej.
+          22:00 → 02:00), lo tomamos como horario nocturno que cruza la
+          medianoche.
+        </p>
+
         <SubmitButton />
       </SectionShell>
     </form>

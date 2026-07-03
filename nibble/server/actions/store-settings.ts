@@ -316,8 +316,15 @@ const dayHoursSchema = z
     message: "Horario de cierre inválido (HH:MM)",
     path: ["closeTime"],
   })
-  .refine((v) => v.isClosed || v.openTime < v.closeTime, {
-    message: "El cierre tiene que ser después de la apertura",
+  // Cierre < apertura = horario NOCTURNO que cruza medianoche (22:00–03:00).
+  // `isStoreOpenNow` lo soporta explícitamente (caso food truck) — antes
+  // este refine exigía `openTime < closeTime` y el soporte overnight del
+  // engine era inalcanzable: ningún owner podía configurarlo desde la UI.
+  // Solo rechazamos apertura == cierre, que es ambiguo (¿24h? ¿cerrado?);
+  // para cerrar el día está el checkbox "Cerrado".
+  .refine((v) => v.isClosed || v.openTime !== v.closeTime, {
+    message:
+      "Apertura y cierre no pueden ser iguales. Para no atender ese día, marca 'Cerrado'.",
     path: ["closeTime"],
   });
 
