@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Prisma } from "@prisma/client";
+import { Prisma, StoreVertical } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireSuperAdminOrFail } from "@/lib/auth/session";
 import { audit } from "@/lib/audit/log";
@@ -16,7 +16,10 @@ const TEMPLATE_ERROR_MSG = "Sólo el super admin puede gestionar plantillas.";
 const upsertSchema = z.object({
   id: z.string().optional(),
   name: z.string().trim().min(2).max(60),
-  vertical: z.enum(["RESTAURANT", "FOOD_TRUCK", "RETAIL", "HARDWARE", "SERVICES"]),
+  // nativeEnum: acepta las 10 verticales del schema. Antes era un z.enum
+  // manual con solo 5 — el admin no podía crear plantillas para BAKERY,
+  // GROCERY, BEAUTY, HEALTH ni OTHER aunque el resto del sistema las soporta.
+  vertical: z.nativeEnum(StoreVertical),
   description: z.string().trim().min(10).max(500),
   // `.url()` solo de Zod acepta cualquier scheme (http, https, ftp,
    // javascript:). El previewUrl se renderiza como `href` y como `src` de

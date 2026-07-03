@@ -7,16 +7,16 @@ import type { ActionState } from "@/lib/validation/actionState";
 import { ImageUploadField } from "@/components/dashboard/shared/ImageUploadField";
 import { SubmitButton } from "@/components/ui/SubmitButton";
 import { ErrorAlert } from "@/components/ui/Alert";
+import { VERTICAL_LABELS } from "@/lib/saas/verticals";
 
 const initial: ActionState = {};
 
-const VERTICALS: { value: string; label: string }[] = [
-  { value: "RESTAURANT", label: "Restaurante" },
-  { value: "FOOD_TRUCK", label: "Food truck" },
-  { value: "RETAIL", label: "Retail" },
-  { value: "HARDWARE", label: "Ferretería" },
-  { value: "SERVICES", label: "Servicios" },
-];
+// Todas las verticales del schema, desde la fuente única de labels.
+// Antes era una lista manual de 5 — no se podían crear plantillas para
+// BAKERY/GROCERY/BEAUTY/HEALTH/OTHER aunque el sistema las soporta.
+const VERTICALS: { value: string; label: string }[] = Object.entries(
+  VERTICAL_LABELS,
+).map(([value, label]) => ({ value, label }));
 
 type TemplateInput = {
   id: string;

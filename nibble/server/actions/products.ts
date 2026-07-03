@@ -477,7 +477,7 @@ export async function deleteProductAction(formData: FormData): Promise<ActionSta
   if (inOrder > 0) {
     return {
       error:
-        "Este producto está en pedidos pasados. Mejor desactivalo (toggle 'Activo') en lugar de eliminarlo.",
+        "Este producto está en pedidos pasados. Mejor desactívalo (toggle 'Activo') en lugar de eliminarlo.",
     };
   }
 

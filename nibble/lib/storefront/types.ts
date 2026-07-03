@@ -38,9 +38,10 @@ export type StoreView = {
    *  como cerrado (`isClosed`). NO indica si el local está abierto ahora —
    *  para eso usar `isOpenNow`. */
   closesTodayAt: string | null;
-  /** True si la tienda está abierta AHORA según la hora local del browser
-   *  del servidor (que en VPS Bolivia coincide con hora de Cochabamba).
-   *  Considera día de la semana + rango open/close del día actual. */
+  /** True si la tienda está abierta AHORA, evaluado en hora BOLIVIA
+   *  explícita (`isStoreOpenNow` + `inBolivia`) — independiente de la TZ
+   *  del proceso. Considera día de la semana, rango open/close del día y
+   *  horarios nocturnos que cruzan medianoche. */
   isOpenNow: boolean;
   /** Texto humano "Abre mañana a las 10:00", "Abre el lunes 10:00", etc.
    *  Solo presente si `isOpenNow=false`. Null si la tienda no tiene

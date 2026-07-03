@@ -11,10 +11,15 @@ import type { StoreView, ProductView } from "./types";
 import { isProductAvailableNow, isStoreOpenNow } from "./availability";
 import { inBolivia } from "@/lib/booking/timezone";
 
-const FALLBACK_BANNER =
-  "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=1600&q=80";
-const FALLBACK_PRODUCT =
-  "https://images.unsplash.com/photo-1565299507177-b0ac66763828?w=900&q=80";
+// Placeholders LOCALES (public/placeholders/, regenerables con
+// scripts/make-placeholders.mjs). Antes eran URLs de Unsplash — pero
+// next.config solo permite Unsplash en dev, así que en producción una
+// tienda sin banner (toda tienda recién creada) rompía el hero de su
+// storefront con el error "hostname not configured" de next/image, y
+// un producto sin foto rompía su card. Local = sin remotePatterns y
+// pasa la CSP img-src 'self'.
+const FALLBACK_BANNER = "/placeholders/banner.webp";
+const FALLBACK_PRODUCT = "/placeholders/product.webp";
 
 // Nombres en orden Prisma (0=Dom ... 6=Sáb) para `closesTodayAt` que usa
 // `Date.getDay()`. La lista de horarios en cambio se renderiza en orden

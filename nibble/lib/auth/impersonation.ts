@@ -34,7 +34,10 @@ export async function setImpersonatedStore(storeId: string): Promise<void> {
     // action sensible — `strict` lo bloquea.
     sameSite: "strict",
     path: "/",
-    secure: process.env.NODE_ENV === "production",
+    // `secure: true` siempre — mismo razonamiento que la cookie del guest
+    // token: previews/staging corren HTTPS con NODE_ENV=production a veces
+    // inconsistente, y los browsers aceptan cookies Secure en localhost.
+    secure: true,
     maxAge: IMPERSONATION_MAX_AGE_S,
   });
 }
