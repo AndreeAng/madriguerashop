@@ -23,6 +23,7 @@ import { formatBob } from "@/lib/utils";
 import { STATUS_COLORS } from "@/lib/orders/status";
 import { OrderStatusPill } from "@/components/ui/OrderStatusPill";
 import { startOfDay, addDays } from "@/lib/i18n/dates";
+import { REAL_SALE_WHERE } from "@/lib/orders/revenue";
 
 export const metadata = { title: "Inicio · Madriguera Shop" };
 
@@ -58,14 +59,19 @@ export default async function DashboardHome() {
     recentOrders,
     topProducts,
   ] = await Promise.all([
+    // "Ventas de hoy/ayer" usa el filtro canónico de venta real (ver
+    // lib/orders/revenue.ts). Antes sumaba TODOS los pedidos — cancelados,
+    // QR sin verificar y reembolsados inclusive — así que el KPI del home
+    // sobrestimaba y no cuadraba con el de /dashboard/analytics.
     db.order.findMany({
-      where: { storeId: store.id, createdAt: { gte: todayStart } },
+      where: { storeId: store.id, createdAt: { gte: todayStart }, ...REAL_SALE_WHERE },
       select: { id: true, total: true },
     }),
     db.order.findMany({
       where: {
         storeId: store.id,
         createdAt: { gte: yesterdayStart, lt: todayStart },
+        ...REAL_SALE_WHERE,
       },
       select: { id: true, total: true },
     }),
@@ -114,7 +120,13 @@ export default async function DashboardHome() {
     }),
     db.orderItem.groupBy({
       by: ["productName"],
-      where: { order: { storeId: store.id, createdAt: { gte: todayStart } } },
+      where: {
+        order: {
+          storeId: store.id,
+          createdAt: { gte: todayStart },
+          ...REAL_SALE_WHERE,
+        },
+      },
       _sum: { quantity: true },
       orderBy: { _sum: { quantity: "desc" } },
       take: 5,

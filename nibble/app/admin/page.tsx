@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth/session";
+import { REAL_SALE_WHERE } from "@/lib/orders/revenue";
 import { formatBob } from "@/lib/utils";
 import { KpiCardCompact } from "@/components/shared/KpiCardCompact";
 
@@ -61,8 +62,11 @@ export default async function AdminHome({
       where: { status: { in: ["PENDING", "OVERDUE"] } },
       _sum: { amount: true },
     }),
+    // GMV con el filtro canónico de venta real (lib/orders/revenue.ts).
+    // Antes solo excluía CANCELLED: los QR sin verificar (PENDING_PAYMENT,
+    // potencialmente comprobantes falsos) y los reembolsados inflaban el GMV.
     db.order.aggregate({
-      where: { createdAt: { gte: monthStart }, status: { not: "CANCELLED" } },
+      where: { createdAt: { gte: monthStart }, ...REAL_SALE_WHERE },
       _sum: { total: true },
       _count: { _all: true },
     }),
@@ -90,7 +94,8 @@ export default async function AdminHome({
       FROM "Order" o
       JOIN "Store" s ON s."id" = o."storeId"
       WHERE o."createdAt" >= ${monthStart}
-        AND o."status" != 'CANCELLED'
+        AND o."status" NOT IN ('CANCELLED', 'PENDING_PAYMENT')
+        AND o."paymentStatus" != 'REFUNDED'
       GROUP BY o."storeId", s."slug", s."name"
       ORDER BY gmv DESC
       LIMIT 5

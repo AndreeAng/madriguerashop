@@ -13,6 +13,8 @@ import { zodIssuesToFieldErrors } from "@/lib/validation/fieldErrors";
 import { EMAIL_RE } from "@/lib/validation/email";
 import { buildWhatsAppUrl } from "@/lib/utils";
 import { INVALID_INPUT_ERROR } from "@/lib/validation/actionState";
+import { getAvailableSlots } from "@/lib/booking/slots";
+import { ymdLocal } from "@/lib/i18n/dates";
 
 export type CreateBookingState = {
   ok?: { trackingToken: string; whatsappUrl: string };
@@ -136,18 +138,39 @@ export async function createBookingAction(
     return { error: "Este servicio no acepta reservas en este momento." };
   }
 
+  // El slot elegido DEBE ser uno de los que la grilla pública genera para
+  // ese día (getAvailableSlots): dentro del horario de atención, alineado
+  // al paso duración+buffer, futuro y sin cruces. Sin esta re-validación,
+  // el server aceptaba cualquier `startsAt` del FormData — un request
+  // manual podía reservar a las 03:00 con la tienda cerrada, o pegado a
+  // otra reserva ignorando el `bookingBufferMin` configurado, porque la
+  // única restricción vivía en la UI (los botones del BookingForm).
+  const validSlots = await getAvailableSlots(product.id, ymdLocal(startsAt));
+  const slotIso = startsAt.toISOString();
+  if (!validSlots.some((s) => s.startsAt === slotIso)) {
+    return {
+      fieldErrors: {
+        startsAt: "Ese horario ya no está disponible. Elige uno de la lista.",
+      },
+    };
+  }
+
   const customerPhone = normalizePhoneBO(data.customerPhone);
   const endsAt = new Date(
     startsAt.getTime() + product.bookingDurationMin * 60_000,
   );
 
-  // Re-validar disponibilidad inside transaction: el slot pudo haberse
-  // tomado entre que el cliente lo vio y submiteó. Sin el lock, dos
-  // clientes podrían reservar el mismo horario.
   const trackingToken = generateTrackingToken();
   let created: { id: string; trackingToken: string } | null = null;
   try {
     created = await db.$transaction(async (tx) => {
+      // Lock advisory por producto: serializa creaciones concurrentes del
+      // mismo servicio. Los findFirst de conflicto de abajo por sí solos
+      // NO previenen la race — en READ COMMITTED dos transacciones pueden
+      // ambas ver "sin conflicto" y ambas insertar el mismo slot. Con el
+      // lock, la segunda espera al commit de la primera y su findFirst ya
+      // ve la reserva nueva. Se libera solo al terminar la transacción.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${product.id}))`;
       // Buscamos cualquier booking activa que cruza con [startsAt, endsAt).
       // El guard `endsAt: { gt: now }` previene que una PENDING booking
       // del pasado (cliente nunca confirmado por el owner, ya pasó la hora)

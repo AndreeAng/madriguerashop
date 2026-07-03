@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { db } from "@/lib/db";
+import { REAL_SALE_WHERE } from "@/lib/orders/revenue";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
 import { MapDensity } from "@/components/shared/MapsClient";
@@ -65,12 +66,10 @@ export default async function AnalyticsPage({
     0,
   );
 
-  // Estados que cuentan como "venta real". CANCELLED y PENDING_PAYMENT
-  // quedan fuera — el primero porque no se cobró, el segundo porque aún
-  // no se confirmó pago.
-  const realSaleStatus = {
-    notIn: [OrderStatus.CANCELLED, OrderStatus.PENDING_PAYMENT],
-  };
+  // Filtro de "venta real" — canónico y compartido con el home del owner y
+  // el admin (ver lib/orders/revenue.ts). Excluye CANCELLED, PENDING_PAYMENT
+  // y pagos REFUNDED. Antes esta página tenía su propia versión que no
+  // filtraba REFUNDED: un pedido reembolsado seguía sumando revenue.
 
   // Queries en paralelo para no bloquear el render. Cada bloque está
   // anotado con qué métrica produce — facilita auditar si una métrica se
@@ -107,10 +106,10 @@ export default async function AnalyticsPage({
     deadProducts,
   ] = await Promise.all([
     db.order.count({
-      where: { storeId: store.id, createdAt: { gte: from }, status: realSaleStatus },
+      where: { storeId: store.id, createdAt: { gte: from }, ...REAL_SALE_WHERE },
     }),
     db.order.aggregate({
-      where: { storeId: store.id, createdAt: { gte: from }, status: realSaleStatus },
+      where: { storeId: store.id, createdAt: { gte: from }, ...REAL_SALE_WHERE },
       _sum: { total: true },
     }),
     db.customer.count({
@@ -123,14 +122,14 @@ export default async function AnalyticsPage({
       where: {
         storeId: store.id,
         createdAt: { gte: prevFrom, lt: from },
-        status: realSaleStatus,
+        ...REAL_SALE_WHERE,
       },
     }),
     db.order.aggregate({
       where: {
         storeId: store.id,
         createdAt: { gte: prevFrom, lt: from },
-        status: realSaleStatus,
+        ...REAL_SALE_WHERE,
       },
       _sum: { total: true },
     }),
@@ -149,7 +148,7 @@ export default async function AnalyticsPage({
         order: {
           storeId: store.id,
           createdAt: { gte: from },
-          status: realSaleStatus,
+          ...REAL_SALE_WHERE,
         },
       },
       _sum: { subtotal: true, quantity: true },
@@ -187,7 +186,7 @@ export default async function AnalyticsPage({
       SELECT
         date_trunc('day', "createdAt" AT TIME ZONE 'America/La_Paz') AS day,
         COUNT(*)::bigint AS count,
-        SUM(CASE WHEN "status" NOT IN ('CANCELLED', 'PENDING_PAYMENT') THEN "total" ELSE 0 END)::text AS revenue
+        SUM(CASE WHEN "status" NOT IN ('CANCELLED', 'PENDING_PAYMENT') AND "paymentStatus" != 'REFUNDED' THEN "total" ELSE 0 END)::text AS revenue
       FROM "Order"
       WHERE "storeId" = ${store.id} AND "createdAt" >= ${from}
       GROUP BY 1
@@ -205,6 +204,7 @@ export default async function AnalyticsPage({
       WHERE "storeId" = ${store.id}
         AND "createdAt" >= ${from}
         AND "status" NOT IN ('CANCELLED', 'PENDING_PAYMENT')
+        AND "paymentStatus" != 'REFUNDED'
       GROUP BY 1
       ORDER BY 1 ASC
     `,
@@ -221,6 +221,7 @@ export default async function AnalyticsPage({
       WHERE "storeId" = ${store.id}
         AND "createdAt" >= ${from}
         AND "status" NOT IN ('CANCELLED', 'PENDING_PAYMENT')
+        AND "paymentStatus" != 'REFUNDED'
       GROUP BY 1
       ORDER BY 1 ASC
     `,

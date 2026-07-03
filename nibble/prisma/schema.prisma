@@ -32,10 +32,9 @@ model User {
   storeId           String?
   store             Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
   isActive          Boolean   @default(true)
-  // TODO: implementar flujo de verificación de email (envío de link al
-  // registrarse, /verify-email/[token]). Hasta entonces este campo es
-  // siempre NULL — pero lo dejamos porque agregarlo más tarde requiere
-  // migration y el costo de mantenerlo NULL es cero.
+  // Verificación de email: el flujo vive en /verify-email/[token] +
+  // lib/auth/email-verification-token.ts. Se setea cuando el owner hace
+  // click en el link enviado al registrarse (o al reenviar desde settings).
   emailVerifiedAt   DateTime?
   lastLoginAt       DateTime?
   // Marcador para invalidar JWTs activos cuando se resetea/cambia la
@@ -329,9 +328,11 @@ model Booking {
   customerEmail String?
   notes         String? @db.Text
 
-  // Slot reservado. `endsAt` se calcula al crear como
-  // `startsAt + product.bookingDurationMin + bufferMin` para que las
-  // queries de "está libre este slot?" sean simples comparaciones de rangos.
+  // Slot reservado. `endsAt` = `startsAt + product.bookingDurationMin`
+  // (SIN buffer — endsAt se muestra al cliente y al owner como hora de fin
+  // real del servicio). El descanso `bookingBufferMin` entre reservas lo
+  // garantiza la grilla: `getAvailableSlots` avanza en pasos de
+  // duración+buffer y `createBookingAction` solo acepta slots de esa grilla.
   startsAt DateTime
   endsAt   DateTime
   status   BookingStatus @default(PENDING)

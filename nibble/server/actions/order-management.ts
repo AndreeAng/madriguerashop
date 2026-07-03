@@ -437,6 +437,17 @@ export async function rejectPaymentAction(
   ) {
     return { error: "Este pago ya fue procesado." };
   }
+  // Un pedido que ya salió (IN_DELIVERY) o se entregó no admite reject:
+  // el `revertOrderImpact` de abajo restituiría stock de mercadería que
+  // está físicamente en la calle, y el pedido quedaría activo con pago
+  // REJECTED — estado incoherente. Para estos casos el flujo correcto es
+  // el reembolso (`markOrderRefundedAction`) o la cancelación del pedido.
+  if (order.status === "IN_DELIVERY" || order.status === "DELIVERED") {
+    return {
+      error:
+        "Este pedido ya salió a entrega. Usa 'Marcar reembolsado' o cancela el pedido para registrar la devolución.",
+    };
+  }
 
   const actor = await db.user.findUnique({
     where: { id: userId },
@@ -463,7 +474,10 @@ export async function rejectPaymentAction(
         where: {
           id: order.id,
           paymentStatus: { in: [PaymentStatus.AWAITING_VERIFICATION, PaymentStatus.PENDING] },
-          status: { not: "CANCELLED" },
+          // notIn refleja el guard de arriba también contra transiciones
+          // concurrentes: si el pedido pasó a IN_DELIVERY/DELIVERED entre
+          // el findFirst y este claim, no lo tocamos.
+          status: { notIn: ["CANCELLED", "IN_DELIVERY", "DELIVERED"] },
         },
         data: {
           paymentStatus: PaymentStatus.REJECTED,
