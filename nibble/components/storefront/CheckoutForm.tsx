@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useId, useMemo, useState } from "react";
+import { useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
@@ -11,6 +11,7 @@ import {
   MessageCircle,
   QrCode,
   Store as StoreIcon,
+  Ticket,
   Upload,
   X,
 } from "lucide-react";
@@ -20,6 +21,11 @@ import {
   type CreateOrderState,
 } from "@/server/actions/orders";
 import { formatBob } from "@/lib/utils";
+import {
+  computeOrderPricing,
+  type CouponForPricing,
+} from "@/lib/orders/pricing";
+import { previewCouponAction } from "@/server/actions/coupon-preview";
 import { storefrontCopy } from "@/lib/storefront/copy";
 import { MapPicker } from "@/components/shared/MapsClient";
 import { SubmitButton } from "@/components/ui/SubmitButton";
@@ -109,6 +115,27 @@ export function CheckoutForm({
     }
   }, [state.error, state.fieldErrors]);
 
+  // Cupón aplicado — validado por el server ANTES de pagar. El flujo QR es
+  // "pagar → subir comprobante → confirmar": si el descuento recién se
+  // conociera al confirmar, el cliente ya habría transferido el monto
+  // equivocado y el comprobante no coincidiría con el total de la orden.
+  const [couponInput, setCouponInput] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<
+    ({ code: string } & CouponForPricing) | null
+  >(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    // Si la validación FINAL rechazó el cupón (ej. otro cliente lo agotó
+    // entre el preview y el submit), lo soltamos para que el total del
+    // resumen vuelva a ser honesto; el error del server queda visible.
+    if (state.fieldErrors?.couponCode) {
+      setAppliedCoupon(null);
+    }
+  }, [state.fieldErrors?.couponCode]);
+
   // Detección automática de zona desde el pin. Si TODAS las zonas tienen
   // shape, asumimos modo "mapa-first" y ocultamos el select. Si hay
   // alguna sin shape (legacy), mostramos el select además del mapa para
@@ -137,13 +164,28 @@ export function CheckoutForm({
   const effectiveZone =
     autoDetectedZone ?? deliveryZones.find((z) => z.id === zoneId) ?? null;
   const subtotal = cart.subtotal;
-  const previewDeliveryFee = useMemo(() => {
+  // Fee BASE de la zona, sin umbral: `freeDeliveryAbove` y el cupón los
+  // aplica `computeOrderPricing` — la MISMA función pura que usa el server
+  // al cobrar. Con cupón aplicado (validado vía previewCouponAction), el
+  // total que ve el cliente antes de escanear el QR es el que se cobra.
+  const previewBaseFee = useMemo(() => {
     if (deliveryMethod !== "delivery") return null;
-    let fee = effectiveZone ? effectiveZone.fee : (store.defaultDeliveryFee ?? 0);
-    if (store.freeDeliveryAbove && subtotal >= store.freeDeliveryAbove) fee = 0;
-    return fee;
-  }, [deliveryMethod, effectiveZone, store, subtotal]);
-  const previewTotal = subtotal + (previewDeliveryFee ?? 0);
+    return effectiveZone ? effectiveZone.fee : (store.defaultDeliveryFee ?? 0);
+  }, [deliveryMethod, effectiveZone, store.defaultDeliveryFee]);
+  const pricing = useMemo(
+    () =>
+      computeOrderPricing({
+        subtotal,
+        deliveryFee: previewBaseFee,
+        deliveryMethod,
+        coupon: appliedCoupon,
+        freeDeliveryAbove: store.freeDeliveryAbove,
+      }),
+    [subtotal, previewBaseFee, deliveryMethod, appliedCoupon, store.freeDeliveryAbove],
+  );
+  const previewDeliveryFee = pricing.deliveryFee;
+  const previewDiscount = pricing.discountAmount;
+  const previewTotal = pricing.total;
 
   useEffect(() => {
     if (state.ok) {
@@ -183,8 +225,45 @@ export function CheckoutForm({
     }
   }
 
+  async function handleApplyCoupon() {
+    const code = couponInput.trim();
+    if (!code || applyingCoupon) return;
+    setCouponError(null);
+    setApplyingCoupon(true);
+    try {
+      // Si el cliente ya tipeó su teléfono, lo mandamos para que el preview
+      // pueda chequear usageLimitPerUser. El server lo re-verifica igual
+      // al confirmar con el teléfono definitivo.
+      const customerPhone = formRef.current
+        ? String(new FormData(formRef.current).get("customerPhone") ?? "").slice(0, 30)
+        : "";
+      const res = await previewCouponAction({
+        storeSlug: slug,
+        couponCode: code,
+        customerPhone,
+      });
+      if ("error" in res) {
+        setAppliedCoupon(null);
+        setCouponError(res.error);
+      } else {
+        setAppliedCoupon(res.ok);
+      }
+    } catch {
+      setCouponError("Error de red. Prueba de nuevo.");
+    } finally {
+      setApplyingCoupon(false);
+    }
+  }
+
+  function handleClearCoupon() {
+    setAppliedCoupon(null);
+    setCouponInput("");
+    setCouponError(null);
+  }
+
   return (
     <form
+      ref={formRef}
       action={action}
       onSubmit={() => setSubmitting(true)}
       noValidate
@@ -391,8 +470,100 @@ export function CheckoutForm({
             />
           </Section>
 
-          {/* ============== 4. Pago ============== */}
-          <Section step="4" title="Método de pago">
+          {/* ============== 4. Cupón / notas ============== */}
+          {/* El cupón va ANTES del pago: con QR el cliente transfiere el
+              monto exacto antes de confirmar, así que el descuento debe
+              estar aplicado y visible cuando escanea. El código validado
+              viaja en el hidden input — texto tipeado sin "Aplicar" no se
+              envía, para que nunca se cobre algo que el resumen no mostró. */}
+          <Section step="4" title="Cupón y notas (opcional)">
+            <div className="grid gap-3">
+              <input
+                type="hidden"
+                name="couponCode"
+                value={appliedCoupon?.code ?? ""}
+              />
+              {appliedCoupon ? (
+                <div className="flex items-center gap-3 rounded-xl border border-[color:var(--color-leaf-500)]/40 bg-[color:var(--color-leaf-500)]/5 p-3 text-sm">
+                  <Ticket className="size-5 text-[color:var(--color-leaf-600)]" />
+                  <span className="flex-1 text-[color:var(--color-leaf-600)]">
+                    Cupón <strong>{appliedCoupon.code}</strong> aplicado
+                    {previewDiscount > 0 && (
+                      <> — ahorras {formatBob(previewDiscount)}</>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleClearCoupon}
+                    aria-label="Quitar cupón"
+                    className="grid size-7 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <label className="block">
+                    <span className="text-xs font-medium text-[color:var(--muted)]">
+                      Código de cupón
+                    </span>
+                    <div className="mt-1.5 flex gap-2">
+                      <input
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          // Enter acá aplica el cupón — sin esto, envía el form.
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            void handleApplyCoupon();
+                          }
+                        }}
+                        placeholder="BIENVENIDO10"
+                        maxLength={40}
+                        autoComplete="off"
+                        className="w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => void handleApplyCoupon()}
+                        disabled={applyingCoupon || !couponInput.trim()}
+                        className="shrink-0 rounded-xl bg-[color:var(--color-bark-900)] px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+                      >
+                        {applyingCoupon ? (
+                          <Loader2 className="size-4 animate-spin" />
+                        ) : (
+                          "Aplicar"
+                        )}
+                      </button>
+                    </div>
+                  </label>
+                  {(couponError ?? fe.couponCode) && (
+                    <p
+                      role="alert"
+                      className="mt-1.5 text-xs text-[color:var(--color-tomato-600)]"
+                    >
+                      {couponError ?? fe.couponCode}
+                    </p>
+                  )}
+                </div>
+              )}
+              <label className="block">
+                <span className="text-xs font-medium text-[color:var(--muted)]">
+                  Notas para la tienda
+                </span>
+                <textarea
+                  name="customerNotes"
+                  rows={2}
+                  placeholder={`Ej. Tocar el timbre dos veces. ${copy.checkoutNotesPlaceholder}`}
+                  className="mt-1.5 w-full resize-y rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+                  maxLength={500}
+                />
+              </label>
+            </div>
+          </Section>
+
+          {/* ============== 5. Pago ============== */}
+          <Section step="5" title="Método de pago">
             <div className="grid gap-3 md:grid-cols-2">
               {store.acceptsQR && (
                 <PayCard
@@ -439,15 +610,12 @@ export function CheckoutForm({
                 <div>
                   <p className="text-sm font-semibold">
                     Escanea el QR para pagar {formatBob(previewTotal)}
-                    {" "}
-                    <span className="font-normal text-[color:var(--muted)]">
-                      (sin cupón aún)
-                    </span>
                   </p>
-                  <p className="mt-0.5 text-xs text-[color:var(--muted)]">
-                    Si aplicas un cupón abajo, el total final se calcula al
-                    confirmar.
-                  </p>
+                  {appliedCoupon && previewDiscount > 0 && (
+                    <p className="mt-0.5 text-xs text-[color:var(--muted)]">
+                      Cupón {appliedCoupon.code} ya incluido en el monto.
+                    </p>
+                  )}
                   <p className="mt-1 text-xs text-[color:var(--muted)]">
                     {store.qrInstructions ??
                       "Una vez pagado, sube el comprobante. La tienda lo verifica antes de confirmar."}
@@ -471,29 +639,6 @@ export function CheckoutForm({
             )}
           </Section>
 
-          {/* ============== 4. Cupón / notas ============== */}
-          <Section step="5" title="Cupón y notas (opcional)">
-            <div className="grid gap-3">
-              <Field
-                label="Código de cupón"
-                name="couponCode"
-                placeholder="BIENVENIDO10"
-                error={fe.couponCode}
-              />
-              <label className="block">
-                <span className="text-xs font-medium text-[color:var(--muted)]">
-                  Notas para la tienda
-                </span>
-                <textarea
-                  name="customerNotes"
-                  rows={2}
-                  placeholder={`Ej. Tocar el timbre dos veces. ${copy.checkoutNotesPlaceholder}`}
-                  className="mt-1.5 w-full resize-y rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
-                  maxLength={500}
-                />
-              </label>
-            </div>
-          </Section>
         </div>
 
         {/* ============== Resumen ============== */}
@@ -545,15 +690,18 @@ export function CheckoutForm({
 
             <div className="mt-4 space-y-2 border-t border-[color:var(--line)] pt-4 text-sm">
               <Row label="Subtotal" value={formatBob(subtotal)} />
+              {appliedCoupon && previewDiscount > 0 && (
+                <Row
+                  label={`Cupón ${appliedCoupon.code}`}
+                  value={`− ${formatBob(previewDiscount)}`}
+                />
+              )}
               {previewDeliveryFee !== null && (
                 <Row
                   label={previewDeliveryFee === 0 ? "Envío (gratis)" : "Envío"}
                   value={formatBob(previewDeliveryFee)}
                 />
               )}
-              <p className="text-[10px] text-[color:var(--muted)]">
-                Si usas cupón, se aplica al confirmar {copy.cartLabel.toLowerCase()}.
-              </p>
               <div className="flex justify-between border-t border-[color:var(--line)] pt-3 text-base font-semibold">
                 <span>Total estimado</span>
                 <span className="font-display text-2xl num-tabular">

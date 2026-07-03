@@ -32,6 +32,7 @@ import { isAcceptedProofUrl } from "@/lib/storage/blob";
 import { captureError } from "@/lib/observability/captureError";
 import { EMAIL_RE } from "@/lib/validation/email";
 import { computeOrderPricing, type CouponForPricing } from "@/lib/orders/pricing";
+import { validateCouponForOrder } from "@/lib/orders/coupon";
 
 // ============== Tipos ==============
 
@@ -79,11 +80,11 @@ const createOrderSchema = z
     deliveryAddress: z.string().trim().max(300),
     deliveryNote: z.string().trim().max(200),
     deliveryZoneId: z.string().optional(),
-    // Lat/lng opcionales del cliente. Validamos rangos válidos para evitar
-    // basura como "9999, 9999" si alguien manipula el form. Acotamos al
-    // hemisferio sur (Bolivia entera está entre lat -22 y -10) para
-    // detectar errores groseros — fuera de ese box los descartamos
-    // silenciosamente en lugar de fallar.
+    // Lat/lng opcionales del cliente. Validamos solo rangos geográficos
+    // válidos (lat ±90, lng ±180) para evitar basura como "9999, 9999" si
+    // alguien manipula el form; fuera de rango se descarta silenciosamente
+    // en lugar de fallar. No acotamos al box de Bolivia a propósito: un
+    // pin levemente fuera igual cae en "sin zona → fee por defecto".
     deliveryLat: z
       .string()
       .optional()
@@ -508,72 +509,34 @@ export async function createOrderAction(
     }
   }
 
-  // 8. Coupon. discountAmount agrupa tanto descuentos en producto como
-  // FREE_SHIPPING (el ahorro de envío se contabiliza acá para que el
-  // historial de la orden refleje el beneficio del cupón, no solo el total).
+  // 8. Coupon. Los checks (existe, activo, fechas, usageLimit, mínimo,
+  // usageLimitPerUser) viven en `validateCouponForOrder` — compartidos con
+  // `previewCouponAction` para que el total que el cliente ve antes de pagar
+  // el QR sea el mismo que se cobra acá. El enforcement REAL contra pedidos
+  // concurrentes sigue dentro de la transacción (abajo), donde el row-lock
+  // del UPDATE de Coupon serializa.
+  //
+  // Reusamos el `now` del scope del action (declarado en el bloque de
+  // scheduling, arriba) para que todos los checks compartan timestamp.
   let discountAmount = 0;
   let couponId: string | null = null;
   let couponCode: string | null = null;
   // Cupón validado mapeado a primitivos para el cálculo puro de precios.
   let pricingCoupon: CouponForPricing | null = null;
   if (data.couponCode) {
-    const coupon = await db.coupon.findUnique({
-      where: { storeId_code: { storeId: store.id, code: data.couponCode.toUpperCase() } },
+    const validated = await validateCouponForOrder({
+      storeId: store.id,
+      code: data.couponCode,
+      subtotal,
+      customerPhone,
+      now,
     });
-    if (!coupon || !coupon.isActive) {
-      return { fieldErrors: { couponCode: "Cupón inválido" } };
+    if (!validated.ok) {
+      return { fieldErrors: { couponCode: validated.message } };
     }
-    // Reusamos el `now` del scope del action (declarado en el bloque de
-    // scheduling, arriba). Antes había un `const now = new Date()` local
-    // que shadow-eaba el outer y producía un timestamp distinto de los
-    // demás checks — code smell que confunde refactors.
-    if (coupon.validFrom > now || coupon.validTo < now) {
-      return { fieldErrors: { couponCode: "Cupón fuera de fecha" } };
-    }
-    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
-      return { fieldErrors: { couponCode: "Cupón agotado" } };
-    }
-    if (coupon.minOrderAmount && subtotal < Number(coupon.minOrderAmount)) {
-      return {
-        fieldErrors: {
-          couponCode: `Mínimo de Bs ${formatBobAmount(coupon.minOrderAmount)} para este cupón`,
-        },
-      };
-    }
-
-    // Sprint 2.7 — usageLimitPerUser: chequear contra CouponUsage por phone.
-    // Esto es solo un fail-fast de UX para no entrar a la tx si ya sabemos
-    // que el cupón está agotado para este cliente. El enforcement REAL vive
-    // dentro de la transacción (líneas ~763-779), donde el row-lock del
-    // UPDATE de Coupon serializa contra pedidos concurrentes del mismo
-    // teléfono.
-    if (coupon.usageLimitPerUser) {
-      const used = await db.couponUsage.count({
-        where: { couponId: coupon.id, customerPhone },
-      });
-      if (used >= coupon.usageLimitPerUser) {
-        return {
-          fieldErrors: {
-            couponCode:
-              coupon.usageLimitPerUser === 1
-                ? "Ya usaste este cupón."
-                : `Ya usaste este cupón el máximo de ${coupon.usageLimitPerUser} veces.`,
-          },
-        };
-      }
-    }
-
-    // La aritmética del descuento (tipo de cupón, maxDiscount, freeDelivery,
-    // clamp y total) vive en `computeOrderPricing` — abajo. Acá solo
-    // capturamos el cupón ya validado como primitivos.
-    couponId = coupon.id;
-    couponCode = coupon.code;
-    pricingCoupon = {
-      type: coupon.type,
-      value: Number(coupon.value),
-      maxDiscountAmount:
-        coupon.maxDiscountAmount != null ? Number(coupon.maxDiscountAmount) : null,
-    };
+    couponId = validated.id;
+    couponCode = validated.code;
+    pricingCoupon = validated.pricing;
   }
 
   // 9. Descuentos, envío gratis por umbral y total — aritmética pura
