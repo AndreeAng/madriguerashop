@@ -123,8 +123,11 @@ describe("computeOrderPricing — cupón FIXED_AMOUNT", () => {
 });
 
 describe("computeOrderPricing — cupón FREE_SHIPPING", () => {
-  it("pone el envío en 0 y contabiliza el ahorro como descuento", () => {
-    // deliveryDiscount = 10 → fee = 0, discount = 10 → total = 100 - 10 + 0 = 90
+  it("descuenta el envío UNA sola vez: el cliente paga el subtotal", () => {
+    // deliveryDiscount = 10. El fee se reporta al valor cobrado (10) y el
+    // ahorro va a discountAmount → total = 100 - 0 + 10 - 10 = 100.
+    // Regresión: antes fee→0 Y discount=10 a la vez, y el total daba 90 —
+    // el envío se regalaba dos veces (Bs 10 de pérdida para el merchant).
     const r = computeOrderPricing({
       subtotal: 100,
       deliveryFee: 10,
@@ -132,12 +135,12 @@ describe("computeOrderPricing — cupón FREE_SHIPPING", () => {
       coupon: freeShip(),
       freeDeliveryAbove: null,
     });
-    expect(r).toEqual({ discountAmount: 10, deliveryFee: 0, total: 90 });
+    expect(r).toEqual({ discountAmount: 10, deliveryFee: 10, total: 100 });
   });
 
   it("maxDiscountAmount topea el ahorro de envío (fee 10, tope 5)", () => {
-    // deliveryDiscount = min(10,5)=5 → fee = 10-5 = 5, discount = 5
-    // total = 100 - 5 + 5 = 100
+    // deliveryDiscount = min(10,5)=5 → discount = 5, fee cobrado = 10
+    // total = 100 - 0 + 10 - 5 = 105 (el cliente paga la mitad del envío)
     const r = computeOrderPricing({
       subtotal: 100,
       deliveryFee: 10,
@@ -145,7 +148,34 @@ describe("computeOrderPricing — cupón FREE_SHIPPING", () => {
       coupon: freeShip(5),
       freeDeliveryAbove: null,
     });
-    expect(r).toEqual({ discountAmount: 5, deliveryFee: 5, total: 100 });
+    expect(r).toEqual({ discountAmount: 5, deliveryFee: 10, total: 105 });
+  });
+
+  it("envío mayor al subtotal: el descuento cubre el fee, no el producto", () => {
+    // subtotal 5, fee 10 → deliveryDiscount = 10 → total = 5 - 0 + 10 - 10 = 5.
+    // discountAmount (10) puede exceder el subtotal: es el valor real del
+    // envío regalado, clampeado al fee y no al subtotal.
+    const r = computeOrderPricing({
+      subtotal: 5,
+      deliveryFee: 10,
+      deliveryMethod: "delivery",
+      coupon: freeShip(),
+      freeDeliveryAbove: null,
+    });
+    expect(r).toEqual({ discountAmount: 10, deliveryFee: 10, total: 5 });
+  });
+
+  it("mantiene el invariante del desglose: total = subtotal - descuento + envío", () => {
+    // Las vistas (tracking, dashboard, WhatsApp) muestran estas 4 líneas y
+    // el cliente hace la resta. Si el invariante se rompe, el ticket "no cierra".
+    const r = computeOrderPricing({
+      subtotal: 100,
+      deliveryFee: 10,
+      deliveryMethod: "delivery",
+      coupon: freeShip(),
+      freeDeliveryAbove: null,
+    });
+    expect(r.total).toBe(100 - r.discountAmount + (r.deliveryFee ?? 0));
   });
 
   it("no aporta nada en pickup (sin fee)", () => {
