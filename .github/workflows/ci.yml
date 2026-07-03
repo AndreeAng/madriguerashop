@@ -215,6 +215,11 @@ jobs:
       # build; las pruebas que necesiten fixtures testeables deben exponerse
       # vía un flag explícito de la app, no vía NODE_ENV=test.
       NODE_ENV: production
+      # El rate limiter falla duro en producción sin Upstash (correcto para
+      # serverless). El E2E corre `next start` single-process, donde el
+      # fallback in-memory SÍ funciona — sin este opt-in, cada server action
+      # con rate limit (checkout, login) revienta con 500 y el E2E es rojo.
+      RATE_LIMIT_ALLOW_IN_MEMORY: "true"
       SEED_SUPER_ADMIN_EMAIL: admin@nibble.bo
       SEED_SUPER_ADMIN_PASSWORD: ci-admin-password-not-real
       SEED_DEMO_OWNER_PASSWORD: ci-demo-password-not-real

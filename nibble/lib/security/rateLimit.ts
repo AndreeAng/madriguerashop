@@ -131,12 +131,19 @@ export async function rateLimit(
   // decorativo — cada Lambda arranca con el contador en cero y el atacante
   // distribuye sus requests entre instancias. Fallamos duro en runtime para
   // que el problema salte inmediatamente (no en el primer brute force).
-  // Excepción: durante el build de Next.js (`NEXT_PHASE=phase-production-build`)
-  // el runtime se levanta sin Redis para tareas no-críticas — no bloqueamos.
+  // Excepciones:
+  //   - Build de Next.js (`NEXT_PHASE=phase-production-build`): el runtime
+  //     se levanta sin Redis para tareas no-críticas — no bloqueamos.
+  //   - `RATE_LIMIT_ALLOW_IN_MEMORY=true`: opt-in EXPLÍCITO para entornos
+  //     single-process donde el limiter in-memory sí funciona — el job E2E
+  //     del CI (`next start` con un solo worker) y VPS de un solo proceso
+  //     (el deploy recomendado en el README). Nunca activarlo en Vercel u
+  //     otro serverless multi-instancia: ahí el fallback es decorativo.
   warnIfMisconfiguredOnce();
   if (
     process.env.NODE_ENV === "production" &&
-    process.env.NEXT_PHASE !== "phase-production-build"
+    process.env.NEXT_PHASE !== "phase-production-build" &&
+    process.env.RATE_LIMIT_ALLOW_IN_MEMORY !== "true"
   ) {
     throw new Error(
       "[rateLimit] UPSTASH_REDIS_REST_URL no configurado en producción. " +
