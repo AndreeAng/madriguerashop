@@ -10,3 +10,8 @@ next-env.d.ts
 # Comprobantes de pago: sirven por route handler con auth, NO se commitean.
 private-uploads/
 public/uploads/
+# Output de Playwright (CI y flujo manual)
+test-results/
+playwright-report/
+tests/manual/assets/
+tests/manual/shots/
