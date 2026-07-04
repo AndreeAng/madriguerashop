@@ -76,7 +76,7 @@ export function TeamClient({
       {cashiers.length === 0 ? (
         <EmptyState
           icon={<UserCircle className="size-8" />}
-          description="Sin cajeros invitados todavía. Cuando tengas más manos para atender pedidos, invitalos acá."
+          description="Sin cajeros invitados todavía. Cuando tengas más manos para atender pedidos, invítalos acá."
         />
       ) : (
         <ul className="overflow-hidden rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)]">

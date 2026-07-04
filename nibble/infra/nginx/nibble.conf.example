@@ -1,5 +1,5 @@
 # nginx config de ejemplo para deploy en VPS.
-# Reemplazá nibble.bo por tu dominio real.
+# Reemplaza nibble.bo por tu dominio real.
 
 server {
     listen 80;

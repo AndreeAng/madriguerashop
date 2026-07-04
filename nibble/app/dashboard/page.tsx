@@ -182,6 +182,7 @@ export default async function DashboardHome() {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
+                timeZone: "America/La_Paz",
               })}
             </p>
           </div>
@@ -274,6 +275,7 @@ export default async function DashboardHome() {
                               {o.createdAt.toLocaleTimeString("es-BO", {
                                 hour: "2-digit",
                                 minute: "2-digit",
+                                timeZone: "America/La_Paz",
                               })}
                             </p>
                           </div>

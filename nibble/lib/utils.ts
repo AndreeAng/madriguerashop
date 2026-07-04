@@ -36,6 +36,9 @@ export function formatDateLong(d: Date): string {
     month: "long",
     hour: "2-digit",
     minute: "2-digit",
+    // El locale es-BO NO fija la zona horaria — sin esto, el server en UTC
+    // (Vercel) formatea 4 horas adelantado de lo que ve el cliente boliviano.
+    timeZone: "America/La_Paz",
   });
 }
 

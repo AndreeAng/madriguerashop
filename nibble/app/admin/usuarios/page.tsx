@@ -226,6 +226,7 @@ export default async function AdminUsersPage({
                                 day: "2-digit",
                                 month: "short",
                                 year: "numeric",
+                                timeZone: "America/La_Paz",
                               })
                             : "Nunca"}
                         </td>

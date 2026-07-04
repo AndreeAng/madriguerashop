@@ -231,9 +231,9 @@ export default async function CobranzasPage({
                           Plan {inv.store.plan.name} · Tienda {inv.store.status}
                         </p>
                         <p className="text-xs text-[color:var(--muted)]">
-                          Vence: {inv.dueDate.toLocaleDateString("es-BO", { dateStyle: "medium" })}
+                          Vence: {inv.dueDate.toLocaleDateString("es-BO", { dateStyle: "medium", timeZone: "America/La_Paz" })}
                           {inv.paidAt &&
-                            ` · Pagada: ${inv.paidAt.toLocaleDateString("es-BO", { dateStyle: "medium" })}`}
+                            ` · Pagada: ${inv.paidAt.toLocaleDateString("es-BO", { dateStyle: "medium", timeZone: "America/La_Paz" })}`}
                         </p>
                         {inv.notes && (
                           <p className="mt-1 text-xs italic text-[color:var(--muted)]">

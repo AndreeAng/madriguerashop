@@ -50,7 +50,7 @@ jobs:
 
     # GitHub Actions no permite `${{ secrets.* }}` en `environment.url`.
     # Antes era `url: ${{ secrets.PROD_APP_URL }}` y rechazaba el workflow.
-    # Si querés un link clickable en la UI de GitHub Deployments, hardcodealo
+    # Si quieres un link clickable en la UI de GitHub Deployments, hardcodéalo
     # acá; el smoke test sigue usando $PROD_APP_URL desde secrets.
     environment:
       name: production
@@ -199,7 +199,7 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
         run: |
-          echo "::error::Deploy falló — el deploy anterior sigue live. Investigá los logs antes del próximo push a main."
+          echo "::error::Deploy falló — el deploy anterior sigue live. Investiga los logs antes del próximo push a main."
           # Vercel rolling deploys: el deploy anterior queda activo si éste falla
           # los health checks. Aquí podríamos llamar a `vercel rollback` si
           # quisiéramos ser explícitos, pero el comportamiento default ya cubre.

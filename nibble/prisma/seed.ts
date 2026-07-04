@@ -358,7 +358,7 @@ async function seedDemoStore(
   await db.coupon.deleteMany({ where: { storeId: store.id } });
   if (spec.coupons && spec.coupons.length > 0) {
     // Vigencia de los cupones demo: 30 días desde hoy. Si quieres probar
-    // "fuera de fecha" en la UI, editás desde el dashboard.
+    // "fuera de fecha" en la UI, editas desde el dashboard.
     const validFrom = new Date();
     const validTo = new Date();
     validTo.setDate(validTo.getDate() + 30);
@@ -614,7 +614,7 @@ const demoStores: DemoStoreSpec[] = [
       {
         slug: "cerveza-artesanal",
         name: "Cerveza artesanal",
-        description: "IPA, Stout o Pale Ale — preguntá qué tenemos hoy.",
+        description: "IPA, Stout o Pale Ale — pregunta qué tenemos hoy.",
         basePrice: 25,
         category: "Bebidas",
         imageUrl:
@@ -737,7 +737,7 @@ const demoStores: DemoStoreSpec[] = [
         imageUrl:
           "https://images.unsplash.com/photo-1494859802809-d069c3b71a8a?w=1200&q=80",
         isFeatured: true,
-        customLabel: "Ahorrás Bs 20",
+        customLabel: "Ahorras Bs 20",
       },
     ],
     owner: {
@@ -1140,7 +1140,7 @@ const demoStores: DemoStoreSpec[] = [
     popup: {
       title: "¡Bienvenida al horno!",
       message:
-        "Encargá tu torta con un día de anticipación. Tres leches, cheesecake y chocolate belga disponibles toda la semana.",
+        "Encarga tu torta con un día de anticipación. Tres leches, cheesecake y chocolate belga disponibles toda la semana.",
       imageUrl:
         "https://images.unsplash.com/photo-1551404973-761c83cd8339?w=900&q=80",
       ctaText: "Ver tortas",
@@ -1363,7 +1363,7 @@ const demoStores: DemoStoreSpec[] = [
     popup: {
       title: "¿Tu lista de compras lista?",
       message:
-        "Pedinos por WhatsApp con la lista escrita y te armamos el pedido. Como en la tienda de toda la vida, pero a domicilio.",
+        "Pídenos por WhatsApp con la lista escrita y te armamos el pedido. Como en la tienda de toda la vida, pero a domicilio.",
       ctaText: "Empezar pedido",
       ctaUrl: "https://wa.me/59171234500",
       delaySeconds: 5,
@@ -1448,7 +1448,7 @@ const demoStores: DemoStoreSpec[] = [
         slug: "manicure-decoracion",
         name: "Manicure con decoración",
         description:
-          "Diseño a elección: francés, glitter, arte mano alzada, pedrería. Contanos en las notas qué estilo te gusta.",
+          "Diseño a elección: francés, glitter, arte mano alzada, pedrería. Cuéntanos en las notas qué estilo te gusta.",
         basePrice: 95,
         category: "Servicios",
         imageUrl:
@@ -1761,7 +1761,7 @@ const demoStores: DemoStoreSpec[] = [
     },
     banner: {
       title: "Entrega en 30 minutos en el centro",
-      subtitle: "Si tu emergencia es urgente, contactanos por WhatsApp para coordinar.",
+      subtitle: "Si tu emergencia es urgente, contáctanos por WhatsApp para coordinar.",
       imageUrl:
         "https://images.unsplash.com/photo-1587854692152-cbe660dbde88?w=1600&q=80",
       linkUrl: "https://wa.me/59172112233",
@@ -1769,7 +1769,7 @@ const demoStores: DemoStoreSpec[] = [
     popup: {
       title: "¿Tienes receta médica?",
       message:
-        "Subila por WhatsApp con tu pedido y verificamos disponibilidad inmediata. Atención farmacéutica con tu prescripción al lado.",
+        "Súbela por WhatsApp con tu pedido y verificamos disponibilidad inmediata. Atención farmacéutica con tu prescripción al lado.",
       ctaText: "Enviar receta",
       ctaUrl: "https://wa.me/59172112233",
       delaySeconds: 4,

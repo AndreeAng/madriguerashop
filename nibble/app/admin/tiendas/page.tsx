@@ -134,7 +134,7 @@ export default async function AdminTiendasPage({
             </p>
             <h1 className="font-display mt-1 text-3xl">Tiendas</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              {stores.length} tiendas en el filtro actual
+              {total} tienda{total === 1 ? "" : "s"} en el filtro actual
             </p>
           </div>
 

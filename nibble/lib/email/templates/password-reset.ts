@@ -10,6 +10,7 @@ export function passwordResetEmail(opts: {
   const expires = opts.expiresAt.toLocaleString("es-BO", {
     dateStyle: "medium",
     timeStyle: "short",
+    timeZone: "America/La_Paz",
   });
 
   const body = `

@@ -84,7 +84,7 @@ export async function upsertTemplateAction(
       ) {
         return {
           fieldErrors: {
-            componentKey: `${existing._count.stores} tienda${existing._count.stores === 1 ? "" : "s"} usa esta plantilla. Reasignalas antes de cambiar el componentKey.`,
+            componentKey: `${existing._count.stores} tienda${existing._count.stores === 1 ? "" : "s"} usa esta plantilla. Reasígnalas antes de cambiar el componentKey.`,
           },
         };
       }
@@ -179,7 +179,7 @@ export async function deleteTemplateAction(
   if (result.count === 0) {
     return {
       error:
-        "No se pudo eliminar: hay tiendas usando esta plantilla. Reasignalas primero.",
+        "No se pudo eliminar: hay tiendas usando esta plantilla. Reasígnalas primero.",
     };
   }
 
@@ -229,7 +229,7 @@ export async function reassignStoresToTemplateAction(
   });
   if (!target) return { error: "Plantilla destino no encontrada." };
   if (!target.isActive) {
-    return { error: "La plantilla destino está inactiva. Activala primero." };
+    return { error: "La plantilla destino está inactiva. Actívala primero." };
   }
 
   const result = await db.store.updateMany({

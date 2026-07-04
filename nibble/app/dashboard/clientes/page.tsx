@@ -167,6 +167,7 @@ export default async function ClientesPage({
                               {c.lastOrderAt.toLocaleDateString("es-BO", {
                                 day: "2-digit",
                                 month: "short",
+                                timeZone: "America/La_Paz",
                               })}
                             </span>
                           ) : (

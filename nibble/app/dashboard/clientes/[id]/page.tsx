@@ -54,6 +54,7 @@ export default async function CustomerDetailPage({
                 Cliente desde{" "}
                 {customer.createdAt.toLocaleDateString("es-BO", {
                   dateStyle: "medium",
+                  timeZone: "America/La_Paz",
                 })}
               </p>
 
@@ -80,6 +81,7 @@ export default async function CustomerDetailPage({
                       ? customer.lastOrderAt.toLocaleDateString("es-BO", {
                           day: "2-digit",
                           month: "short",
+                          timeZone: "America/La_Paz",
                         })
                       : "—"
                   }
@@ -120,6 +122,7 @@ export default async function CustomerDetailPage({
                                 {o.createdAt.toLocaleString("es-BO", {
                                   dateStyle: "short",
                                   timeStyle: "short",
+                                  timeZone: "America/La_Paz",
                                 })}
                               </p>
                             </div>

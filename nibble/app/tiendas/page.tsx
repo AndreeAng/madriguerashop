@@ -15,8 +15,9 @@ export const metadata = {
     "Las tiendas que ya viven en Madriguera Shop. Hechas por bolivianos, vendiendo a bolivianos.",
 };
 
-const FALLBACK_BANNER =
-  "https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=1200&q=80";
+// Placeholder local (mismo asset que el storefront) — sin dependencia de
+// Unsplash para tiendas que aún no subieron banner.
+const FALLBACK_BANNER = "/placeholders/banner.webp";
 
 function initials(name: string): string {
   return (

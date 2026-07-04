@@ -182,6 +182,7 @@ export default async function AdminAlertasPage({
                           {a.createdAt.toLocaleString("es-BO", {
                             dateStyle: "short",
                             timeStyle: "short",
+                            timeZone: "America/La_Paz",
                           })}
                         </span>
                         {a.store && (

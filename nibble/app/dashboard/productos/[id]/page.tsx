@@ -91,7 +91,7 @@ export default async function EditProductPage({
 
       <h1 className="font-display mt-3 text-3xl">{productRaw.name}</h1>
       <p className="mt-1 text-sm text-[color:var(--muted)]">
-        Última actualización: {productRaw.updatedAt.toLocaleString("es-BO")}
+        Última actualización: {productRaw.updatedAt.toLocaleString("es-BO", { timeZone: "America/La_Paz" })}
       </p>
 
       <div className="mt-8">

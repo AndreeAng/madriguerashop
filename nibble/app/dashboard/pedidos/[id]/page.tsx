@@ -73,6 +73,7 @@ export default async function OrderDetailPage({
                   {order.createdAt.toLocaleString("es-BO", {
                     dateStyle: "medium",
                     timeStyle: "short",
+                    timeZone: "America/La_Paz",
                   })}
                 </span>
               </h1>
@@ -226,11 +227,12 @@ export default async function OrderDetailPage({
                         month: "long",
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "America/La_Paz",
                       })}
                     </p>
                     <p className="mt-0.5 text-xs text-[color:var(--muted)]">
                       El cliente eligió este horario al momento del pago.
-                      Preparalo para entregar/recoger en este momento.
+                      Prepáralo para entregar/recoger en este momento.
                     </p>
                   </div>
                 )}
@@ -259,6 +261,7 @@ export default async function OrderDetailPage({
                             {ev.createdAt.toLocaleString("es-BO", {
                               dateStyle: "short",
                               timeStyle: "short",
+                              timeZone: "America/La_Paz",
                             })}
                             {ev.byUserName ? ` · ${ev.byUserName}` : " · sistema"}
                           </p>

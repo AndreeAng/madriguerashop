@@ -55,15 +55,17 @@ export default async function ContactPage({
   );
 
   // Las redes son opcionales — mostramos solo las que el owner cargó.
+  // Se guardan como USUARIO (no URL) — construimos la URL completa igual
+  // que el footer; el valor crudo como href sería un link relativo roto.
   const socials = [
     store.instagram
-      ? { icon: Instagram, label: "Instagram", href: store.instagram }
+      ? { icon: Instagram, label: "Instagram", href: `https://instagram.com/${store.instagram}` }
       : null,
     store.facebook
-      ? { icon: Facebook, label: "Facebook", href: store.facebook }
+      ? { icon: Facebook, label: "Facebook", href: `https://facebook.com/${store.facebook}` }
       : null,
     store.tiktok
-      ? { icon: MessageCircle, label: "TikTok", href: store.tiktok }
+      ? { icon: MessageCircle, label: "TikTok", href: `https://tiktok.com/@${store.tiktok}` }
       : null,
     store.website
       ? { icon: Globe, label: "Sitio web", href: store.website }
@@ -147,7 +149,7 @@ export default async function ContactPage({
 
           {socials.length > 0 && (
             <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-              <div className="text-sm font-medium">Seguinos</div>
+              <div className="text-sm font-medium">Síguenos</div>
               <ul className="mt-2 space-y-2 text-sm">
                 {socials.map((s) => {
                   const Icon = s.icon;

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Script de deploy para VPS Linux (Ubuntu/Debian).
-# Ejemplo — adaptá rutas a tu setup real.
+# Ejemplo — adapta rutas a tu setup real.
 set -euo pipefail
 
 APP_DIR=/var/www/nibble

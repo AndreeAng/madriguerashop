@@ -230,6 +230,7 @@ export default async function OrdersPage({
                                     month: "short",
                                     hour: "2-digit",
                                     minute: "2-digit",
+                                    timeZone: "America/La_Paz",
                                   })}
                                 </span>
                               )}
@@ -251,6 +252,7 @@ export default async function OrdersPage({
                                 month: "short",
                                 hour: "2-digit",
                                 minute: "2-digit",
+                                timeZone: "America/La_Paz",
                               })}
                             </p>
                           </div>

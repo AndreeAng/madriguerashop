@@ -43,7 +43,7 @@ export function TemplateDangerZone({
         <h3 className="text-sm font-semibold">Eliminar plantilla</h3>
         <p className="mt-1 text-xs text-[color:var(--muted)]">
           {storesUsing > 0
-            ? `Esta plantilla está en uso por ${storesUsing} tienda${storesUsing === 1 ? "" : "s"}. Reasignalas antes de eliminar.`
+            ? `Esta plantilla está en uso por ${storesUsing} tienda${storesUsing === 1 ? "" : "s"}. Reasígnalas antes de eliminar.`
             : "No la usa ninguna tienda. Eliminarla es irreversible."}
         </p>
         {!confirmDelete ? (

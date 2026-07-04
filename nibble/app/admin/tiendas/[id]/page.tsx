@@ -156,7 +156,7 @@ export default async function AdminStoreDetailPage({
                         </p>
                       </div>
                       <span className="text-[10px] text-[color:var(--muted)]">
-                        Desde {u.createdAt.toLocaleDateString("es-BO")}
+                        Desde {u.createdAt.toLocaleDateString("es-BO", { timeZone: "America/La_Paz" })}
                       </span>
                     </li>
                   ))}
@@ -178,7 +178,7 @@ export default async function AdminStoreDetailPage({
             ) : (
               <>
                 <p className="mt-2 text-sm text-[color:var(--fg-soft)]">
-                  Esta tienda existe pero todavía no tiene dueño. Asignale uno
+                  Esta tienda existe pero todavía no tiene dueño. Asígnale uno
                   cuando el cliente confirme — la tienda y todo su catálogo
                   pasan a estar bajo su control.
                 </p>

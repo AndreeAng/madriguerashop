@@ -44,14 +44,16 @@ function buildRemotePatterns(): NonNullable<
     });
   }
 
-  // Placeholders del seed (Unsplash/Picsum) sólo en dev. En producción no
-  // deberían aparecer URLs así — si aparecen es bug del seed que se debe
-  // corregir, no algo que la app deba "soportar" sirviendo.
+  // Unsplash se permite TAMBIÉN en producción: las tiendas demo del seed
+  // (big-bite-wings, la-latita, etc.) usan imágenes de Unsplash y son el
+  // showroom al que enlaza la landing ("Ver una tienda real"). Sin este
+  // patrón, sus heroes y fotos devuelven 400 del image optimizer en prod.
+  // Las tiendas reales suben a Blob/uploads — nunca generan URLs de terceros.
+  patterns.push({ protocol: "https", hostname: "images.unsplash.com" });
+
+  // Picsum sólo en dev (placeholders de pruebas locales).
   if (process.env.NODE_ENV !== "production") {
-    patterns.push(
-      { protocol: "https", hostname: "images.unsplash.com" },
-      { protocol: "https", hostname: "picsum.photos" },
-    );
+    patterns.push({ protocol: "https", hostname: "picsum.photos" });
   }
 
   return patterns;

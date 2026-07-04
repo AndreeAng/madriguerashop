@@ -154,7 +154,7 @@ export default async function AuditoriaPage({
             </p>
             <h1 className="font-display mt-1 text-3xl">Auditoría</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
-              Últimos 200 eventos · {entries.length} en el filtro actual
+              {total} evento{total === 1 ? "" : "s"} en el filtro actual · página {page} de {totalPages}
             </p>
           </div>
 
@@ -214,6 +214,7 @@ export default async function AuditoriaPage({
                           {e.createdAt.toLocaleString("es-BO", {
                             dateStyle: "short",
                             timeStyle: "short",
+                            timeZone: "America/La_Paz",
                           })}
                         </td>
                         <td className="px-3 py-3">

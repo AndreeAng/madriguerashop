@@ -133,7 +133,7 @@ export default async function FacturacionPage() {
                 ) : (
                   <div className="mt-4 flex aspect-square items-center justify-center rounded-xl border border-dashed border-[color:var(--line-strong)] bg-[color:var(--bg)] text-center">
                     <p className="px-6 text-xs text-[color:var(--muted)]">
-                      QR no configurado todavía. Contactanos por WhatsApp.
+                      QR no configurado todavía. Contáctanos por WhatsApp.
                     </p>
                   </div>
                 )}
@@ -186,16 +186,16 @@ function InvoiceCard({
           </p>
           <p className="mt-1 text-xs text-[color:var(--muted)]">
             Período:{" "}
-            {invoice.periodStart.toLocaleDateString("es-BO", { dateStyle: "medium" })} —{" "}
-            {invoice.periodEnd.toLocaleDateString("es-BO", { dateStyle: "medium" })}
+            {invoice.periodStart.toLocaleDateString("es-BO", { dateStyle: "medium", timeZone: "America/La_Paz" })} —{" "}
+            {invoice.periodEnd.toLocaleDateString("es-BO", { dateStyle: "medium", timeZone: "America/La_Paz" })}
           </p>
           <p className="text-xs text-[color:var(--muted)]">
             Vence:{" "}
-            {invoice.dueDate.toLocaleDateString("es-BO", { dateStyle: "medium" })}
+            {invoice.dueDate.toLocaleDateString("es-BO", { dateStyle: "medium", timeZone: "America/La_Paz" })}
           </p>
           {invoice.paidAt && (
             <p className="text-xs text-[color:var(--color-leaf-600)]">
-              Pagada: {invoice.paidAt.toLocaleDateString("es-BO", { dateStyle: "medium" })}
+              Pagada: {invoice.paidAt.toLocaleDateString("es-BO", { dateStyle: "medium", timeZone: "America/La_Paz" })}
             </p>
           )}
           {invoice.notes && (

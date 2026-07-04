@@ -111,7 +111,7 @@ export default async function AboutPage({
             </div>
             {store.hoursGroups.length === 0 ? (
               <p className="mt-2 text-sm text-[color:var(--muted)]">
-                Consultanos por WhatsApp.
+                Consúltanos por WhatsApp.
               </p>
             ) : (
               <ul className="mt-2 space-y-1 text-sm">
