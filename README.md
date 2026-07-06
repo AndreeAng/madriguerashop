@@ -43,29 +43,112 @@
 
 ## Desarrollo local
 
+### Requisitos
+
+- Node.js 22+
+- Docker Desktop (recomendado para la DB) — o cualquier PostgreSQL 14+
+
+### 1. Base de datos
+
+**Opción A — Docker (recomendado):**
+
+```bash
+docker run -d \
+  --name madriguera-postgres \
+  -e POSTGRES_USER=madriguera \
+  -e POSTGRES_PASSWORD=madriguera_dev \
+  -e POSTGRES_DB=madrigueras \
+  -p 5433:5432 \
+  postgres:14-alpine
+```
+
+> **¿Por qué 5433?** El puerto 5432 suele estar ocupado por una instalación local de PostgreSQL (muy común en Windows). Usar 5433 evita el conflicto sin necesidad de diagnosticar nada.
+
+**Opción B — PostgreSQL local o Neon:**  
+Saltá este paso y usá tu `DATABASE_URL` directamente en el paso siguiente.
+
+### 2. Variables de entorno
+
 ```bash
 cd nibble
-cp .env.example .env            # Configurá DATABASE_URL y NEXTAUTH_SECRET mínimo
+cp .env.example .env
+```
+
+Editá `.env` con los valores mínimos:
+
+```env
+NODE_ENV=development
+APP_URL=http://localhost:3000
+AUTH_URL=http://localhost:3000
+
+# Generá con: openssl rand -base64 32
+AUTH_SECRET=<secreto>
+ENCRYPTION_KEY=<otro_secreto>
+
+# Si usaste Docker con el comando de arriba:
+DATABASE_URL=postgresql://madriguera:madriguera_dev@127.0.0.1:5433/madrigueras?schema=public&connection_limit=1&pool_timeout=20
+DIRECT_URL=postgresql://madriguera:madriguera_dev@127.0.0.1:5433/madrigueras?schema=public
+
+# Dev: storage en filesystem local
+UPLOAD_DIR=./public/uploads
+PUBLIC_UPLOADS_URL=http://localhost:3000/uploads
+PROOF_UPLOAD_DIR=./private-uploads/proof
+
+# Rate limit in-memory (solo válido en dev con proceso único)
+RATE_LIMIT_ALLOW_IN_MEMORY=true
+
+# Credenciales del super admin que crea el seed
+SEED_SUPER_ADMIN_EMAIL=admin@madrigueras.shop
+SEED_SUPER_ADMIN_PASSWORD=<password_seguro>
+SEED_DEMO_OWNER_PASSWORD=owner123change
+```
+
+> **Nota:** Usá `127.0.0.1` en vez de `localhost` en la URL de la DB. En sistemas modernos `localhost` puede resolver a IPv6 (`::1`) primero, lo que rompe la conexión de Prisma con Docker.
+
+### 3. Instalar, migrar y seedear
+
+```bash
 npm install
-npm run db:generate
-npm run db:push                 # primera vez: crea tablas
-npm run db:seed                 # 5 tiendas demo + super admin + plans
+npm run db:migrate        # aplica las migraciones (crea tablas)
+npm run db:seed           # datos de prueba: 9 tiendas demo + super admin + planes
 npm run dev
 ```
 
-App en `http://localhost:3000`. Login del super admin con las credenciales de `SEED_SUPER_ADMIN_EMAIL`/`PASSWORD` que pusiste en `.env`.
+La app queda en `http://localhost:3000`.
 
-### Logins de prueba (post-seed)
+### Logins de prueba
 
-Password universal: `owner123change`
+Super admin: el email y password que pusiste en `SEED_SUPER_ADMIN_EMAIL` / `SEED_SUPER_ADMIN_PASSWORD`.
 
-| Tienda | URL | Login owner |
+Owners de tiendas (password: `owner123change`):
+
+| Tienda | URL | Login |
 |---|---|---|
 | Big Bite Wings (RESTAURANT) | `/big-bite-wings` | `owner@bigbitewings.bo` |
 | La Latita (FOOD_TRUCK) | `/la-latita` | `owner@lalatita.bo` |
 | Nutriarte (RETAIL) | `/nutriarte` | `owner@nutriarte.bo` |
 | Ferretería Tunari (HARDWARE) | `/ferreteria-tunari` | `owner@ferreteriatunari.bo` |
 | Estudio Clara (SERVICES) | `/estudio-clara` | `owner@estudioclara.bo` |
+| Migas de Casa (BAKERY) | `/migas-de-casa` | `owner@migasdecasa.bo` |
+| Almacén del Barrio (GROCERY) | `/almacen-del-barrio` | `owner@almacendelbarrio.bo` |
+| Estudio Bella (BEAUTY) | `/estudio-bella` | `owner@estudiobella.bo` |
+| Farmacia Sana Vida (HEALTH) | `/farmacia-sana-vida` | `owner@sanavida.bo` |
+
+### Solución de problemas
+
+**`Authentication failed for (not available)` al migrar:**  
+Hay otro proceso usando el puerto de PostgreSQL. En Windows:
+```powershell
+Get-NetTCPConnection -LocalPort 5432 | Select-Object LocalAddress,OwningProcess
+Get-Process -Id <PID>
+```
+Si el proceso no es Docker, cambiá el puerto del contenedor a `5433` como se indica arriba y actualizá `DATABASE_URL`.
+
+**`npm run db:migrate` falla con error de conexión:**  
+Verificá que el contenedor esté corriendo: `docker ps`. Si está detenido: `docker start madriguera-postgres`.
+
+**El contenedor desaparece entre reinicios:**  
+El `docker run` de arriba ya incluye `--name` para poder reiniciarlo con `docker start madriguera-postgres`. No uses `--rm`.
 
 ---
 
