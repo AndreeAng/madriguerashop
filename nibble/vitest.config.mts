@@ -12,6 +12,22 @@ export default defineConfig({
     // `setupFiles` corre antes que cualquier test. Lo usamos para forzar
     // TZ=UTC y desbugear timezone tests entre dev (BOT) y CI (UTC).
     setupFiles: ["./tests/setup.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary", "html"],
+      reportsDirectory: "./coverage",
+      // Medimos la lógica de negocio pura (lib/) + las server actions.
+      // `all: true` reporta también los archivos que NINGÚN test toca (0%),
+      // que es justo lo que queremos ver para priorizar. Los componentes
+      // React y las rutas se cubren con Playwright (E2E), no acá.
+      all: true,
+      include: ["lib/**/*.ts", "server/**/*.ts"],
+      exclude: [
+        "**/*.d.ts",
+        "**/types.ts", // módulos solo-de-tipos (no hay ejecutable que cubrir)
+        "lib/db.ts", // singleton de PrismaClient — nada que testear
+      ],
+    },
   },
   resolve: {
     alias: {

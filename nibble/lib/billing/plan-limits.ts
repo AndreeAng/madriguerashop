@@ -39,7 +39,7 @@ export type LimitStatus = {
   nearLimit: boolean;
 };
 
-function statusFrom(current: number, limit: number | null): LimitStatus {
+export function statusFrom(current: number, limit: number | null): LimitStatus {
   if (limit === null) {
     return { current, limit: null, pct: null, exceeded: false, nearLimit: false };
   }
