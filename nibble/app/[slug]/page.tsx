@@ -35,7 +35,14 @@ export async function generateMetadata({
   // getStoreBySlug está cacheada con React.cache → si la usamos también en
   // la page, comparte una sola query por render.
   const store = await getStoreBySlug(slug);
-  if (!store) return {};
+  // Una tienda suspendida/cancelada renderiza el not-found en el body (via
+  // getStorefrontData), pero `getStoreBySlug` NO filtra por estado — sin
+  // este guard, su nombre se filtraba en el <title> y meta description,
+  // haciendo distinguible una tienda suspendida de uno slug inexistente.
+  // Tratamos ambos casos igual: metadata vacía + noindex.
+  if (!store || store.status === "SUSPENDED" || store.status === "CANCELLED") {
+    return { robots: { index: false, follow: false } };
+  }
   const faviconUrl = store.faviconUrl ?? store.logoUrl ?? null;
   return {
     title: store.metaTitle ?? store.name,
