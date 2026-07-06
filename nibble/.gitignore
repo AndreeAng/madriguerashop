@@ -15,3 +15,6 @@ test-results/
 playwright-report/
 tests/manual/assets/
 tests/manual/shots/
+
+# Test coverage reports
+/coverage

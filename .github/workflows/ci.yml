@@ -458,6 +458,20 @@ jobs:
           DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
         run: npx prisma migrate deploy
 
+      - name: Seed base data (idempotente)
+        # Los tests de integración necesitan los singletons que crea el seed:
+        # Template, Plan (starter/business), SaasSettings y BillingCounter.
+        # El seed usa upsert, así que correrlo en cada run es no-op si ya
+        # existen — evita depender de que la branch de Neon esté pre-seedeada
+        # a mano (si se recrea/resetea, sin esto todos los tests fallan con
+        # "Test DB sin template/plan"). Sin SEED_DEMO_OWNER_PASSWORD el seed
+        # salta las tiendas demo y NO borra nada, solo crea lo mínimo.
+        env:
+          DATABASE_URL: ${{ secrets.TEST_DATABASE_URL }}
+          SEED_SUPER_ADMIN_EMAIL: ci@example.com
+          SEED_SUPER_ADMIN_PASSWORD: ci-password-not-real-12345
+        run: npm run db:seed
+
       - name: Run integration tests
         run: npm run test:integration
 

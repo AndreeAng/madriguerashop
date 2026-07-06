@@ -1,8 +1,19 @@
 import { defineConfig } from "vitest/config";
+import { loadEnv } from "vite";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Vitest NO carga los archivos `.env` a `process.env` por su cuenta, así que
+// `TEST_DATABASE_URL` puesta en `.env.local` no llegaba al setup y había que
+// exportarla en el shell en cada corrida. `loadEnv` lee .env/.env.local/
+// .env.test y la inyectamos vía `test.env` (abajo). Si no existe, queda
+// undefined y el setup muestra el mensaje de ayuda como antes.
+const fileEnv = loadEnv("test", __dirname, "");
+const injectedEnv: Record<string, string> = {};
+if (fileEnv.TEST_DATABASE_URL)
+  injectedEnv.TEST_DATABASE_URL = fileEnv.TEST_DATABASE_URL;
 
 /**
  * Config para tests de INTEGRACIÓN — corren contra un Postgres real
@@ -42,6 +53,8 @@ export default defineConfig({
     },
     testTimeout: 30_000,
     hookTimeout: 30_000,
+    // Inyecta TEST_DATABASE_URL desde `.env.local` (ver loadEnv arriba).
+    env: injectedEnv,
   },
   resolve: {
     alias: {
