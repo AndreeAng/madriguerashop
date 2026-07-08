@@ -1,8 +1,10 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   statusFrom,
   productLimitMessage,
   staffLimitMessage,
+  checkProductLimit,
+  checkStaffLimit,
   type LimitStatus,
 } from "@/lib/billing/plan-limits";
 
@@ -72,6 +74,60 @@ describe("productLimitMessage", () => {
 
   it("cadena vacía cuando el límite es ilimitado", () => {
     expect(productLimitMessage(statusFrom(9999, null))).toBe("");
+  });
+});
+
+// Guard de regresión del bug "no se puede crear producto".
+// checkProductLimit/checkStaffLimit corren DENTRO de la transacción del CREATE
+// (advisory lock). Si hacen el lookup del plan por el pool `db` en vez del `tx`
+// pasado, con `connection_limit=1` la transacción se auto-bloquea (retiene la
+// única conexión) y expira a los 5s. Por eso TODAS las queries del check deben
+// ir por el `client` recibido.
+describe("checkProductLimit — usa el client pasado para TODAS sus queries", () => {
+  function makeTxClient(opts: { maxProducts: number | null; activeCount: number }) {
+    return {
+      store: {
+        findUnique: vi.fn(async () => ({ plan: { maxProducts: opts.maxProducts } })),
+      },
+      product: { count: vi.fn(async () => opts.activeCount) },
+      user: { count: vi.fn(async () => 0) },
+    };
+  }
+
+  it("hace el lookup del plan Y el count sobre el client (no sobre el pool db)", async () => {
+    const client = makeTxClient({ maxProducts: 10, activeCount: 7 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status = await checkProductLimit("store-1", client as any);
+
+    // El lookup del plan tiene que salir por el client — este es el guard del
+    // deadlock. En el código buggy salía por `db` y este spy quedaba sin llamar.
+    expect(client.store.findUnique).toHaveBeenCalledTimes(1);
+    expect(client.product.count).toHaveBeenCalledTimes(1);
+    expect(status).toMatchObject({ current: 7, limit: 10, exceeded: false });
+  });
+
+  it("respeta límite null (plan sin tope) leído por el client", async () => {
+    const client = makeTxClient({ maxProducts: null, activeCount: 999 });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status = await checkProductLimit("store-1", client as any);
+    expect(client.store.findUnique).toHaveBeenCalledTimes(1);
+    expect(status.limit).toBeNull();
+    expect(status.exceeded).toBe(false);
+  });
+});
+
+describe("checkStaffLimit — usa el client pasado para TODAS sus queries", () => {
+  it("hace el lookup del plan sobre el client (guard del mismo deadlock)", async () => {
+    const client = {
+      store: { findUnique: vi.fn(async () => ({ plan: { maxStaff: 1 } })) },
+      user: { count: vi.fn(async () => 1) },
+      product: { count: vi.fn(async () => 0) },
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const status = await checkStaffLimit("store-1", client as any);
+    expect(client.store.findUnique).toHaveBeenCalledTimes(1);
+    expect(client.user.count).toHaveBeenCalledTimes(1);
+    expect(status).toMatchObject({ current: 1, limit: 1, exceeded: true });
   });
 });
 
