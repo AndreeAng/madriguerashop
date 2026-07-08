@@ -1,8 +1,11 @@
 import type { ReactNode } from "react";
 import { Role } from "@prisma/client";
+import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { readImpersonatedStoreId } from "@/lib/auth/impersonation";
+import { computeDunningNotice } from "@/lib/billing/dunning-notice";
 import { DashboardSidebar } from "@/components/dashboard/Sidebar";
+import { BillingNotice } from "@/components/dashboard/BillingNotice";
 import { ImpersonationBanner } from "@/components/admin/ImpersonationBanner";
 import { dashboardCopy } from "@/lib/dashboard/copy";
 import { DashboardCopyProvider } from "@/lib/dashboard/copy-context";
@@ -38,6 +41,18 @@ export default async function DashboardLayout({
     user.role === Role.SUPER_ADMIN && impersonatedId === store.id;
   const copy = dashboardCopy(store.vertical);
 
+  // Aviso de cobranza: factura abierta más próxima + estado de la tienda.
+  const earliestOpenInvoice = await db.invoice.findFirst({
+    where: { storeId: store.id, status: { in: ["PENDING", "OVERDUE"] } },
+    orderBy: { dueDate: "asc" },
+    select: { dueDate: true, status: true },
+  });
+  const dunningNotice = computeDunningNotice({
+    status: store.status,
+    earliestOpenInvoice,
+    now: new Date(),
+  });
+
   return (
     <DashboardCopyProvider copy={copy}>
       <div className="flex min-h-screen">
@@ -59,6 +74,7 @@ export default async function DashboardLayout({
           {isImpersonating && (
             <ImpersonationBanner storeName={store.name} />
           )}
+          <BillingNotice notice={dunningNotice} />
           {children}
         </div>
       </div>
