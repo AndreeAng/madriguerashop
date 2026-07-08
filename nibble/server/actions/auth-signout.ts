@@ -43,5 +43,5 @@ export async function signOutAction(): Promise<void> {
     actorId: session?.user?.id ?? null,
   });
   await clearImpersonatedStore();
-  await signOut({ redirectTo: "/" });
+  await signOut({ redirectTo: "/login" });
 }

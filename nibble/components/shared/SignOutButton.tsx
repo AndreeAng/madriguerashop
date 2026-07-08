@@ -4,7 +4,7 @@ import { signOutAction } from "@/server/actions/auth-signout";
 /**
  * Botón "Cerrar sesión" reutilizable para admin/dashboard sidebars.
  * Usa `<form action={serverAction}>` — el envío del form invoca la action,
- * que llama `signOut()` y redirige a `/`. No requiere JS del cliente:
+ * que llama `signOut()` y redirige a `/login`. No requiere JS del cliente:
  * funciona incluso con JS deshabilitado.
  *
  * `variant` adapta el color para los dos temas de sidebar:
