@@ -63,29 +63,57 @@ export function statusFrom(current: number, limit: number | null): LimitStatus {
  * un request siguiente arranca limpio, sin riesgo de mostrar planes
  * stale tras un upgrade.
  */
-const getStorePlanLimits = cache(
-  async (
-    storeId: string,
-  ): Promise<{
-    maxProducts: number | null;
-    maxOrdersPerMonth: number | null;
-    maxStaff: number | null;
-  } | null> => {
-    const store = await db.store.findUnique({
-      where: { id: storeId },
-      select: {
-        plan: {
-          select: {
-            maxProducts: true,
-            maxOrdersPerMonth: true,
-            maxStaff: true,
-          },
+type PlanLimits = {
+  maxProducts: number | null;
+  maxOrdersPerMonth: number | null;
+  maxStaff: number | null;
+} | null;
+
+/**
+ * Query cruda del plan sobre el `client` dado. DEBE usar el `client`, no el
+ * singleton `db`: cuando `checkProductLimit`/`checkStaffLimit` corren DENTRO de
+ * una transacción interactiva (advisory lock del CREATE), pegarle al pool con
+ * `db` pide una segunda conexión — y con `connection_limit=1` la transacción ya
+ * tiene la única, así que el query se cuelga hasta que la transacción expira a
+ * los 5s ("Transaction already closed"). Ese fue el bug que impedía crear
+ * productos. Ver `plan-limits.test.ts`.
+ */
+async function fetchPlanLimits(
+  storeId: string,
+  client: TxClient,
+): Promise<PlanLimits> {
+  const store = await client.store.findUnique({
+    where: { id: storeId },
+    select: {
+      plan: {
+        select: {
+          maxProducts: true,
+          maxOrdersPerMonth: true,
+          maxStaff: true,
         },
       },
-    });
-    return store?.plan ?? null;
-  },
+    },
+  });
+  return store?.plan ?? null;
+}
+
+/**
+ * Lee el `Plan` de la tienda por el pool. Memoizado per-request con
+ * `React.cache()` para que los 3 checks (`checkProductLimit`, `checkStaffLimit`,
+ * `checkOrderLimitThisMonth`) que se llaman juntos en el banner del dashboard
+ * hagan UNA sola query, no tres.
+ *
+ * SOLO para el camino por defecto (banner en Server Components). Adentro de una
+ * transacción se usa `fetchPlanLimits(storeId, tx)` — ver nota arriba.
+ */
+const getStorePlanLimits = cache(
+  (storeId: string): Promise<PlanLimits> => fetchPlanLimits(storeId, db),
 );
+
+/** Plan por el client correcto: el pool cacheado si es `db`, o el `tx` pasado. */
+function planLimitsFor(storeId: string, client: TxClient): Promise<PlanLimits> {
+  return client === db ? getStorePlanLimits(storeId) : fetchPlanLimits(storeId, client);
+}
 
 // ============== Checks individuales ==============
 
@@ -93,7 +121,7 @@ export async function checkProductLimit(
   storeId: string,
   client: TxClient = db,
 ): Promise<LimitStatus> {
-  const plan = await getStorePlanLimits(storeId);
+  const plan = await planLimitsFor(storeId, client);
   const limit = plan?.maxProducts ?? null;
   const current = await client.product.count({
     where: { storeId, isActive: true },
@@ -105,7 +133,7 @@ export async function checkStaffLimit(
   storeId: string,
   client: TxClient = db,
 ): Promise<LimitStatus> {
-  const plan = await getStorePlanLimits(storeId);
+  const plan = await planLimitsFor(storeId, client);
   // `maxStaff` cuenta usuarios CASHIER (el owner no consume slot — el
   // plan starter tiene `maxStaff=1` que significa "1 cashier además del
   // owner"). Si el día de mañana el plan tiene maxStaff=0, el owner no
