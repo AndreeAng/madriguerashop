@@ -36,7 +36,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
-    "@sentry/nextjs": "^9.10.0",
+    "@sentry/nextjs": "^10.65.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
     "@vercel/blob": "^2.4.0",
