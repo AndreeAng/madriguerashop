@@ -35,7 +35,7 @@ export default async function RecoveryPage() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at 30% 30%, rgba(245,158,11,0.35), transparent 35%), radial-gradient(circle at 80% 70%, rgba(217,119,6,0.25), transparent 35%)",
+              "radial-gradient(circle at 75% 15%, rgba(212,20,90,0.38), transparent 45%)",
           }}
         />
       </div>

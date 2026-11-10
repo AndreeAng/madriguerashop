@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Fraunces } from "next/font/google";
 import Script from "next/script";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
@@ -8,18 +7,7 @@ import "./globals.css";
 // chico (~6KB) y se carga aunque la página no use mapa — aceptable.
 import "leaflet/dist/leaflet.css";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
-
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  variable: "--font-fraunces",
-  display: "swap",
-  axes: ["SOFT", "WONK", "opsz"],
-});
+import { fontVariablesClass } from "@/lib/fonts/marketing";
 
 export const metadata: Metadata = {
   title: "Madriguera Shop — Tu tienda virtual lista en 5 minutos",
@@ -46,8 +34,8 @@ export const viewport: Viewport = {
   maximumScale: 5,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f7f5f0" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1410" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f9" },
+    { media: "(prefers-color-scheme: dark)", color: "#121016" },
   ],
 };
 
@@ -66,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es-BO" className={`${inter.variable} ${fraunces.variable}`}>
+    <html lang="es-BO" className={fontVariablesClass}>
       <body>
         {/* WCAG 2.4.1: Skip link al inicio del body. Permite a usuarios
             de teclado y screen reader saltar la nav repetida (header

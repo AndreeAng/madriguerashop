@@ -43,10 +43,7 @@ export default async function SettingsPage() {
       <main className="p-6 lg:p-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Tu tienda
-              </p>
-              <h1 className="font-display mt-1 text-3xl">Configuración</h1>
+              <h1 className="font-display text-3xl">Configuración</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 Estado:{" "}
                 <span className="font-medium text-[color:var(--fg)]">

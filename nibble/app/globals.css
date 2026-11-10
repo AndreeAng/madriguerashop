@@ -1,40 +1,39 @@
 @import "tailwindcss";
 
 @theme {
-  /* `next/font` registra `--font-inter` y `--font-fraunces` apuntando a
-     la font-face local optimizada (subset + swap). Sin `var(...)` el
-     browser cae al string literal "Inter" y, si Google Fonts no cargó,
-     descarta el preload de Next y va al fallback genérico. */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, serif;
+  /* `next/font` (lib/fonts) registra `--font-instrument` y `--font-bricolage`
+     en <html>. Sin `var(...)` el navegador caería al nombre literal y
+     descartaría el preload de Next. */
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Menlo", "Consolas", monospace;
 
-  --color-cream-50: #fdfaf3;
-  --color-cream-100: #f8f0df;
-  --color-cream-200: #f0e3c5;
-  --color-cream-300: #e6d2a4;
+  --color-cream-50: #f7f7f9;
+  --color-cream-100: #efeef2;
+  --color-cream-200: #e2e0e7;
+  --color-cream-300: #cfccd6;
 
-  --color-amber-50: #fff8eb;
-  --color-amber-100: #ffe8c2;
-  --color-amber-200: #ffd285;
-  --color-amber-300: #ffb74a;
-  --color-amber-400: #f59e0b;
-  --color-amber-500: #db7706;
-  --color-amber-600: #b3590a;
-  --color-amber-700: #8a3f0c;
-  --color-amber-800: #6b300c;
-  --color-amber-900: #4a210a;
+  --color-amber-50: #fff8e6;
+  --color-amber-100: #ffefc2;
+  --color-amber-200: #ffe08a;
+  --color-amber-300: #ffc94d;
+  --color-amber-400: #ffb21e;
+  --color-amber-500: #e69500;
+  --color-amber-600: #a35c00;
+  --color-amber-700: #7d4500;
+  --color-amber-800: #5e3400;
+  --color-amber-900: #3f2300;
 
-  --color-bark-50: #f7f4ee;
-  --color-bark-100: #ebe4d3;
-  --color-bark-200: #ccbe9f;
-  --color-bark-300: #998967;
-  --color-bark-400: #6e6047;
-  --color-bark-500: #4f4434;
-  --color-bark-600: #3a3126;
-  --color-bark-700: #2a231b;
-  --color-bark-800: #1a1510;
-  --color-bark-900: #100c08;
+  --color-bark-50: #f4f3f6;
+  --color-bark-100: #e7e5eb;
+  --color-bark-200: #c9c6d0;
+  --color-bark-300: #9894a1;
+  --color-bark-400: #67636f;
+  --color-bark-500: #46424e;
+  --color-bark-600: #34303b;
+  --color-bark-700: #2a2630;
+  --color-bark-800: #1d1a22;
+  --color-bark-900: #121016;
 
   --color-tomato-50: #fef2f2;
   --color-tomato-400: #ef4444;
@@ -92,13 +91,13 @@
   --fg-soft: var(--color-bark-700);
   --muted: var(--color-bark-400);
   --muted-soft: var(--color-bark-300);
-  --placeholder: #7a6c52;
-  --line: rgba(26, 21, 16, 0.08);
-  --line-strong: rgba(26, 21, 16, 0.14);
+  --placeholder: #6b6774;
+  --line: rgba(18, 16, 22, 0.08);
+  --line-strong: rgba(18, 16, 22, 0.14);
   --card: #ffffff;
-  --card-soft: #fbf6ec;
-  --brand: var(--color-amber-500);
-  --brand-strong: var(--color-amber-600);
+  --card-soft: var(--color-bark-50);
+  --brand: var(--color-mk-magenta);
+  --brand-strong: var(--color-mk-magenta-deep);
   --brand-fg: #ffffff;
   --ink: var(--color-bark-800);
   --accent: var(--color-tomato-500);
@@ -122,10 +121,9 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image:
-    radial-gradient(1200px 600px at 8% -10%, rgba(245, 158, 11, 0.10), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, rgba(220, 38, 38, 0.05), transparent 55%),
-    radial-gradient(700px 400px at 50% 110%, rgba(79, 125, 58, 0.04), transparent 55%);
+  /* Fondo plano: el color lo pone cada tienda (acción) y la tinta. La capa
+     queda para no mover el stacking de las páginas que dependen de ella. */
+  background: transparent;
 }
 
 @layer base {
@@ -137,7 +135,7 @@ body::before {
 
 ::selection { background: var(--color-amber-200); color: var(--color-bark-900); }
 
-/* amber-600 da 3:1 o más tanto sobre crema como sobre bark-900. Sin
+/* amber-600 da 3:1 o más tanto sobre el fondo claro como sobre la tinta. Sin
    border-radius: el outline sigue la forma propia de cada control. */
 :focus-visible {
   outline: 2px solid var(--color-amber-600);
@@ -150,16 +148,14 @@ body::before {
 @layer utilities {
   .font-display {
     font-family: var(--font-display);
-    font-feature-settings: "ss01", "ss02";
-    letter-spacing: -0.025em;
-    font-variation-settings: "SOFT" 30, "WONK" 0, "opsz" 144;
+    letter-spacing: -0.02em;
+    font-variation-settings: "opsz" 48;
   }
 
   .font-display-wonk {
     font-family: var(--font-display);
-    font-feature-settings: "ss01", "ss02";
     letter-spacing: -0.03em;
-    font-variation-settings: "SOFT" 50, "WONK" 1, "opsz" 144;
+    font-variation-settings: "wdth" 86, "opsz" 96;
   }
 
   .num-tabular {
@@ -226,7 +222,7 @@ body::before {
     color: var(--color-amber-500);
     float: left;
     margin: 0.05em 0.12em -0.1em 0;
-    font-variation-settings: "SOFT" 50, "WONK" 1, "opsz" 144;
+    font-variation-settings: "opsz" 96;
   }
 
   .stamp {
@@ -273,43 +269,43 @@ body::before {
 
   .shadow-soft {
     box-shadow:
-      0 1px 0 rgba(24, 20, 13, 0.04),
-      0 8px 24px -12px rgba(24, 20, 13, 0.16),
-      0 24px 48px -32px rgba(24, 20, 13, 0.18);
+      0 1px 0 rgba(18, 16, 22, 0.04),
+      0 8px 24px -12px rgba(18, 16, 22, 0.16),
+      0 24px 48px -32px rgba(18, 16, 22, 0.18);
   }
 
   .shadow-float {
     box-shadow:
-      0 1px 0 rgba(24, 20, 13, 0.04),
-      0 18px 40px -16px rgba(24, 20, 13, 0.22),
-      0 40px 80px -40px rgba(24, 20, 13, 0.32);
+      0 1px 0 rgba(18, 16, 22, 0.04),
+      0 18px 40px -16px rgba(18, 16, 22, 0.22),
+      0 40px 80px -40px rgba(18, 16, 22, 0.32);
   }
 
   .shadow-card {
     box-shadow:
-      0 1px 2px rgba(24, 20, 13, 0.04),
-      0 4px 14px -8px rgba(24, 20, 13, 0.18);
+      0 1px 2px rgba(18, 16, 22, 0.04),
+      0 4px 14px -8px rgba(18, 16, 22, 0.18);
   }
 
   .shadow-card-hover {
     box-shadow:
-      0 1px 2px rgba(24, 20, 13, 0.04),
-      0 18px 40px -16px rgba(24, 20, 13, 0.28),
-      0 24px 56px -32px rgba(219, 119, 6, 0.18);
+      0 1px 2px rgba(18, 16, 22, 0.04),
+      0 18px 40px -16px rgba(18, 16, 22, 0.28),
+      0 24px 56px -32px rgba(230, 149, 0, 0.18);
   }
 
   .shadow-pill {
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.6) inset,
-      0 1px 2px rgba(24, 20, 13, 0.06),
-      0 8px 24px -10px rgba(24, 20, 13, 0.18);
+      0 1px 2px rgba(18, 16, 22, 0.06),
+      0 8px 24px -10px rgba(18, 16, 22, 0.18);
   }
 
   .bg-stripe {
     background-image: repeating-linear-gradient(
       45deg,
-      rgba(245, 158, 11, 0.08) 0,
-      rgba(245, 158, 11, 0.08) 8px,
+      rgba(255, 178, 30, 0.08) 0,
+      rgba(255, 178, 30, 0.08) 8px,
       transparent 8px,
       transparent 16px
     );

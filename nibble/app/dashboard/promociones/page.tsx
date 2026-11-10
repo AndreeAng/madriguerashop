@@ -96,10 +96,7 @@ export default async function PromocionesPage() {
 
       <main className="mx-auto max-w-4xl p-6 lg:p-8">
         <div>
-          <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-            Marketing
-          </p>
-          <h1 className="font-display mt-1 text-3xl">Promociones</h1>
+          <h1 className="font-display text-3xl">Promociones</h1>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
             Banners, popups y cupones para activar más ventas. Cada uno se
             usa en momentos distintos — lee la descripción de cada pestaña.

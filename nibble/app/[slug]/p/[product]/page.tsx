@@ -182,7 +182,7 @@ export default async function ProductDetailPage({
             {product.rating && (
               <div className="mt-3 flex items-center gap-2 text-sm">
                 <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--card)] px-2 py-1">
-                  <Star className="size-3.5 fill-current text-[color:var(--color-amber-500)]" />
+                  <Star className="size-3.5 fill-current text-[color:var(--color-amber-600)]" />
                   <span className="font-medium">{product.rating}</span>
                 </span>
               </div>

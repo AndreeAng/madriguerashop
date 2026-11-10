@@ -166,7 +166,7 @@ export function ProductCard({
             como best seller; antes se mostraba en cualquier hero, mintiendo. */}
         {isHero && product.badge === "best" && (
           <span className="absolute bottom-3 right-3 hidden rounded-full bg-white/95 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-bark-900)] shadow-pill backdrop-blur md:inline-flex">
-            <Star className="mr-1 size-3 fill-[color:var(--color-amber-500)] text-[color:var(--color-amber-500)]" />
+            <Star className="mr-1 size-3 fill-[color:var(--color-amber-500)] text-[color:var(--color-amber-600)]" />
             #1 más vendido
           </span>
         )}

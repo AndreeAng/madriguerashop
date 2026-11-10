@@ -157,7 +157,7 @@ export function ProductImagesField({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img.url} alt={img.alt ?? ""} className="size-full object-cover" />
             {i === 0 && (
-              <span className="absolute left-2 top-2 rounded-full bg-[color:var(--color-amber-500)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-pill">
+              <span className="absolute left-2 top-2 rounded-full bg-mk-magenta px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-pill">
                 Principal
               </span>
             )}

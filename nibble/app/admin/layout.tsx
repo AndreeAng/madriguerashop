@@ -28,7 +28,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="flex min-h-screen">
       <AdminSidebar user={{ fullName: admin.fullName, email: admin.email }} />
-      <div className="flex-1">{children}</div>
+      <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
 }

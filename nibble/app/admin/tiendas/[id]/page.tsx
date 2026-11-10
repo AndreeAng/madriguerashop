@@ -132,7 +132,7 @@ export default async function AdminStoreDetailPage({
                 Owner
               </h2>
               {!hasOwner && (
-                <span className="rounded-full bg-[color:var(--color-amber-500)] px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                <span className="rounded-full bg-mk-magenta px-2.5 py-0.5 text-[11px] font-semibold text-white">
                   Sin owner asignado
                 </span>
               )}

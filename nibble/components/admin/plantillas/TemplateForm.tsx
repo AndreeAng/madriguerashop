@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upsertTemplateAction } from "@/server/actions/admin-templates";
@@ -58,7 +59,7 @@ export function TemplateForm({
           role="status"
           className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
         >
-          ✓ Plantilla guardada.
+          <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Plantilla guardada.
         </p>
       )}
       {state.error && <ErrorAlert>{state.error}</ErrorAlert>}

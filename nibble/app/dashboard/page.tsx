@@ -172,12 +172,10 @@ export default async function DashboardHome() {
           )}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Hola, {ownerName}
-              </p>
-              <h1 className="font-display mt-1 text-3xl">Tu tienda hoy</h1>
+              <h1 className="font-display text-3xl">Tu tienda hoy</h1>
             </div>
             <p className="text-xs text-[color:var(--muted)]">
+              Hola, {ownerName} ·{" "}
               {now.toLocaleDateString("es-BO", {
                 weekday: "long",
                 day: "numeric",

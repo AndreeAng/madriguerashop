@@ -43,10 +43,7 @@ export default function DashboardError({
         <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[color:var(--color-tomato-500)]/10 text-[color:var(--color-tomato-600)]">
           <AlertTriangle className="size-6" />
         </div>
-        <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--muted)]">
-          Error en el panel
-        </p>
-        <h1 className="font-display mt-3 text-3xl leading-tight">
+        <h1 className="font-display text-3xl leading-tight">
           No pudimos cargar esta sección
         </h1>
         <p className="mt-4 text-[color:var(--muted)]">

@@ -30,10 +30,7 @@ export default async function TeamPage() {
 
       <main className="mx-auto max-w-3xl p-6 lg:p-8">
         <div>
-          <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-            Tu equipo
-          </p>
-          <h1 className="font-display mt-1 text-3xl">Cajeros</h1>
+          <h1 className="font-display text-3xl">Cajeros</h1>
           <p className="mt-1 text-sm text-[color:var(--muted)]">
             Los cajeros pueden ver pedidos y marcar estados (preparando, en
             entrega, entregado). NO pueden crear/editar productos, ver

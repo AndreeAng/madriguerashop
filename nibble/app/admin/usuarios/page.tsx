@@ -118,10 +118,7 @@ export default async function AdminUsersPage({
 
         <main className="p-6 lg:p-8">
           <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Plataforma
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Usuarios</h1>
+            <h1 className="font-display text-3xl">Usuarios</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
               {total} {total === 1 ? "usuario" : "usuarios"}
               {q || roleFilter || statusFilter !== "all" ? " (filtrados)" : ""} ·

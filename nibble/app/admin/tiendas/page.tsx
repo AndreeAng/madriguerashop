@@ -6,6 +6,7 @@ import { requireSuperAdmin } from "@/lib/auth/session";
 import { formatBob } from "@/lib/utils";
 import { Pagination } from "@/components/ui/Pagination";
 import { verticalLabel } from "@/lib/saas/verticals";
+import { storeActionColors } from "@/lib/storefront/theme";
 
 export const metadata = { title: "Tiendas · Admin" };
 
@@ -129,10 +130,7 @@ export default async function AdminTiendasPage({
 
         <main className="p-6 lg:p-8">
           <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Catálogo de tiendas
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Tiendas</h1>
+            <h1 className="font-display text-3xl">Tiendas</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
               {total} tienda{total === 1 ? "" : "s"} en el filtro actual
             </p>
@@ -194,8 +192,11 @@ export default async function AdminTiendasPage({
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
                             <div
-                              className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg text-[11px] font-bold text-white"
-                              style={{ background: s.primaryColor }}
+                              className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg text-[11px] font-bold"
+                              style={{
+                                background: storeActionColors(s.primaryColor).action,
+                                color: storeActionColors(s.primaryColor).onAction,
+                              }}
                             >
                               {s.logoUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element

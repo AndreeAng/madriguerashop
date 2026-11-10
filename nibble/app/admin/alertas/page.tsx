@@ -89,10 +89,7 @@ export default async function AdminAlertasPage({
     <main className="p-6 lg:p-8">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Operación
-              </p>
-              <h1 className="font-display mt-1 text-3xl">Alertas</h1>
+              <h1 className="font-display text-3xl">Alertas</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {openCount} abierta{openCount === 1 ? "" : "s"}
                 {criticalCount > 0 && (

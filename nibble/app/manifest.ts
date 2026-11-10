@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
       "Plataforma SaaS de tiendas virtuales en Bolivia. Cobra por QR, atiende por WhatsApp.",
     start_url: "/",
     display: "standalone",
-    background_color: "#f7f5f0",
-    theme_color: "#f59e0b",
+    background_color: "#f7f7f9",
+    theme_color: "#121016",
     lang: "es-BO",
     orientation: "portrait",
     icons: [

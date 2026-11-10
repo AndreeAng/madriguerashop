@@ -369,10 +369,7 @@ export default async function AnalyticsPage({
       <main className="mx-auto max-w-6xl p-6 lg:p-8">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Tu tienda en números
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Analytics</h1>
+            <h1 className="font-display text-3xl">Analytics</h1>
           </div>
 
           <RangeTabs current={rangeKey} />
@@ -887,7 +884,8 @@ function HourlyChart({
   const barW = (width - padX * 2) / buckets.length;
 
   return (
-    <div className="overflow-x-auto">
+    // contain:inline-size: el gráfico no ensancha la grilla; se desplaza dentro.
+    <div className="overflow-x-auto [contain:inline-size]" tabIndex={0}>
       <svg
         viewBox={`0 0 ${width} ${height + 22}`}
         className="block min-w-[420px] max-w-full"
@@ -979,7 +977,8 @@ function WeekdayChart({
   const barW = (width - padX * 2) / reordered.length;
 
   return (
-    <div className="overflow-x-auto">
+    // contain:inline-size: el gráfico no ensancha la grilla; se desplaza dentro.
+    <div className="overflow-x-auto [contain:inline-size]" tabIndex={0}>
       <svg
         viewBox={`0 0 ${width} ${height + 22}`}
         className="block w-full"
@@ -1055,7 +1054,8 @@ function DailyOrdersChart({
   const barW = (width - padX * 2) / series.length;
 
   return (
-    <div className="overflow-x-auto">
+    // contain:inline-size: el gráfico no ensancha la grilla; se desplaza dentro.
+    <div className="overflow-x-auto [contain:inline-size]" tabIndex={0}>
       <svg
         viewBox={`0 0 ${width} ${height + 26}`}
         className="block min-w-[640px] max-w-full"

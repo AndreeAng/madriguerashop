@@ -24,10 +24,7 @@ export default async function AdminImportPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-6 lg:p-10">
-      <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-        Captación
-      </p>
-      <h1 className="font-display mt-1 text-3xl">Importar tienda de Quick</h1>
+      <h1 className="font-display text-3xl">Importar tienda de Quick</h1>
       <p className="mt-2 text-sm text-[color:var(--muted)]">
         Migra una tienda de <code className="rounded bg-[color:var(--card)] px-1.5 py-0.5 text-xs">cat.quick.com.bo</code>{" "}
         a Madriguera Shop. Trae categorías, productos, descripciones e imágenes.

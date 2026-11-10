@@ -152,7 +152,7 @@ function SuspendBlock({
           className={
             isSuspended
               ? "inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-bark-900)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
-              : "inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-500)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--color-amber-600)]"
+              : "inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-400)] px-4 py-2 text-sm font-semibold text-[color:var(--color-bark-900)] hover:bg-[color:var(--color-amber-300)]"
           }
         >
           {isSuspended ? (
