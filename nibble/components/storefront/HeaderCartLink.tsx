@@ -29,7 +29,7 @@ export function HeaderCartLink({
           ? `${copy.cartLabel} con ${itemCount} ${itemCount === 1 ? copy.itemSingular : copy.itemPlural}`
           : `${copy.cartLabel} vacío`
       }
-      className="relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full bg-[color:var(--color-bark-900)] pl-4 pr-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-[color:var(--color-bark-800)] hover:scale-[1.02] active:scale-95"
+      className="relative inline-flex h-[44px] shrink-0 items-center gap-2 overflow-hidden rounded-full bg-[color:var(--color-bark-900)] pl-[16px] pr-[14px] text-sm font-semibold text-white transition-all duration-200 hover:bg-[color:var(--color-bark-800)] hover:scale-[1.02] active:scale-95"
     >
       <ShoppingBag aria-hidden className="size-4" />
       <span className="hidden sm:inline">{copy.cartLabel}</span>

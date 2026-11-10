@@ -197,7 +197,7 @@ export default async function OrderTrackingPage({
                 return (
                   <li
                     key={step.key}
-                    className={`flex items-start gap-4 rounded-2xl border p-4 transition ${
+                    className={`flex items-start gap-[12px] rounded-2xl border p-[16px] transition ${
                       active
                         ? "border-[color:var(--color-amber-500)] bg-[color:var(--bg)]"
                         : done
@@ -206,7 +206,7 @@ export default async function OrderTrackingPage({
                     }`}
                   >
                     <div
-                      className={`flex size-9 shrink-0 items-center justify-center rounded-full ${
+                      className={`flex size-[36px] shrink-0 items-center justify-center rounded-full ${
                         done
                           ? "bg-[color:var(--color-leaf-500)] text-white"
                           : active
@@ -216,8 +216,8 @@ export default async function OrderTrackingPage({
                     >
                       <Icon className="size-4" />
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
+                    <div className="min-w-0 flex-1 break-words">
+                      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                         <p className="text-sm font-semibold">{step.label}</p>
                         {active && (
                           <span className="rounded-full bg-[color:var(--color-amber-600)] px-2 py-0.5 text-xs font-semibold text-white">
@@ -247,7 +247,7 @@ export default async function OrderTrackingPage({
         </div>
 
         {/* Resumen + Entrega */}
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-2">
           <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
             <h2 className="font-semibold">Resumen</h2>
             <ul className="mt-4 space-y-3">

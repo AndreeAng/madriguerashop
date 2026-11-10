@@ -124,7 +124,7 @@ export function CheckoutCartLine({
           </div>
         </div>
       ) : (
-        <div className="mt-1.5 flex items-center justify-between">
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-x-3">
           <div className="flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--bg)]">
             <button
               type="button"

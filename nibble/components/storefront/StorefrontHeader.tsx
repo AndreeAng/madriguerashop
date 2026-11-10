@@ -9,7 +9,7 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
   const copy = storefrontCopy(store.vertical);
   return (
     <header className="sticky top-0 z-40 border-b border-[color:var(--line)] glass">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4">
+      <div className="mx-auto flex h-[64px] max-w-6xl items-center gap-[12px] px-[16px]">
         {/*
           En mobile no hay drawer lateral — el "menú" del storefront son las
           categorías que viven en el home. El botón antes era un <button> sin
@@ -20,7 +20,7 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
         <Link
           href={`/${store.slug}#menu`}
           aria-label={copy.menuAriaLabel}
-          className="grid size-11 place-items-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--card-soft)] md:hidden"
+          className="grid size-[44px] shrink-0 place-items-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--card-soft)] md:hidden"
         >
           <Menu className="size-5" />
         </Link>
@@ -28,11 +28,11 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
         <Link
           href={`/${store.slug}`}
           aria-label={`${store.name}, inicio`}
-          className="flex items-center gap-2.5"
+          className="flex shrink-0 items-center gap-2.5"
         >
           <div className="relative">
             <div
-              className="grid size-10 place-items-center overflow-hidden rounded-xl text-[13px] font-bold text-white shadow-pill ring-2 ring-white/40"
+              className="grid size-[40px] place-items-center overflow-hidden rounded-xl text-[13px] font-bold text-white shadow-pill ring-2 ring-white/40"
               style={{ background: store.primaryColor }}
             >
               {store.logoUrl ? (
@@ -48,7 +48,7 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
               )}
             </div>
             {store.isOpenNow && (
-              <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-[color:var(--color-leaf-500)] ring-2 ring-[color:var(--bg)]" />
+              <span className="absolute -bottom-[2px] -right-[2px] size-[12px] rounded-full bg-[color:var(--color-leaf-500)] ring-2 ring-[color:var(--bg)]" />
             )}
           </div>
           <div className="hidden md:block">
@@ -72,11 +72,11 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
           <span>{copy.searchPlaceholder}</span>
         </Link>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="ml-auto flex items-center gap-[6px]">
           <Link
             href={`/${store.slug}/buscar`}
             aria-label="Buscar"
-            className="grid size-11 place-items-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--card-soft)] md:hidden"
+            className="grid size-[44px] shrink-0 place-items-center rounded-full text-[color:var(--ink)] transition hover:bg-[color:var(--card-soft)] md:hidden"
           >
             <Search className="size-5" />
           </Link>

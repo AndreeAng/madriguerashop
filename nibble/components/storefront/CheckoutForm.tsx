@@ -356,7 +356,7 @@ export function CheckoutForm({
       />
 
       {/* El `<main>` envuelve este form en la page del checkout. */}
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_360px]">
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] gap-8 px-4 py-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-6">
           <h1 className="font-display text-3xl">Finalizar {copy.orderSingular}</h1>
 
@@ -668,7 +668,7 @@ export function CheckoutForm({
             )}
 
             {paymentMethod === "QR_STATIC" && (
-              <div className="mt-4 grid gap-4 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4 md:grid-cols-[180px_1fr]">
+              <div className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-4 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4 md:grid-cols-[180px_1fr]">
                 {store.qrImageUrl ? (
                   <div className="aspect-square overflow-hidden rounded-xl bg-white p-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -855,7 +855,7 @@ function ProofUploader({
     <>
       <label
         htmlFor={id}
-        className="mt-4 inline-flex cursor-pointer items-center gap-2 rounded-full border border-dashed border-[color:var(--color-bark-300)] bg-[color:var(--bg)] px-4 py-3 text-sm font-medium hover:border-[color:var(--color-bark-900)]"
+        className="mt-4 inline-flex max-w-full cursor-pointer items-center gap-2 rounded-full border border-dashed border-[color:var(--color-bark-300)] bg-[color:var(--bg)] px-4 py-3 text-sm font-medium hover:border-[color:var(--color-bark-900)]"
       >
         {uploading ? (
           <>
