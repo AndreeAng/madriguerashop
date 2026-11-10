@@ -88,16 +88,16 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
               {store.hoursSummary}
             </li>
           </ul>
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          <div className="mt-2 flex flex-wrap gap-x-4 text-xs">
             <Link
               href={`/${store.slug}/sobre-nosotros`}
-              className="inline-block py-1.5 text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+              className="inline-flex min-h-11 items-center text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
             >
               Sobre nosotros
             </Link>
             <Link
               href={`/${store.slug}/contacto`}
-              className="inline-block py-1.5 text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+              className="inline-flex min-h-11 items-center text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
             >
               Contacto
             </Link>
@@ -125,7 +125,7 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
           <span>© {new Date().getFullYear()} {store.name}. Todos los derechos reservados.</span>
           <Link
             href="/"
-            className="inline-flex items-center gap-1.5 transition hover:text-[color:var(--fg)]"
+            className="-my-3 inline-flex min-h-11 items-center gap-1.5 transition hover:text-[color:var(--fg)]"
           >
             <span>Powered by</span>
             <NibbleLogo className="text-current" />

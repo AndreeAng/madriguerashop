@@ -174,7 +174,7 @@ export default async function OrderTrackingPage({
               trackingToken={token}
               phoneOnly={phoneOnly}
               label={`Hablar con ${order.store.name}`}
-              className="hidden items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-2 text-xs font-medium text-[color:var(--color-bark-900)] md:inline-flex"
+              className="hidden min-h-11 items-center gap-1.5 rounded-full bg-whatsapp px-4 text-xs font-medium text-[color:var(--color-bark-900)] md:inline-flex"
             />
           </div>
 
@@ -380,7 +380,7 @@ export default async function OrderTrackingPage({
               trackingToken={token}
               phoneOnly={phoneOnly}
               label={`Hablar con ${order.store.name}`}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-[color:var(--color-bark-900)]"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-whatsapp px-5 py-3 text-sm font-medium text-[color:var(--color-bark-900)]"
             />
           </div>
         </div>

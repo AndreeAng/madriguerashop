@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Clock, MapPin, Sparkles } from "lucide-react";
 import { getStorefrontData, getStoreBySlug } from "@/lib/tenant/resolve";
 import { toStoreView } from "@/lib/storefront/adapter";
-import { storefrontCopy } from "@/lib/storefront/copy";
+import { MIN_ORDERS_TO_SHOW, storefrontCopy } from "@/lib/storefront/copy";
 import { getCartSnapshot } from "@/server/actions/cart";
 import { trackPageView } from "@/lib/analytics/track";
 import { StorefrontHeader } from "@/components/storefront/StorefrontHeader";
@@ -62,15 +62,12 @@ export default async function AboutPage({
       <StorefrontHeader store={store} cartCount={cart?.itemCount ?? 0} />
 
       <main id="main-content" className="mx-auto max-w-3xl px-4 py-12">
-        <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-600)]">
-          Sobre {store.name}
-        </p>
-        <h1 className="font-display mt-2 text-4xl">{store.tagline}</h1>
+        <h1 className="font-display text-4xl">Sobre {store.name}</h1>
 
         <div className="mt-8 space-y-6 text-[color:var(--fg-soft)]">
           <p className="text-lg leading-relaxed">{store.description}</p>
 
-          {store.ordersThisMonth !== undefined && store.ordersThisMonth > 0 && (
+          {store.ordersThisMonth !== undefined && store.ordersThisMonth >= MIN_ORDERS_TO_SHOW && (
             <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
               <div className="flex items-center gap-2 text-sm">
                 <Sparkles className="size-4 text-[color:var(--color-amber-600)]" />

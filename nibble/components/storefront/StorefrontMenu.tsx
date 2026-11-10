@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronRight, Flame } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { ProductView, StoreView } from "@/lib/storefront/types";
 import { storefrontCopy } from "@/lib/storefront/copy";
 import { categoryAnchorId as slugCat } from "@/lib/storefront/category-anchor";
@@ -125,10 +125,7 @@ export function StorefrontMenu({
         <section id="destacados" className="mx-auto max-w-6xl scroll-mt-32 px-4 pt-10">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-100)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-amber-700)]">
-                <Flame className="size-3" /> {copy.featuredPill}
-              </span>
-              <h2 className="font-display mt-3 text-3xl leading-tight md:text-4xl">
+              <h2 className="font-display text-3xl leading-tight md:text-4xl">
                 {copy.featuredTitle}
               </h2>
               <p className="mt-1.5 max-w-md text-sm text-[color:var(--muted)]">
@@ -141,7 +138,7 @@ export function StorefrontMenu({
                 e.preventDefault();
                 handleChipClick(slugCat(populatedCategories[0] ?? ""));
               }}
-              className="hidden items-center gap-1 text-sm font-medium text-[color:var(--fg-soft)] hover:text-[color:var(--color-amber-600)] md:inline-flex"
+              className="hidden min-h-11 items-center gap-1 text-sm font-medium text-[color:var(--fg-soft)] hover:text-[color:var(--color-amber-600)] md:inline-flex"
             >
               Ver todo <ChevronRight className="size-4" />
             </a>

@@ -48,6 +48,11 @@
   --color-leaf-600: #3d6429;
   --color-leaf-700: #2f4e20;
 
+  /* Verde de marca de WhatsApp para los botones que abren el chat: se
+     reconoce como "esto abre WhatsApp". Texto encima: bark-900 (contraste ~10:1). */
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #20bd5a;
+
   --color-gold-400: #d4a857;
   --color-gold-500: #b8862f;
 
@@ -405,4 +410,14 @@ body::before {
       transform: none !important;
     }
   }
+}
+
+/* Zoom del mapa del checkout: Leaflet lo dibuja de 30px, chico para el
+   dedo en la ruta de compra. Doble clase para ganarle a leaflet.css sin
+   depender del orden de import. */
+.map-picker .leaflet-control-zoom.leaflet-bar a {
+  width: 44px;
+  height: 44px;
+  line-height: 44px;
+  font-size: 22px;
 }

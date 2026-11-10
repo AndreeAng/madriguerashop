@@ -23,19 +23,19 @@ export function StorefrontBanner({
 }) {
   const inner = (
     <div className="relative h-[180px] w-full overflow-hidden rounded-3xl md:h-[260px]">
-      {/* Imagen mobile separada si el owner la subió; sino reusa la principal. */}
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={mobileImageUrl ?? imageUrl}
-        alt={title ?? ""}
-        className="absolute inset-0 size-full object-cover md:hidden"
-      />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imageUrl}
-        alt={title ?? ""}
-        className="absolute inset-0 hidden size-full object-cover md:block"
-      />
+      {/* Imagen mobile separada si el owner la subió; sino reusa la principal.
+          <picture> descarga solo la que corresponde al ancho: dos <img> con
+          una oculta por CSS bajaban las dos. El media coincide con `md`. */}
+      <picture>
+        {mobileImageUrl && (
+          <source media="(max-width: 767.98px)" srcSet={mobileImageUrl} />
+        )}
+        <img
+          src={imageUrl}
+          alt={title ?? ""}
+          className="absolute inset-0 size-full object-cover"
+        />
+      </picture>
 
       {/* Overlay solo si hay texto para mostrar. Sin texto, la imagen sola
           es la promo — algunos owners subirán el banner ya "diseñado". */}
