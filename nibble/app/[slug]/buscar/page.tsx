@@ -105,7 +105,7 @@ export default async function SearchPage({
       <main id="main-content" className="mx-auto max-w-6xl px-4 py-10">
         <Link
           href={`/${slug}`}
-          className="inline-flex items-center gap-1 text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+          className="inline-flex min-h-11 items-center gap-1 text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
         >
           <ChevronLeft className="size-3.5" />
           Volver al menú
@@ -118,7 +118,7 @@ export default async function SearchPage({
           method="get"
           role="search"
           aria-label={`Buscar productos en ${store.name}`}
-          className="mt-4 flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2"
+          className="mt-4 flex items-center gap-2 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--card)] py-1 pl-3 pr-1"
         >
           <Search className="size-4 text-[color:var(--muted)]" aria-hidden="true" />
           <input
@@ -127,11 +127,12 @@ export default async function SearchPage({
             defaultValue={q}
             autoFocus
             placeholder={`Buscar en ${store.name}…`}
-            className="flex-1 bg-transparent text-base outline-none sm:text-sm placeholder:text-[color:var(--muted)]"
+            aria-label={`Buscar en ${store.name}`}
+            className="min-h-11 min-w-0 flex-1 bg-transparent text-base outline-none sm:text-sm placeholder:text-[color:var(--muted)]"
           />
           <button
             type="submit"
-            className="rounded-full bg-[color:var(--color-bark-900)] px-3 py-1.5 text-xs font-medium text-white hover:bg-[color:var(--color-bark-700)]"
+            className="min-h-11 rounded-full bg-[color:var(--color-bark-900)] px-4 text-xs font-medium text-white hover:bg-[color:var(--color-bark-700)]"
           >
             Buscar
           </button>

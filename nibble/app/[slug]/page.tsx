@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
-  Star,
+  ShoppingBag,
   Clock,
   MapPin,
   ShieldCheck,
@@ -24,9 +24,13 @@ import { StorefrontMenu } from "@/components/storefront/StorefrontMenu";
 import { StorefrontBanner } from "@/components/storefront/StorefrontBanner";
 import { StorefrontPopup } from "@/components/storefront/StorefrontPopup";
 import { ClosedStoreNotice } from "@/components/storefront/ClosedStoreNotice";
-import { formatBob } from "@/lib/utils";
+import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
 import { storefrontCopy } from "@/lib/storefront/copy";
 import { storeActionColors } from "@/lib/storefront/theme";
+
+const HOME_PRODUCTS_PER_CATEGORY = 8;
+/** Bajo este volumen el contador resta confianza en vez de sumarla. */
+const MIN_ORDERS_TO_SHOW = 10;
 
 export async function generateMetadata({
   params,
@@ -60,9 +64,9 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
 
   // 1. Load store with template + hours + plan (via cached helper)
   const storeData = await getStorefrontData(slug);
-  // `getStorefrontData` ahora devuelve null en vez de llamar `notFound()`
-  // internamente — eso restaura el status 404 real (importante para SEO,
-  // sino Google podría indexar slugs inexistentes como páginas válidas).
+  // Con `loading.tsx` en este segmento la respuesta ya empezó a enviarse, así
+  // que el status queda en 200; lo que protege el SEO es el `noindex` que
+  // agrega `notFound()` (ver tests/e2e/storefront.spec.ts).
   if (!storeData) notFound();
 
   // Tracking de visita (fire-and-forget, no bloquea el render)
@@ -78,9 +82,11 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
     db.product.findMany({
       where: { storeId: storeData.id, isActive: true },
       include: {
-        images: { orderBy: { sortOrder: "asc" } },
+        images: { orderBy: { sortOrder: "asc" }, take: 1 },
         variants: { where: { isActive: true } },
-        category: { select: { id: true, name: true, sortOrder: true } },
+        category: {
+          select: { id: true, name: true, slug: true, sortOrder: true, isVisible: true },
+        },
       },
       orderBy: [{ isFeatured: "desc" }, { createdAt: "desc" }],
       take: 1000,
@@ -152,19 +158,33 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
   const allProducts = productsRaw.map((p) => toProductView(p, slug, now));
 
   // 5. Group by category, preserve order from Category.sortOrder
-  const categoryOrder = new Map<string, number>();
+  const categoriesByName = new Map<
+    string,
+    { sortOrder: number; slug: string; isVisible: boolean }
+  >();
   for (const p of productsRaw) {
-    if (p.category) {
-      categoryOrder.set(p.category.name, p.category.sortOrder);
-    }
+    if (p.category) categoriesByName.set(p.category.name, p.category);
   }
-  const populatedCategories = Array.from(categoryOrder.entries())
-    .sort((a, b) => a[1] - b[1])
+  const populatedCategories = Array.from(categoriesByName.entries())
+    .sort((a, b) => a[1].sortOrder - b[1].sortOrder)
     .map(([name]) => name);
 
-  const productsByCategory = Object.fromEntries(
-    populatedCategories.map((c) => [c, allProducts.filter((p) => p.category === c)]),
-  );
+  // Todo esto viaja como props a un client component. Cada categoría visible
+  // manda solo una muestra y enlaza a su listado paginado; una categoría
+  // oculta no tiene página propia, así que conserva todos sus productos.
+  const categoryMeta: Record<string, { total: number; href: string | null }> = {};
+  const productsByCategory: Record<string, typeof allProducts> = {};
+  for (const name of populatedCategories) {
+    const list = allProducts.filter((p) => p.category === name);
+    const category = categoriesByName.get(name)!;
+    categoryMeta[name] = {
+      total: list.length,
+      href: category.isVisible ? `/${slug}/c/${category.slug}` : null,
+    };
+    productsByCategory[name] = category.isVisible
+      ? list.slice(0, HOME_PRODUCTS_PER_CATEGORY)
+      : list;
+  }
 
   // Destacados: solo productos que el owner marcó explícitamente como
   // `isFeatured`. Antes se mostraban los primeros 3 sin filtrar, lo que
@@ -175,7 +195,6 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
     .slice(0, 3)
     .map((p) => toProductView(p, slug, now));
 
-  // Copy por vertical (cart label en el bottom bar mobile).
   const copy = storefrontCopy(store.vertical);
   const { action, onAction } = storeActionColors(store.primaryColor);
   const FulfilmentIcon = store.deliveryEnabled ? Truck : StoreIcon;
@@ -203,7 +222,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
               fill
               priority
               sizes="100vw"
-              className="object-cover scale-[1.02] animate-float"
+              className="object-cover"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--color-bark-900)] via-[color:var(--color-bark-900)]/55 to-[color:var(--color-bark-900)]/20" />
             <div className="absolute inset-0 grain-soft" aria-hidden />
@@ -226,9 +245,9 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                         {store.nextOpeningLabel ?? "Cerrado"}
                       </span>
                     )}
-                    {store.ordersThisMonth !== undefined && store.ordersThisMonth > 0 && (
+                    {store.ordersThisMonth !== undefined && store.ordersThisMonth >= MIN_ORDERS_TO_SHOW && (
                       <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-                        <Star className="size-3 fill-[color:var(--color-amber-300)] text-[color:var(--color-amber-300)]" />
+                        <ShoppingBag aria-hidden className="size-3" />
                         <span className="num-tabular">{store.ordersThisMonth}+ pedidos / mes</span>
                       </span>
                     )}
@@ -330,6 +349,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
             featured={featured}
             populatedCategories={populatedCategories}
             productsByCategory={productsByCategory}
+            categoryMeta={categoryMeta}
           />
         ) : (
           <EmptyMenu storeName={store.name} whatsapp={store.whatsapp} />
@@ -440,33 +460,12 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
         />
       )}
 
-      {/* Floating cart bar (mobile) — sólo cuando hay items */}
-      {cartCount > 0 && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 px-4 md:hidden"
-          style={{
-            bottom: "var(--cookie-banner-h, 0px)",
-            paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-          }}
-        >
-          <a
-            href={`/${store.slug}/checkout`}
-            aria-label={`Ir al checkout. ${copy.cartLabel} con ${cartCount} ${cartCount === 1 ? copy.itemSingular : copy.itemPlural}, total ${formatBob(cartSubtotal)}`}
-            className="flex h-14 items-center justify-between rounded-full bg-[color:var(--color-bark-900)] px-5 text-white shadow-float"
-          >
-            <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <span className="grid size-7 place-items-center rounded-full bg-[color:var(--store-action)] text-xs font-bold num-tabular text-[color:var(--store-on-action)]">
-                {cartCount}
-              </span>
-              {copy.cartLabel}
-            </span>
-            <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <span className="num-tabular">{formatBob(cartSubtotal)}</span>
-              <ChevronRight className="size-4" />
-            </span>
-          </a>
-        </div>
-      )}
+      <FloatingCartBar
+        storeSlug={store.slug}
+        vertical={store.vertical}
+        initialCount={cartCount}
+        initialSubtotal={cartSubtotal}
+      />
     </div>
   );
 }

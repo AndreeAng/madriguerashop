@@ -63,7 +63,7 @@ export function PhoneInputBO({
       >
         <span
           aria-hidden
-          className="select-none border-r border-[color:var(--line)] bg-[color:var(--card-soft)] px-3 py-2 text-sm font-medium text-[color:var(--fg-soft)]"
+          className="flex select-none items-center self-stretch border-r border-[color:var(--line)] bg-[color:var(--card-soft)] px-3 text-sm font-medium text-[color:var(--fg-soft)]"
         >
           +591
         </span>
@@ -80,7 +80,7 @@ export function PhoneInputBO({
           aria-required={required ? true : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className="flex-1 bg-transparent px-3 py-2 text-base outline-none sm:text-sm num-tabular"
+          className="min-h-11 min-w-0 flex-1 bg-transparent px-3 text-base outline-none sm:text-sm num-tabular"
         />
       </div>
       {/* Valor real que llega al form: +591XXXXXXXX (o vacío si no tipeó). */}

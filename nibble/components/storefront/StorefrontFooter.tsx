@@ -69,9 +69,9 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
 
         {/* Contact */}
         <div className="md:col-span-3">
-          <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
             Contacto
-          </h4>
+          </h2>
           <ul className="mt-4 space-y-3 text-sm text-[color:var(--fg-soft)]">
             {store.whatsapp && (
               <li className="flex items-center gap-2.5">
@@ -106,12 +106,12 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
 
         {/* Payment */}
         <div className="md:col-span-4">
-          <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
             Métodos de pago
-          </h4>
+          </h2>
           <ul className="mt-4 grid grid-cols-1 gap-2 text-sm text-[color:var(--fg-soft)]">
             {store.acceptsQR && (
-              <PayItem icon={<QrCode className="size-4" />} label="QR" hint="Todos los bancos" />
+              <PayItem icon={<QrCode className="size-4" />} label="QR" hint="Con la app de tu banco" />
             )}
             {store.acceptsCashOnDelivery && (
               <PayItem icon={<Banknote className="size-4" />} label="Contra entrega" hint="Efectivo al recibir" />

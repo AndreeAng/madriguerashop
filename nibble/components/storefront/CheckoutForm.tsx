@@ -40,6 +40,7 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { PhoneInputBO } from "@/components/shared/PhoneInputBO";
 import { findMatchingZone } from "@/lib/delivery/geometry";
 import type { CartSnapshot } from "@/server/actions/cart";
+import { publishCartSummary } from "@/hooks/useCartSummary";
 import { CheckoutCartLine } from "./CheckoutCartLine";
 
 type CheckoutState = CreateOrderState & { values?: Record<string, string> };
@@ -112,7 +113,7 @@ type Zone = {
 export function CheckoutForm({
   slug,
   store,
-  cart,
+  cart: initialCart,
   deliveryZones,
   hoursByDay,
 }: {
@@ -123,6 +124,7 @@ export function CheckoutForm({
   hoursByDay: HoursDay[];
 }) {
   const router = useRouter();
+  const [cart, setCart] = useState(initialCart);
   const [state, action] = useActionState(submitCheckout, initial);
   const fe = state.fieldErrors ?? {};
   const saved = state.values ?? {};
@@ -185,7 +187,12 @@ export function CheckoutForm({
 
   // El comprobante QR se sube por un monto exacto: si el carrito cambia, ese
   // comprobante ya no coincide con el total que se va a cobrar.
-  function handleCartChanged(removed: boolean) {
+  function handleCartChanged(nextCart: CartSnapshot, removed: boolean) {
+    setCart(nextCart);
+    publishCartSummary(slug, {
+      itemCount: nextCart.itemCount,
+      subtotal: nextCart.subtotal,
+    });
     if (proofUrl) {
       setProofUrl("");
       setProofError("El total cambió. Sube el comprobante del nuevo monto.");
@@ -255,6 +262,7 @@ export function CheckoutForm({
 
   useEffect(() => {
     if (state.ok) {
+      publishCartSummary(slug, { itemCount: 0, subtotal: 0 });
       // Abrimos WhatsApp en una pestaña nueva y navegamos al tracking
       try {
         window.open(state.ok.whatsappUrl, "_blank", "noopener,noreferrer");

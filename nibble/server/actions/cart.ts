@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -316,7 +315,7 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
     throw err;
   }
 
-  revalidatePath(`/${store.slug}`);
+  // Sin `revalidatePath`: la UI pinta este snapshot (ver `useCartSummary`).
   return getCartSnapshot(store.slug);
 }
 
@@ -326,7 +325,12 @@ const updateQtySchema = z.object({
   quantity: z.number().int().min(0).max(99),
 });
 
-/** Cambia la cantidad de una línea del carrito del visitante; 0 la quita. */
+/**
+ * Cambia la cantidad de una línea del carrito del visitante; 0 la quita.
+ * Devuelve el carrito y no llama a `revalidatePath`: actualizar la página
+ * desde la action podía no aplicarse nunca en producción y dejaba el carrito
+ * bloqueado. El checkout pinta el snapshot directamente.
+ */
 export async function updateCartItemQuantity(
   input: z.input<typeof updateQtySchema>,
 ) {
@@ -356,7 +360,6 @@ export async function updateCartItemQuantity(
     });
   }
 
-  revalidatePath(`/${store.slug}`);
   return getCartSnapshot(store.slug);
 }
 

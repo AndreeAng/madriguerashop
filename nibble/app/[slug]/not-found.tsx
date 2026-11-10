@@ -35,7 +35,7 @@ export default function StoreNotFound() {
   return (
     <>
       <MarketingHeader />
-      <main className="grid min-h-[60vh] place-items-center px-5 py-16">
+      <main id="main-content" className="grid min-h-[60vh] place-items-center px-5 py-16">
         <div className="max-w-md text-center">
           <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]">
             <Compass className="size-6" />

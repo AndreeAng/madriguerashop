@@ -67,7 +67,7 @@ export default async function CheckoutPage({
       <nav className="mx-auto max-w-6xl px-4 pt-6 text-sm">
         <Link
           href={`/${slug}`}
-          className="inline-flex items-center gap-1 text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+          className="inline-flex min-h-11 items-center gap-1 text-[color:var(--muted)] hover:text-[color:var(--fg)]"
         >
           <ChevronLeft className="size-4" /> Seguir comprando
         </Link>

@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, Trash2 } from "lucide-react";
-import { updateCartItemQuantity, type CartLine } from "@/server/actions/cart";
+import {
+  updateCartItemQuantity,
+  type CartLine,
+  type CartSnapshot,
+} from "@/server/actions/cart";
 import { formatBob } from "@/lib/utils";
 
 const MAX_QTY = 99;
@@ -29,11 +33,11 @@ export function CheckoutCartLine({
   emptyWarning: string;
   /** El formulario se está enviando. */
   locked: boolean;
-  onChanged: (removed: boolean) => void;
+  onChanged: (cart: CartSnapshot, removed: boolean) => void;
   onBusy: (delta: 1 | -1) => void;
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const cancelRef = useRef<HTMLButtonElement>(null);
@@ -56,26 +60,25 @@ export function CheckoutCartLine({
     }
   }, [confirming]);
 
-  function setQuantity(quantity: number) {
+  async function setQuantity(quantity: number) {
     setError(null);
-    startTransition(async () => {
-      try {
-        await updateCartItemQuantity({
-          storeSlug,
-          cartItemId: line.id,
-          quantity,
-        });
-      } catch {
-        setError("No pudimos actualizar este producto. Prueba de nuevo.");
-        return;
-      }
-      if (quantity === 0 && isOnlyLine) {
+    setPending(true);
+    try {
+      const cart = await updateCartItemQuantity({
+        storeSlug,
+        cartItemId: line.id,
+        quantity,
+      });
+      if (!cart || cart.items.length === 0) {
         router.replace(`/${storeSlug}`);
         return;
       }
-      onChanged(quantity === 0);
-      router.refresh();
-    });
+      onChanged(cart, quantity === 0);
+    } catch {
+      setError("No pudimos actualizar este producto. Prueba de nuevo.");
+    } finally {
+      setPending(false);
+    }
   }
 
   const disabled = pending || locked;

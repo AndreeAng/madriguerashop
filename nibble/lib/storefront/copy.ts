@@ -17,7 +17,7 @@ export type StorefrontCopy = {
   /** Título y subtítulo de la sección de destacados en la home. */
   featuredTitle: string;
   featuredSubtitle: string;
-  /** Pill que aparece sobre los destacados ("Lo más pedido hoy" en restaurante). */
+  /** Pill sobre los destacados. Los elige el dueño: no decir "lo más vendido". */
   featuredPill: string;
   /** Label del selector de variantes (Tamaño/Talla/Modelo/etc). */
   variantLabel: string;
@@ -50,8 +50,8 @@ const RESTAURANT_LIKE: StorefrontCopy = {
   searchPlaceholder: "Buscar platos, combos, bebidas…",
   checkoutNotesPlaceholder: "Sin picante, sin cebolla, etc.",
   featuredTitle: "Las imperdibles de la casa",
-  featuredSubtitle: "Lo que nuestros clientes piden semana tras semana.",
-  featuredPill: "Lo más pedido hoy",
+  featuredSubtitle: "Las que la casa recomienda.",
+  featuredPill: "Destacados",
   variantLabel: "Tamaño",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para la cocina",
@@ -68,8 +68,8 @@ const RETAIL_LIKE: StorefrontCopy = {
   searchPlaceholder: "Buscar productos…",
   checkoutNotesPlaceholder: "Color, talla, instrucciones especiales…",
   featuredTitle: "Recomendados",
-  featuredSubtitle: "Lo que más se lleva la gente esta semana.",
-  featuredPill: "Top ventas",
+  featuredSubtitle: "Una selección de nuestra tienda.",
+  featuredPill: "Destacados",
   variantLabel: "Variante",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para el pedido",
@@ -85,9 +85,9 @@ const RETAIL_LIKE: StorefrontCopy = {
 const HARDWARE: StorefrontCopy = {
   searchPlaceholder: "Buscar herramientas, materiales…",
   checkoutNotesPlaceholder: "Marca preferida, modelo, etc.",
-  featuredTitle: "Los más vendidos",
-  featuredSubtitle: "Las herramientas y materiales que siempre se piden.",
-  featuredPill: "Top de la semana",
+  featuredTitle: "Recomendados",
+  featuredSubtitle: "Herramientas y materiales que recomendamos.",
+  featuredPill: "Destacados",
   variantLabel: "Modelo",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Especificaciones",
@@ -104,8 +104,8 @@ const SERVICES: StorefrontCopy = {
   searchPlaceholder: "Buscar servicios…",
   checkoutNotesPlaceholder: "Detalles adicionales, dirección de referencia…",
   featuredTitle: "Servicios destacados",
-  featuredSubtitle: "Lo que más nos piden esta temporada.",
-  featuredPill: "Más solicitados",
+  featuredSubtitle: "Una selección de la casa.",
+  featuredPill: "Destacados",
   variantLabel: "Plan",
   deliveryHint: "Coordinamos por WhatsApp",
   productNotesLabel: "Detalles del servicio",
@@ -122,8 +122,8 @@ const BAKERY: StorefrontCopy = {
   searchPlaceholder: "Buscar panes, tortas, postres…",
   checkoutNotesPlaceholder: "Sin azúcar, mensaje en la torta, etc.",
   featuredTitle: "Las consentidas de la casa",
-  featuredSubtitle: "Recién horneadas — preparadas el día que las pides.",
-  featuredPill: "Más pedidos hoy",
+  featuredSubtitle: "Las que la casa recomienda.",
+  featuredPill: "Destacados",
   variantLabel: "Tamaño",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para la pastelería",
@@ -139,9 +139,9 @@ const BAKERY: StorefrontCopy = {
 const GROCERY: StorefrontCopy = {
   searchPlaceholder: "Buscar productos, marcas…",
   checkoutNotesPlaceholder: "Marca preferida, sustitutos permitidos, etc.",
-  featuredTitle: "Lo que más se lleva la gente",
+  featuredTitle: "Recomendados",
   featuredSubtitle: "Esenciales de la semana y ofertas activas.",
-  featuredPill: "Top de la semana",
+  featuredPill: "Destacados",
   variantLabel: "Presentación",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para el pedido",
@@ -157,9 +157,9 @@ const GROCERY: StorefrontCopy = {
 const BEAUTY: StorefrontCopy = {
   searchPlaceholder: "Buscar productos, servicios de belleza…",
   checkoutNotesPlaceholder: "Tono, tipo de piel, alergias…",
-  featuredTitle: "Bestsellers",
-  featuredSubtitle: "Los favoritos de nuestras clientas.",
-  featuredPill: "Más vendidos",
+  featuredTitle: "Recomendados",
+  featuredSubtitle: "Una selección de la casa.",
+  featuredPill: "Destacados",
   variantLabel: "Tono / Presentación",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas",
@@ -175,9 +175,9 @@ const BEAUTY: StorefrontCopy = {
 const HEALTH: StorefrontCopy = {
   searchPlaceholder: "Buscar medicamentos, productos…",
   checkoutNotesPlaceholder: "Receta médica, dosis, otros detalles…",
-  featuredTitle: "Más solicitados",
+  featuredTitle: "Recomendados",
   featuredSubtitle: "Productos de uso frecuente y consultas habituales.",
-  featuredPill: "Más vendidos",
+  featuredPill: "Destacados",
   variantLabel: "Presentación",
   deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas",
@@ -193,9 +193,9 @@ const HEALTH: StorefrontCopy = {
 const OTHER: StorefrontCopy = {
   searchPlaceholder: "Buscar productos o servicios…",
   checkoutNotesPlaceholder: "Detalles adicionales o instrucciones especiales…",
-  featuredTitle: "Destacados",
-  featuredSubtitle: "Lo que más nos piden esta temporada.",
-  featuredPill: "Top",
+  featuredTitle: "Recomendados",
+  featuredSubtitle: "Una selección de la casa.",
+  featuredPill: "Destacados",
   variantLabel: "Opción",
   deliveryHint: "Coordinamos por WhatsApp",
   productNotesLabel: "Notas",

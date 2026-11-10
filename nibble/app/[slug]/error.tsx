@@ -28,7 +28,7 @@ export default function StorefrontError({
   }, [error]);
 
   return (
-    <main className="grid min-h-[70vh] place-items-center px-4 py-16">
+    <main id="main-content" className="grid min-h-[70vh] place-items-center px-4 py-16">
       <div className="text-center">
         <AlertCircle className="mx-auto size-10 text-[color:var(--color-tomato-600)]" />
         <h1 className="font-display mt-4 text-3xl">No pudimos cargar la tienda</h1>

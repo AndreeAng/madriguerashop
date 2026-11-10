@@ -127,7 +127,7 @@ export default async function ProductDetailPage({
       <nav className="mx-auto max-w-6xl px-4 pt-6 text-sm">
         <Link
           href={`/${slug}`}
-          className="inline-flex items-center gap-1 text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+          className="inline-flex min-h-11 items-center gap-1 text-[color:var(--muted)] hover:text-[color:var(--fg)]"
         >
           <ChevronLeft className="size-4" /> Volver al menú
         </Link>
