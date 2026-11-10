@@ -125,7 +125,7 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
           <span>© {new Date().getFullYear()} {store.name}. Todos los derechos reservados.</span>
           <Link
             href="/"
-            className="-my-3 inline-flex min-h-11 items-center gap-1.5 transition hover:text-[color:var(--fg)]"
+            className="-my-3 inline-flex min-h-11 flex-wrap items-center gap-1.5 transition hover:text-[color:var(--fg)]"
           >
             <span>Powered by</span>
             <NibbleLogo className="text-current" />

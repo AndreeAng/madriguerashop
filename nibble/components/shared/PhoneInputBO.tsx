@@ -80,7 +80,7 @@ export function PhoneInputBO({
           aria-required={required ? true : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
-          className="min-h-11 min-w-0 flex-1 bg-transparent px-3 text-base outline-none sm:text-sm num-tabular"
+          className="min-h-11 w-0 min-w-0 flex-1 bg-transparent px-3 text-base outline-none sm:text-sm num-tabular"
         />
       </div>
       {/* Valor real que llega al form: +591XXXXXXXX (o vacío si no tipeó). */}

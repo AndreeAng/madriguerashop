@@ -118,14 +118,14 @@ export function ProductPdpAdd({
         </p>
       )}
 
-      <div className="mt-8 flex items-center gap-3">
+      <div className="mt-8 flex flex-wrap items-center gap-3">
         <div className="flex items-center rounded-full border border-[color:var(--line)] bg-[color:var(--card)]">
           <button
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             disabled={qty <= 1 || pending}
             aria-label="Disminuir cantidad"
-            className="size-10 rounded-full hover:bg-[color:var(--line)] disabled:opacity-30"
+            className="size-11 rounded-full hover:bg-[color:var(--line)] disabled:opacity-30"
           >
             <Minus className="mx-auto size-4" />
           </button>
@@ -135,7 +135,7 @@ export function ProductPdpAdd({
             onClick={() => setQty((q) => Math.min(99, q + 1))}
             disabled={pending}
             aria-label="Aumentar cantidad"
-            className="size-10 rounded-full hover:bg-[color:var(--line)] disabled:opacity-30"
+            className="size-11 rounded-full hover:bg-[color:var(--line)] disabled:opacity-30"
           >
             <Plus className="mx-auto size-4" />
           </button>
@@ -144,7 +144,7 @@ export function ProductPdpAdd({
           type="button"
           disabled={!canAdd || pending}
           onClick={handleAdd}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[color:var(--color-bark-900)] px-5 py-3 text-center text-sm font-medium text-white transition hover:bg-[color:var(--color-bark-700)] disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full bg-[color:var(--color-bark-900)] px-5 py-3 text-center text-sm font-medium text-white transition hover:bg-[color:var(--color-bark-700)] disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ShoppingBag className="size-4" />
           {!product.available

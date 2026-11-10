@@ -134,7 +134,7 @@ export default async function ProductDetailPage({
       </nav>
 
       <main id="main-content" className="mx-auto max-w-6xl px-4 py-6">
-        <div className="grid gap-10 md:grid-cols-2">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-10 md:grid-cols-2">
           <div className="space-y-3">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-[color:var(--card)]">
               <Image

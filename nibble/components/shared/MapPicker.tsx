@@ -122,15 +122,15 @@ export function MapPicker({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-xs text-[color:var(--muted)]">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 grow basis-40 text-xs text-[color:var(--muted)]">
           Toca el mapa o usa tu ubicación actual para marcar dónde entregar.
         </p>
         <button
           type="button"
           onClick={useMyLocation}
           disabled={geoLoading}
-          className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3.5 text-xs font-medium hover:border-[color:var(--color-bark-300)] disabled:opacity-50"
+          className="inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3.5 text-xs font-medium hover:border-[color:var(--color-bark-300)] disabled:opacity-50"
         >
           <Navigation className="size-3.5" />
           {geoLoading ? "Buscando…" : "Usar mi ubicación"}

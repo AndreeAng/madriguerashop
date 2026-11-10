@@ -88,7 +88,7 @@ export function StorefrontMenu({
       <nav
         id="menu"
         aria-label="Categorías"
-        className="sticky top-16 z-30 mt-10 border-y border-[color:var(--line)] glass"
+        className="sticky top-[64px] z-30 mt-10 border-y border-[color:var(--line)] glass"
       >
         <div className="mx-auto max-w-6xl px-4">
           <div ref={navScrollRef} className="scrollbar-hide flex gap-2 overflow-x-auto py-3">
