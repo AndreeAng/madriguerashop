@@ -32,7 +32,7 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
             </div>
             <div>
               <span className="font-display text-lg leading-none">{store.name}</span>
-              <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
+              <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[color:var(--muted)]">
                 {store.city} · Bolivia
               </p>
             </div>
@@ -69,7 +69,7 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
 
         {/* Contact */}
         <div className="md:col-span-3">
-          <h4 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
             Contacto
           </h4>
           <ul className="mt-4 space-y-3 text-sm text-[color:var(--fg-soft)]">
@@ -91,13 +91,13 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
           <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
             <Link
               href={`/${store.slug}/sobre-nosotros`}
-              className="text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+              className="inline-block py-1.5 text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
             >
               Sobre nosotros
             </Link>
             <Link
               href={`/${store.slug}/contacto`}
-              className="text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+              className="inline-block py-1.5 text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
             >
               Contacto
             </Link>
@@ -106,7 +106,7 @@ export function StorefrontFooter({ store }: { store: StoreView }) {
 
         {/* Payment */}
         <div className="md:col-span-4">
-          <h4 className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
+          <h4 className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--muted)]">
             Métodos de pago
           </h4>
           <ul className="mt-4 grid grid-cols-1 gap-2 text-sm text-[color:var(--fg-soft)]">
@@ -156,7 +156,7 @@ function PayItem({
       </span>
       <span>
         <span className="block text-sm font-medium leading-tight text-[color:var(--fg)]">{label}</span>
-        <span className="block text-[11px] text-[color:var(--muted)]">{hint}</span>
+        <span className="block text-xs text-[color:var(--muted)]">{hint}</span>
       </span>
     </li>
   );

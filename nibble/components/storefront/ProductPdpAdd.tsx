@@ -108,7 +108,7 @@ export function ProductPdpAdd({
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder={copy.productNotesPlaceholder}
-          className="mt-2 w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 text-sm outline-none focus:border-[color:var(--color-bark-300)]"
+          className="mt-2 w-full rounded-xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 text-base outline-none sm:text-sm focus:border-[color:var(--color-bark-300)]"
         />
       </div>
 

@@ -12,7 +12,7 @@ import { formatBob } from "@/lib/utils";
 import { addItemToCart } from "@/server/actions/cart";
 
 const badgeStyles: Record<string, string> = {
-  best: "bg-[color:var(--color-amber-500)] text-white",
+  best: "bg-[color:var(--color-amber-600)] text-white",
   new: "bg-[color:var(--color-leaf-500)] text-white",
   promo: "bg-[color:var(--color-tomato-500)] text-white",
 };
@@ -22,12 +22,14 @@ export function ProductQuickView({
   city,
   storeSlug,
   vertical,
+  deliveryEnabled,
   onClose,
 }: {
   product: ProductView;
   city: string;
   storeSlug: string;
   vertical: StoreVertical;
+  deliveryEnabled: boolean;
   onClose: () => void;
 }) {
   const copy = storefrontCopy(vertical);
@@ -137,7 +139,7 @@ export function ProductQuickView({
       {/* Sheet / dialog */}
       <div
         ref={sheetRef}
-        className="relative z-10 max-h-[92vh] w-full max-w-3xl overflow-hidden rounded-t-3xl bg-[color:var(--card)] shadow-float animate-pop sm:max-h-[88vh] sm:rounded-3xl"
+        className="relative z-10 max-h-[92dvh] w-full max-w-3xl overflow-hidden rounded-t-3xl bg-[color:var(--card)] shadow-float animate-pop sm:max-h-[88dvh] sm:rounded-3xl"
       >
         {/* Mobile drag handle */}
         <div className="flex h-2 items-center justify-center pt-3 sm:hidden">
@@ -148,12 +150,12 @@ export function ProductQuickView({
           ref={closeBtnRef}
           onClick={onClose}
           aria-label="Cerrar"
-          className="absolute right-4 top-4 z-20 grid size-9 place-items-center rounded-full bg-white/95 text-[color:var(--color-bark-900)] shadow-pill backdrop-blur transition hover:scale-105 active:scale-95"
+          className="absolute right-4 top-4 z-20 grid size-11 place-items-center rounded-full bg-white/95 text-[color:var(--color-bark-900)] shadow-pill backdrop-blur transition hover:scale-105 active:scale-95"
         >
           <X aria-hidden className="size-4" />
         </button>
 
-        <div className="flex max-h-[92vh] flex-col overflow-y-auto sm:grid sm:max-h-[88vh] sm:grid-cols-[1.05fr_1fr]">
+        <div className="flex max-h-[92dvh] flex-col overflow-y-auto sm:grid sm:max-h-[88dvh] sm:grid-cols-[1.05fr_1fr]">
           {/* Image side */}
           <div className="relative h-56 shrink-0 overflow-hidden bg-[color:var(--card-soft)] sm:h-auto sm:min-h-full">
             <Image
@@ -193,7 +195,7 @@ export function ProductQuickView({
 
           {/* Info side */}
           <div className="flex flex-col p-5 sm:p-7">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--color-amber-600)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--color-amber-600)]">
               {product.category}
             </p>
             <h2
@@ -220,7 +222,7 @@ export function ProductQuickView({
 
             {product.variants && product.variants.length > 0 && (
               <div className="mt-6">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
                   {copy.variantLabel}
                 </p>
                 <div className="mt-2.5 grid gap-2 sm:grid-cols-3">
@@ -250,7 +252,7 @@ export function ProductQuickView({
                           {v.name}
                         </div>
                         <div
-                          className={`num-tabular text-[11px] ${
+                          className={`num-tabular text-xs ${
                             isDisabled
                               ? "text-[color:var(--muted)]"
                               : isActive
@@ -270,7 +272,7 @@ export function ProductQuickView({
             <div className="mt-6">
               <label
                 htmlFor={notesId}
-                className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]"
+                className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]"
               >
                 {copy.productNotesLabel}
               </label>
@@ -280,7 +282,7 @@ export function ProductQuickView({
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder={copy.productNotesPlaceholder}
-                className="mt-2 w-full resize-none rounded-xl border border-[color:var(--line)] bg-[color:var(--bg)] p-3 text-sm outline-none transition focus:border-[color:var(--color-amber-400)] focus:bg-white"
+                className="mt-2 w-full resize-none rounded-xl border border-[color:var(--line)] bg-[color:var(--bg)] p-3 text-base outline-none sm:text-sm transition focus:border-[color:var(--color-amber-600)] focus:bg-white"
               />
             </div>
 
@@ -288,22 +290,22 @@ export function ProductQuickView({
               <div className="flex items-center gap-2.5 text-[color:var(--fg-soft)]">
                 <Clock className="size-4 text-[color:var(--color-amber-600)]" />
                 <span>
-                  {copy.deliveryHint} en {city}
+                  {deliveryEnabled ? copy.deliveryHint : "Recojo en local"} en {city}
                 </span>
               </div>
               <div className="flex items-center gap-2.5 text-[color:var(--fg-soft)]">
                 <MessageCircle className="size-4 text-[color:var(--color-leaf-500)]" />
-                <span>Confirmación por WhatsApp en menos de 5 min</span>
+                <span>Confirmación por WhatsApp</span>
               </div>
             </div>
 
-            <div className="sticky bottom-0 -mx-5 mt-7 border-t border-[color:var(--line)] bg-[color:var(--card)] p-5 sm:-mx-7 sm:p-7">
+            <div className="sticky bottom-0 -mx-5 mt-7 border-t border-[color:var(--line)] bg-[color:var(--card)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:-mx-7 sm:p-7">
               {error && (
                 <p className="mb-3 rounded-lg bg-[color:var(--color-tomato-50)] px-3 py-2 text-xs text-[color:var(--color-tomato-700)]">
                   {error}
                 </p>
               )}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {product.isBookable ? (
                   // Servicios reservables: en lugar del flujo carrito (qty
                   // picker + "Agregar"), el QuickView lleva al cliente a
@@ -311,7 +313,7 @@ export function ProductQuickView({
                   // QuickView no tiene espacio para un selector completo.
                   <Link
                     href={`/${storeSlug}/p/${product.slug}`}
-                    className="group flex h-12 flex-1 items-center justify-between gap-2 whitespace-nowrap rounded-full bg-[color:var(--color-bark-900)] pl-5 pr-2 text-sm font-semibold text-white shadow-pill transition-all hover:bg-[color:var(--color-amber-500)] active:scale-[0.98]"
+                    className="group flex h-12 flex-1 items-center justify-between gap-2 whitespace-nowrap rounded-full bg-[color:var(--color-bark-900)] pl-5 pr-2 text-sm font-semibold text-white shadow-pill transition-all hover:bg-[color:var(--color-amber-600)] active:scale-[0.98]"
                   >
                     <span className="inline-flex items-center gap-2">
                       <CalendarClock className="size-4" />
@@ -349,10 +351,10 @@ export function ProductQuickView({
                       type="button"
                       disabled={!canAdd || pending}
                       onClick={handleAdd}
-                      className="group flex h-12 flex-1 items-center justify-between gap-2 whitespace-nowrap rounded-full bg-[color:var(--color-bark-900)] pl-5 pr-2 text-sm font-semibold text-white shadow-pill transition-all hover:bg-[color:var(--color-amber-500)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
+                      className="group flex h-12 flex-[1_0_auto] items-center justify-between gap-2 whitespace-nowrap rounded-full bg-[color:var(--color-bark-900)] pl-5 pr-2 text-sm font-semibold text-white shadow-pill transition-all hover:bg-[color:var(--color-amber-600)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       <span className="inline-flex items-center gap-2">
-                        <ShoppingBag className="size-4" />
+                        <ShoppingBag className="hidden size-4 min-[380px]:block" />
                         {!product.available
                           ? "No disponible"
                           : !variantAvailable

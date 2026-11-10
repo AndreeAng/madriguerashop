@@ -76,7 +76,7 @@ export default async function ContactPage({
     <div>
       <StorefrontHeader store={store} cartCount={cart?.itemCount ?? 0} />
 
-      <main className="mx-auto max-w-3xl px-4 py-12">
+      <main id="main-content" className="mx-auto max-w-3xl px-4 py-12">
         <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
           Contacto
         </p>
@@ -90,7 +90,7 @@ export default async function ContactPage({
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="press mt-6 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-white transition hover:bg-[#20BD5A]"
+            className="press mt-6 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-[color:var(--color-bark-900)] transition hover:bg-[#20BD5A]"
           >
             <MessageCircle className="size-4" aria-hidden="true" />
             {formatWaPhone(store.whatsapp)}

@@ -320,11 +320,45 @@ export async function addItemToCart(input: z.input<typeof addItemSchema>) {
   return getCartSnapshot(store.slug);
 }
 
-// NOTA: existieron `updateCartItemQuantity` / `removeCartItem` / `clearCart`
-// (edición del carrito con validación de guest token) pero ninguna UI las
-// consume — el flujo actual es PDP → "Agregar" → checkout directo, sin
-// pantalla de edición de carrito. Eliminadas; si se agrega esa UI,
-// recuperarlas de git (validaban tenant + guest token correctamente).
+const updateQtySchema = z.object({
+  storeSlug: z.string().min(1),
+  cartItemId: z.string().min(1),
+  quantity: z.number().int().min(0).max(99),
+});
+
+/** Cambia la cantidad de una línea del carrito del visitante; 0 la quita. */
+export async function updateCartItemQuantity(
+  input: z.input<typeof updateQtySchema>,
+) {
+  const data = updateQtySchema.parse(input);
+
+  const store = await getStoreBySlug(data.storeSlug);
+  if (!store) throw new Error("Tienda no encontrada");
+
+  const item = await db.cartItem.findUnique({
+    where: { id: data.cartItemId },
+    include: { cart: true },
+  });
+  if (!item || item.cart.storeId !== store.id) {
+    throw new Error("Item no encontrado");
+  }
+
+  const token = await readGuestToken();
+  if (!token || item.cart.guestToken !== token) throw new Error("No autorizado");
+
+  // `*Many`: un doble-tap sobre una línea ya borrada no debe lanzar P2025.
+  if (data.quantity === 0) {
+    await db.cartItem.deleteMany({ where: { id: item.id } });
+  } else {
+    await db.cartItem.updateMany({
+      where: { id: item.id },
+      data: { quantity: data.quantity },
+    });
+  }
+
+  revalidatePath(`/${store.slug}`);
+  return getCartSnapshot(store.slug);
+}
 
 export async function getCartSnapshot(storeSlug: string): Promise<CartSnapshot | null> {
   const store = await getStoreBySlug(storeSlug);

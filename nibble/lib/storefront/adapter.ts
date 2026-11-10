@@ -196,6 +196,8 @@ export function toStoreView(
     addressText: store.addressText,
 
     primaryColor: store.primaryColor,
+    deliveryEnabled: store.deliveryEnabled,
+    pickupEnabled: store.pickupEnabled,
     secondaryColor: store.secondaryColor,
     accentColor: store.accentColor,
 

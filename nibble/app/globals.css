@@ -22,6 +22,8 @@
   --color-amber-500: #db7706;
   --color-amber-600: #b3590a;
   --color-amber-700: #8a3f0c;
+  --color-amber-800: #6b300c;
+  --color-amber-900: #4a210a;
 
   --color-bark-50: #f7f4ee;
   --color-bark-100: #ebe4d3;
@@ -34,13 +36,17 @@
   --color-bark-800: #1a1510;
   --color-bark-900: #100c08;
 
+  --color-tomato-50: #fef2f2;
   --color-tomato-400: #ef4444;
   --color-tomato-500: #dc2626;
   --color-tomato-600: #b91c1c;
+  --color-tomato-700: #991b1b;
 
+  --color-leaf-50: #f0f5ea;
   --color-leaf-400: #6b9a4f;
   --color-leaf-500: #4f7d3a;
   --color-leaf-600: #3d6429;
+  --color-leaf-700: #2f4e20;
 
   --color-gold-400: #d4a857;
   --color-gold-500: #b8862f;
@@ -94,11 +100,15 @@ body {
 
 ::selection { background: var(--color-amber-200); color: var(--color-bark-900); }
 
+/* amber-600 da 3:1 o más tanto sobre crema como sobre bark-900. Sin
+   border-radius: el outline sigue la forma propia de cada control. */
 :focus-visible {
-  outline: 2px solid var(--color-amber-400);
+  outline: 2px solid var(--color-amber-600);
   outline-offset: 2px;
-  border-radius: 6px;
 }
+
+:where(h1, h2, h3) { text-wrap: balance; }
+:where(p) { text-wrap: pretty; }
 
 @layer utilities {
   .font-display {

@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 /**
  * Modal popup que aparece tras `delaySeconds` desde que el cliente
@@ -15,10 +16,7 @@ import { X } from "lucide-react";
  *  - `sessionStorage` (no localStorage): si el cliente cierra la pestaña
  *    y vuelve mañana, queremos volver a mostrar el popup. Si lo
  *    cerramos para siempre, el merchant pierde un canal valioso.
- *  - Focus trap mínimo: Tab cicla dentro del dialog, Shift+Tab también.
- *    Sin esto, `aria-modal="true"` mentía a screen readers — el foco se
- *    escapaba al contenido oculto detrás del overlay.
- *  - `Escape` lo cierra, click afuera también.
+ *  - Foco y teclado en `useDialogFocus`. Click afuera también cierra.
  */
 export function StorefrontPopup({
   popupId,
@@ -46,6 +44,7 @@ export function StorefrontPopup({
   // abrir el segundo.
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const key = `popup_seen_${popupId}`;
@@ -59,43 +58,12 @@ export function StorefrontPopup({
     return () => clearTimeout(t);
   }, [popupId, delaySeconds, showOncePerSession]);
 
-  // Escape para cerrar + focus trap + restore focus al cerrar (WCAG 2.4.3).
-  useEffect(() => {
-    if (!open) return;
-    // Capturamos el elemento que tenía el foco antes de abrir el modal
-    // para devolverle el foco al cerrar — sin esto el foco salta al
-    // `<body>` y el usuario de teclado pierde el contexto.
-    const opener = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        return;
-      }
-      if (e.key !== "Tab" || !dialog) return;
-      const focusables = dialog.querySelectorAll<HTMLElement>(
-        'a, button, input, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0]!;
-      const last = focusables[focusables.length - 1]!;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      // Restaurar foco solo si el opener sigue en el DOM y enfocable.
-      if (opener && typeof opener.focus === "function") {
-        opener.focus();
-      }
-    };
-  }, [open]);
+  useDialogFocus({
+    open,
+    dialogRef,
+    initialFocusRef: closeRef,
+    onEscape: () => setOpen(false),
+  });
 
   if (!open) return null;
 
@@ -115,10 +83,11 @@ export function StorefrontPopup({
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[color:var(--card)] shadow-2xl"
       >
         <button
+          ref={closeRef}
           type="button"
           onClick={() => setOpen(false)}
           aria-label="Cerrar"
-          className="absolute right-3 top-3 z-10 grid size-8 place-items-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60"
+          className="absolute right-3 top-3 z-10 grid size-11 place-items-center rounded-full bg-black/40 text-white backdrop-blur hover:bg-black/60"
         >
           <X className="size-4" />
         </button>

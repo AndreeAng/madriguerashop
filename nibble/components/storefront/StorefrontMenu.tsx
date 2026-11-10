@@ -79,7 +79,7 @@ export function StorefrontMenu({
       {/* Sticky category nav with active state */}
       <nav
         id="menu"
-        aria-label="Categorías del menú"
+        aria-label="Categorías"
         className="sticky top-16 z-30 mt-10 border-y border-[color:var(--line)] glass"
       >
         <div className="mx-auto max-w-6xl px-4">
@@ -117,7 +117,7 @@ export function StorefrontMenu({
         <section id="destacados" className="mx-auto max-w-6xl scroll-mt-32 px-4 pt-10">
           <div className="flex items-end justify-between gap-4">
             <div>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-100)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[color:var(--color-amber-700)]">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-[color:var(--color-amber-100)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-amber-700)]">
                 <Flame className="size-3" /> {copy.featuredPill}
               </span>
               <h2 className="font-display mt-3 text-3xl leading-tight md:text-4xl">
@@ -211,6 +211,7 @@ export function StorefrontMenu({
           city={store.city}
           storeSlug={store.slug}
           vertical={store.vertical}
+          deliveryEnabled={store.deliveryEnabled}
           onClose={() => setActive(null)}
         />
       )}
@@ -237,7 +238,7 @@ function CategoryChip({
       data-cat={dataKey}
       aria-pressed={active}
       onClick={onClick}
-      className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
+      className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
         active
           ? "border-[color:var(--color-bark-900)] bg-[color:var(--color-bark-900)] text-white shadow-pill"
           : "border-[color:var(--line)] bg-[color:var(--card)] text-[color:var(--fg-soft)] hover:border-[color:var(--color-amber-300)] hover:bg-[color:var(--color-amber-50)] hover:text-[color:var(--color-bark-900)]"
@@ -246,7 +247,7 @@ function CategoryChip({
       {name}
       {count !== undefined && (
         <span
-          className={`num-tabular rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+          className={`num-tabular rounded-full px-1.5 py-0.5 text-xs font-semibold ${
             active
               ? "bg-white/15 text-white/90"
               : "bg-[color:var(--bg)] text-[color:var(--muted)]"

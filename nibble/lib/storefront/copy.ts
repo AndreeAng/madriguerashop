@@ -21,7 +21,7 @@ export type StorefrontCopy = {
   featuredPill: string;
   /** Label del selector de variantes (Tamaño/Talla/Modelo/etc). */
   variantLabel: string;
-  /** Frase de tiempo de entrega en la quick view de producto. */
+  /** Cómo llega el pedido. Sin tiempos: ninguna tienda los configura. */
   deliveryHint: string;
   /** Label del campo "notas" a nivel ítem (PDP + QuickView). En restaurante
    * son "Notas para la cocina", en hardware "Especificaciones", etc. */
@@ -53,7 +53,7 @@ const RESTAURANT_LIKE: StorefrontCopy = {
   featuredSubtitle: "Lo que nuestros clientes piden semana tras semana.",
   featuredPill: "Lo más pedido hoy",
   variantLabel: "Tamaño",
-  deliveryHint: "Entrega 30–45 min",
+  deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para la cocina",
   productNotesPlaceholder: "Sin cebolla, término medio, etc.",
   menuAriaLabel: "Menú",
@@ -71,7 +71,7 @@ const RETAIL_LIKE: StorefrontCopy = {
   featuredSubtitle: "Lo que más se lleva la gente esta semana.",
   featuredPill: "Top ventas",
   variantLabel: "Variante",
-  deliveryHint: "Entrega en el día",
+  deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para el pedido",
   productNotesPlaceholder: "Color, talla, preferencias…",
   menuAriaLabel: "Catálogo",
@@ -125,7 +125,7 @@ const BAKERY: StorefrontCopy = {
   featuredSubtitle: "Recién horneadas — preparadas el día que las pides.",
   featuredPill: "Más pedidos hoy",
   variantLabel: "Tamaño",
-  deliveryHint: "Entrega en el día",
+  deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas para la pastelería",
   productNotesPlaceholder: "Mensaje en la torta, sin azúcar, alergias…",
   menuAriaLabel: "Carta",
@@ -161,7 +161,7 @@ const BEAUTY: StorefrontCopy = {
   featuredSubtitle: "Los favoritos de nuestras clientas.",
   featuredPill: "Más vendidos",
   variantLabel: "Tono / Presentación",
-  deliveryHint: "Entrega en el día",
+  deliveryHint: "Entrega a domicilio",
   productNotesLabel: "Notas",
   productNotesPlaceholder: "Tipo de piel, alergias, preferencias…",
   menuAriaLabel: "Catálogo",

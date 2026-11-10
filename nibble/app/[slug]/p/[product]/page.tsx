@@ -133,7 +133,7 @@ export default async function ProductDetailPage({
         </Link>
       </nav>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 py-6">
         <div className="grid gap-10 md:grid-cols-2">
           <div className="space-y-3">
             <div className="relative aspect-square overflow-hidden rounded-3xl bg-[color:var(--card)]">
@@ -145,7 +145,7 @@ export default async function ProductDetailPage({
                 className="object-cover"
               />
               {product.badge && product.badgeLabel && (
-                <span className="absolute left-4 top-4 rounded-full bg-[color:var(--color-amber-500)] px-3 py-1.5 text-xs font-semibold text-white">
+                <span className="absolute left-4 top-4 rounded-full bg-[color:var(--color-amber-600)] px-3 py-1.5 text-xs font-semibold text-white">
                   {product.badgeLabel}
                 </span>
               )}
@@ -174,7 +174,7 @@ export default async function ProductDetailPage({
           </div>
 
           <div>
-            <p className="text-[11px] uppercase tracking-wider text-[color:var(--muted)]">
+            <p className="text-xs uppercase tracking-wider text-[color:var(--muted)]">
               {product.category}
             </p>
             <h1 className="font-display mt-2 text-4xl">{product.name}</h1>
@@ -221,11 +221,13 @@ export default async function ProductDetailPage({
             <div className="mt-6 grid gap-3 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4 text-sm">
               <div className="flex items-center gap-3">
                 <Clock className="size-4 text-[color:var(--muted)]" />
-                <span>Entrega en {store.city}</span>
+                <span>
+                  {store.deliveryEnabled ? "Entrega" : "Recojo"} en {store.city}
+                </span>
               </div>
               <div className="flex items-center gap-3">
                 <MessageCircle className="size-4 text-[color:var(--muted)]" />
-                <span>Confirmación por WhatsApp en menos de 5 min</span>
+                <span>Confirmación por WhatsApp</span>
               </div>
             </div>
           </div>

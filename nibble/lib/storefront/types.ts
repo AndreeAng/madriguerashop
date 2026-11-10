@@ -27,6 +27,8 @@ export type StoreView = {
   addressText: string | null;
 
   primaryColor: string;
+  deliveryEnabled: boolean;
+  pickupEnabled: boolean;
   secondaryColor: string;
   accentColor: string;
 

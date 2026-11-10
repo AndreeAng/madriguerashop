@@ -61,7 +61,7 @@ export default async function AboutPage({
     <div>
       <StorefrontHeader store={store} cartCount={cart?.itemCount ?? 0} />
 
-      <main className="mx-auto max-w-3xl px-4 py-12">
+      <main id="main-content" className="mx-auto max-w-3xl px-4 py-12">
         <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
           Sobre {store.name}
         </p>

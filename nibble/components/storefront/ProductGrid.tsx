@@ -36,6 +36,7 @@ export function ProductGrid({
           city={store.city}
           storeSlug={store.slug}
           vertical={store.vertical}
+          deliveryEnabled={store.deliveryEnabled}
           onClose={() => setActive(null)}
         />
       )}
