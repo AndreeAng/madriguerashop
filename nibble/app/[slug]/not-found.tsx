@@ -1,8 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowRight, Compass, MessageCircle } from "lucide-react";
+import { ArrowRight, MessageCircle } from "lucide-react";
 import { MarketingHeader } from "@/components/marketing/Header";
 import { MarketingFooter } from "@/components/marketing/Footer";
+import { marketingFontClass } from "@/lib/fonts/marketing";
 
 const SUPPORT_WA = "59172201700";
 
@@ -33,49 +34,50 @@ export const metadata: Metadata = {
 
 export default function StoreNotFound() {
   return (
-    <>
+    <div className={`${marketingFontClass} bg-white`}>
       <MarketingHeader />
-      <main id="main-content" className="grid min-h-[60vh] place-items-center px-5 py-16">
-        <div className="max-w-md text-center">
-          <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]">
-            <Compass className="size-6" />
-          </div>
-          <h1 className="font-display mt-6 text-4xl leading-tight md:text-5xl">
-            Esta tienda no está disponible
-          </h1>
-          <p className="mt-4 text-[color:var(--muted)]">
-            Puede que el link sea incorrecto, que la tienda esté temporalmente
-            fuera de servicio, o que aún no esté pública.
-          </p>
+      <main id="main-content" className="mx-auto max-w-7xl px-5 py-20 md:py-32">
+        <h1 className="mk-display max-w-4xl break-words text-[clamp(3rem,8vw,6.5rem)] font-bold leading-[0.9]">
+          Esta tienda <span className="text-mk-magenta">no está disponible.</span>
+        </h1>
+        <p className="mt-7 max-w-xl text-lg leading-relaxed text-mk-soft">
+          Puede que el link sea incorrecto, que la tienda esté temporalmente fuera de servicio, o
+          que aún no esté pública.
+        </p>
 
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <Link
-              href="/tiendas"
-              className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-bark-900)] px-5 py-3 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
-            >
-              Ver el directorio de tiendas
-              <ArrowRight className="size-4" />
-            </Link>
-            <Link
-              href={`https://wa.me/${SUPPORT_WA}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-[color:var(--muted)] hover:text-[color:var(--fg)]"
-            >
-              <MessageCircle className="size-4" />
-              Contactar soporte
-            </Link>
-          </div>
-
-          <p className="mt-8 text-xs text-[color:var(--muted)]">
-            ¿Tienes una tienda?{" "}
-            <Link href="/registro" className="font-medium text-[color:var(--fg)] hover:underline">
-              Crea la tuya en 5 minutos
-            </Link>
-          </p>
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+          <Link
+            href="/tiendas"
+            className="press group inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-mk-magenta px-8 text-base font-semibold text-white transition-colors hover:bg-mk-magenta-deep"
+          >
+            Ver el directorio de tiendas
+            <ArrowRight
+              aria-hidden="true"
+              className="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </Link>
+          <Link
+            href={`https://wa.me/${SUPPORT_WA}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="press inline-flex min-h-14 items-center justify-center gap-2 rounded-full border-2 border-mk-ink px-8 text-base font-semibold transition-colors hover:bg-mk-ink hover:text-white"
+          >
+            <MessageCircle aria-hidden="true" className="size-4" />
+            Contactar soporte
+          </Link>
         </div>
+
+        <p className="mt-12 text-mk-soft">
+          ¿Tienes un negocio?{" "}
+          <Link
+            href="/registro"
+            className="font-semibold text-mk-ink underline decoration-mk-magenta decoration-2 underline-offset-4 hover:text-mk-magenta"
+          >
+            Crea tu tienda en 5 minutos
+          </Link>
+        </p>
       </main>
       <MarketingFooter />
-    </>
+    </div>
   );
 }

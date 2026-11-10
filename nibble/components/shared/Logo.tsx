@@ -29,10 +29,10 @@ function NibbleMark({ className }: { className?: string }) {
 export function NibbleLogo({ className, mono = false }: { className?: string; mono?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <NibbleMark className="h-7 w-7" />
+      <NibbleMark className="size-[28px] shrink-0" />
       <span
         className={cn(
-          "font-display text-lg tracking-tight",
+          "font-display whitespace-nowrap text-[18px] tracking-tight",
           mono ? "text-current" : "text-[color:var(--fg)]"
         )}
       >
