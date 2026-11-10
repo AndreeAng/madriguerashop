@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import { X, Minus, Plus, Star, Clock, MessageCircle, Flame, ShoppingBag, CalendarClock } from "lucide-react";
 import Link from "next/link";
 import type { StoreVertical } from "@prisma/client";
@@ -10,6 +9,7 @@ import type { ProductView } from "@/lib/storefront/types";
 import { storefrontCopy } from "@/lib/storefront/copy";
 import { formatBob } from "@/lib/utils";
 import { addItemToCart } from "@/server/actions/cart";
+import { publishCartSummary } from "@/hooks/useCartSummary";
 
 const badgeStyles: Record<string, string> = {
   best: "bg-[color:var(--color-amber-600)] text-white",
@@ -98,7 +98,6 @@ export function ProductQuickView({
       ? Math.round(((product.comparePrice - product.price) / product.comparePrice) * 100)
       : null;
 
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -106,14 +105,23 @@ export function ProductQuickView({
     setError(null);
     startTransition(async () => {
       try {
-        await addItemToCart({
+        const cart = await addItemToCart({
           storeSlug,
           productId: product.id,
           variantId: variant?.id ?? null,
           quantity: qty,
           notes: notes.trim() || null,
         });
-        router.refresh();
+        if (cart && "error" in cart) {
+          setError(cart.error);
+          return;
+        }
+        if (cart) {
+          publishCartSummary(storeSlug, {
+            itemCount: cart.itemCount,
+            subtotal: cart.subtotal,
+          });
+        }
         onClose();
       } catch (e) {
         setError(e instanceof Error ? e.message : "No se pudo agregar al carrito");

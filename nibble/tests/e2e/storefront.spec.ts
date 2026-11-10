@@ -35,6 +35,17 @@ test.describe("Storefront público", () => {
     await expect(page.getByText(/Bs/i).first()).toBeVisible();
   });
 
+  test("agregar desde la vista rápida actualiza el carrito sin recargar", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/big-bite-wings");
+    await page.getByRole("button", { name: /^Rechazar$/ }).click();
+    await page.locator('main button[aria-label^="Ver "]:not([disabled])').first().click();
+    await page.getByRole("dialog").getByRole("button", { name: /^Agregar/ }).click();
+
+    await expect(page.getByRole("link", { name: /^Ir al checkout/ })).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+  });
+
   test("tienda inexistente muestra not-found con noindex (SEO blindado)", async ({
     page,
   }) => {

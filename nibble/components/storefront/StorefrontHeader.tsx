@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ShoppingBag, User, Menu, MapPin, Search } from "lucide-react";
+import { User, Menu, MapPin, Search } from "lucide-react";
 import type { StoreView } from "@/lib/storefront/types";
 import { storefrontCopy } from "@/lib/storefront/copy";
+import { HeaderCartLink } from "./HeaderCartLink";
 
 export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; cartCount?: number }) {
   const copy = storefrontCopy(store.vertical);
@@ -85,26 +86,11 @@ export function StorefrontHeader({ store, cartCount = 0 }: { store: StoreView; c
           >
             <User className="size-4" /> Acceder
           </Link>
-          <Link
-            href={`/${store.slug}/checkout`}
-            aria-label={
-              cartCount > 0
-                ? `${copy.cartLabel} con ${cartCount} ${cartCount === 1 ? copy.itemSingular : copy.itemPlural}`
-                : `${copy.cartLabel} vacío`
-            }
-            className="relative inline-flex h-11 items-center gap-2 overflow-hidden rounded-full bg-[color:var(--color-bark-900)] pl-4 pr-3.5 text-sm font-semibold text-white transition-all duration-200 hover:bg-[color:var(--color-bark-800)] hover:scale-[1.02] active:scale-95"
-          >
-            <ShoppingBag aria-hidden className="size-4" />
-            <span className="hidden sm:inline">{copy.cartLabel}</span>
-            {cartCount > 0 && (
-              <span
-                aria-hidden
-                className="grid size-5 place-items-center rounded-full bg-[color:var(--color-amber-400)] text-xs font-bold text-[color:var(--color-bark-900)] num-tabular"
-              >
-                {cartCount}
-              </span>
-            )}
-          </Link>
+          <HeaderCartLink
+            storeSlug={store.slug}
+            vertical={store.vertical}
+            initialCount={cartCount}
+          />
         </div>
       </div>
     </header>

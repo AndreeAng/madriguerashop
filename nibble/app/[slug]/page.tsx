@@ -24,7 +24,7 @@ import { StorefrontMenu } from "@/components/storefront/StorefrontMenu";
 import { StorefrontBanner } from "@/components/storefront/StorefrontBanner";
 import { StorefrontPopup } from "@/components/storefront/StorefrontPopup";
 import { ClosedStoreNotice } from "@/components/storefront/ClosedStoreNotice";
-import { formatBob } from "@/lib/utils";
+import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
 import { storefrontCopy } from "@/lib/storefront/copy";
 import { storeActionColors } from "@/lib/storefront/theme";
 
@@ -195,7 +195,6 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
     .slice(0, 3)
     .map((p) => toProductView(p, slug, now));
 
-  // Copy por vertical (cart label en el bottom bar mobile).
   const copy = storefrontCopy(store.vertical);
   const { action, onAction } = storeActionColors(store.primaryColor);
   const FulfilmentIcon = store.deliveryEnabled ? Truck : StoreIcon;
@@ -461,33 +460,12 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
         />
       )}
 
-      {/* Floating cart bar (mobile) — sólo cuando hay items */}
-      {cartCount > 0 && (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 px-4 md:hidden"
-          style={{
-            bottom: "var(--cookie-banner-h, 0px)",
-            paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
-          }}
-        >
-          <a
-            href={`/${store.slug}/checkout`}
-            aria-label={`Ir al checkout. ${copy.cartLabel} con ${cartCount} ${cartCount === 1 ? copy.itemSingular : copy.itemPlural}, total ${formatBob(cartSubtotal)}`}
-            className="flex h-14 items-center justify-between rounded-full bg-[color:var(--color-bark-900)] px-5 text-white shadow-float"
-          >
-            <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <span className="grid size-7 place-items-center rounded-full bg-[color:var(--store-action)] text-xs font-bold num-tabular text-[color:var(--store-on-action)]">
-                {cartCount}
-              </span>
-              {copy.cartLabel}
-            </span>
-            <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <span className="num-tabular">{formatBob(cartSubtotal)}</span>
-              <ChevronRight className="size-4" />
-            </span>
-          </a>
-        </div>
-      )}
+      <FloatingCartBar
+        storeSlug={store.slug}
+        vertical={store.vertical}
+        initialCount={cartCount}
+        initialSubtotal={cartSubtotal}
+      />
     </div>
   );
 }
