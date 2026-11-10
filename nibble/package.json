@@ -29,10 +29,11 @@
   },
   "//overrides": "next-auth@5 beta lockea nodemailer viejo vía @auth/core. Historial de CVEs que forzaron el override: GHSA-vvjj-xcjg-gr5g (CRLF injection, fix 8.x) y GHSA-p6gq-j5cr-w38f (raw option bypassea disableFileAccess → file read/SSRF, fix 9.0.3). El riesgo real en nuestro código es bajo (armamos los mensajes nosotros, sin raw de usuario) pero el audit del CI bloquea highs.",
   "overrides": {
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^10.5.0",
     "@auth/core": {
-      "nodemailer": "^9.0.3"
-    }
+      "nodemailer": "^10.5.0"
+    },
+    "postcss": "^8.5.32"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -46,15 +47,15 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.469.0",
     "next": "^15.1.6",
-    "next-auth": "5.0.0-beta.31",
-    "nodemailer": "^9.0.3",
+    "next-auth": "5.0.0-beta.32",
+    "nodemailer": "^10.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-leaflet": "^5.0.0",
     "server-only": "^0.0.1",
-    "sharp": "^0.34.0",
+    "sharp": "^0.35.5",
     "tailwind-merge": "^2.6.0",
-    "zod": "4.4.1"
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.0",
