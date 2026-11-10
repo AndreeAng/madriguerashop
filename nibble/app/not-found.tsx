@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ArrowLeft, Compass } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { NibbleLogo } from "@/components/shared/Logo";
+import { marketingFontClass } from "@/lib/fonts/marketing";
 
 // Defensivo: aunque rutas inexistentes a nivel app router devuelven 404
 // real (no caen en el soft-404 quirk del [slug]/page.tsx), un crawler que
@@ -12,37 +14,54 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
   return (
-    <main className="grid min-h-screen place-items-center bg-[color:var(--bg)] p-8">
-      <div className="max-w-md text-center">
-        <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]">
-          <Compass className="size-6" />
-        </div>
-        <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--muted)]">
-          Error 404
+    <div className={`${marketingFontClass} relative flex min-h-dvh flex-col overflow-hidden bg-mk-ink text-mk-on-ink`}>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(50rem_30rem_at_85%_10%,rgba(212,20,90,0.3),transparent_60%)]"
+      />
+      <header className="relative mx-auto w-full max-w-7xl px-5 pt-5">
+        <Link
+          href="/"
+          aria-label="Madriguera Shop, inicio"
+          className="inline-flex min-h-11 items-center [--fg:var(--color-mk-on-ink)]"
+        >
+          <NibbleLogo />
+        </Link>
+      </header>
+
+      <main
+        id="main-content"
+        className="relative mx-auto flex w-full max-w-7xl flex-1 flex-col justify-center px-5 py-16"
+      >
+        <p
+          aria-hidden="true"
+          className="mk-display text-[clamp(6rem,22vw,16rem)] font-extrabold leading-[0.8] text-mk-saffron"
+        >
+          404
         </p>
-        <h1 className="font-display mt-3 text-5xl leading-tight">
-          Esta página no existe
+        <h1 className="mk-display mt-6 max-w-3xl text-[clamp(2.5rem,6vw,5rem)] font-bold leading-[0.92]">
+          Esta página no existe.
         </h1>
-        <p className="mt-4 text-[color:var(--muted)]">
+        <p className="mt-6 max-w-lg text-lg leading-relaxed text-mk-on-ink-soft">
           O fue movida, o el link tiene un typo, o nunca existió. Pasa.
         </p>
 
-        <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-full bg-[color:var(--color-bark-900)] px-5 py-3 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)]"
+            className="press inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-mk-magenta px-8 text-base font-semibold text-white transition-colors hover:bg-mk-magenta-deep"
           >
-            <ArrowLeft className="size-4" />
+            <ArrowLeft aria-hidden="true" className="size-4" />
             Volver al inicio
           </Link>
           <Link
             href="/tiendas"
-            className="text-sm text-[color:var(--muted)] hover:text-[color:var(--fg)] hover:underline"
+            className="press inline-flex min-h-14 items-center justify-center rounded-full border border-white/25 px-8 text-base font-semibold transition-colors hover:border-white/60 hover:bg-white/5"
           >
             Ver tiendas
           </Link>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

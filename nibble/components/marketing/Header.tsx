@@ -55,7 +55,7 @@ export function MarketingHeader({ tone = "light" }: { tone?: "light" | "dark" })
         onDark ? "text-mk-on-ink" : "text-mk-ink",
       ].join(" ")}
     >
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-5">
+      <div className="mx-auto flex h-[64px] max-w-7xl items-center justify-between gap-[16px] px-[20px]">
         <Link
           href="/"
           aria-label="Madriguera Shop, inicio"
@@ -64,12 +64,12 @@ export function MarketingHeader({ tone = "light" }: { tone?: "light" | "dark" })
           <NibbleLogo />
         </Link>
 
-        <nav aria-label="Principal" className="hidden items-center gap-1 text-sm font-medium md:flex">
+        <nav aria-label="Principal" className="hidden items-center gap-[4px] text-sm font-medium md:flex">
           {NAV.map((n) => (
             <Link
               key={n.href}
               href={n.href}
-              className={`inline-flex min-h-11 items-center rounded-full px-4 transition-colors ${
+              className={`inline-flex min-h-[44px] items-center whitespace-nowrap rounded-full px-[14px] transition-colors ${
                 onDark
                   ? "text-mk-on-ink-soft hover:text-mk-on-ink"
                   : "text-mk-soft hover:text-mk-ink"
@@ -80,10 +80,10 @@ export function MarketingHeader({ tone = "light" }: { tone?: "light" | "dark" })
           ))}
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-[8px]">
           <Link
             href="/login"
-            className={`hidden min-h-11 items-center rounded-full px-4 text-sm font-medium transition-colors md:inline-flex ${
+            className={`hidden min-h-[44px] items-center whitespace-nowrap rounded-full px-[16px] text-sm font-medium transition-colors md:inline-flex ${
               onDark ? "hover:bg-white/10" : "hover:bg-mk-paper-2"
             }`}
           >
@@ -91,7 +91,7 @@ export function MarketingHeader({ tone = "light" }: { tone?: "light" | "dark" })
           </Link>
           <Link
             href="/registro"
-            className="group hidden min-h-11 items-center gap-1.5 rounded-full bg-mk-magenta px-5 text-sm font-semibold text-white transition-colors hover:bg-mk-magenta-deep md:inline-flex"
+            className="group hidden min-h-[44px] items-center gap-[6px] whitespace-nowrap rounded-full bg-mk-magenta px-[20px] text-sm font-semibold text-white transition-colors hover:bg-mk-magenta-deep md:inline-flex"
           >
             Empezar
             <ArrowRight
@@ -105,7 +105,7 @@ export function MarketingHeader({ tone = "light" }: { tone?: "light" | "dark" })
             aria-expanded={open}
             aria-controls="mkt-mobile-menu"
             onClick={() => setOpen((v) => !v)}
-            className={`inline-flex size-11 items-center justify-center rounded-full border md:hidden ${
+            className={`inline-flex size-[44px] items-center justify-center rounded-full border md:hidden ${
               onDark ? "border-white/25" : "border-[color:var(--line-strong)] bg-white"
             }`}
           >
@@ -118,7 +118,7 @@ export function MarketingHeader({ tone = "light" }: { tone?: "light" | "dark" })
       <div
         id="mkt-mobile-menu"
         hidden={!open}
-        className="absolute inset-x-0 top-16 border-b border-[color:var(--line)] bg-white text-mk-ink md:hidden"
+        className="absolute inset-x-0 top-[64px] border-b border-[color:var(--line)] bg-white text-mk-ink md:hidden"
       >
         <div className="mx-auto max-w-7xl px-5 pb-6 pt-2">
           <ul className="flex flex-col divide-y divide-[color:var(--line)]">

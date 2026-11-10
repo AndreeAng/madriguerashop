@@ -8,7 +8,7 @@ export function MarketingFooter() {
     <footer className={`${marketingFontClass} bg-mk-ink text-mk-on-ink`}>
       <div className="mx-auto max-w-7xl px-5 py-16 md:py-20">
         <div className="grid gap-12 md:grid-cols-12">
-          <div className="md:col-span-5">
+          <div className="md:col-span-4">
             <span className="[--fg:var(--color-mk-on-ink)]">
               <NibbleLogo />
             </span>
@@ -39,7 +39,7 @@ export function MarketingFooter() {
               { label: "hola@madrigueras.shop", href: "mailto:hola@madrigueras.shop" },
               { label: "+591 7220 1700", href: "https://wa.me/59172201700" },
             ]}
-            className="md:col-span-2"
+            className="md:col-span-3"
           />
           <FooterCol
             title="Legal"
@@ -77,7 +77,7 @@ function FooterCol({
           <li key={l.label}>
             <Link
               href={l.href}
-              className="inline-flex min-h-11 items-center text-mk-on-ink-soft transition-colors hover:text-mk-saffron"
+              className="inline-flex min-h-11 items-center text-mk-on-ink-soft [overflow-wrap:anywhere] transition-colors hover:text-mk-saffron"
             >
               {l.label}
             </Link>
