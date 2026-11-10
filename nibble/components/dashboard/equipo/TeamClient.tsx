@@ -1,7 +1,15 @@
 "use client";
 
 import { useActionState, useEffect, useState, useTransition } from "react";
-import { KeyRound, Pause, Play, Plus, UserCircle, X } from "lucide-react";
+import {
+  KeyRound,
+  Pause,
+  Play,
+  Plus,
+  UserCircle,
+  X,
+  Check,
+} from "lucide-react";
 import {
   inviteCashierAction,
   resetCashierPasswordAction,
@@ -288,7 +296,7 @@ function ResetPasswordDialog({
 
         {state.ok && (
           <p className="mt-3 rounded-lg bg-[color:var(--color-leaf-50)] px-3 py-2 text-xs text-[color:var(--color-leaf-700)]">
-            ✓ Link enviado. Avisa al cajero que revise su email (válido 1 hora).
+            <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Link enviado. Avisa al cajero que revise su email (válido 1 hora).
           </p>
         )}
         {state.error && (

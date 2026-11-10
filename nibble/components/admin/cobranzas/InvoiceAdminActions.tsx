@@ -2,7 +2,13 @@
 
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { CheckCircle2, Loader2, ShieldX, X } from "lucide-react";
+import {
+  CheckCircle2,
+  Loader2,
+  ShieldX,
+  X,
+  TriangleAlert,
+} from "lucide-react";
 import {
   verifyInvoicePaymentAction,
   cancelInvoiceAction,
@@ -84,7 +90,7 @@ export function InvoiceAdminActions({
 
       {!hasProof && (
         <p className="text-[11px] text-[color:var(--muted)]">
-          ⚠ Aún no subió comprobante. Verifica igual sólo si confirmaste el pago por otro medio.
+          <TriangleAlert aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Aún no subió comprobante. Verifica igual sólo si confirmaste el pago por otro medio.
         </p>
       )}
 

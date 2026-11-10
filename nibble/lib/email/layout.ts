@@ -50,12 +50,12 @@ export type EmailLayoutInput = {
   footnote?: string;
 };
 
-const COLOR_BG = "#f7f5f0";
+const COLOR_BG = "#f7f7f9";
 const COLOR_CARD = "#ffffff";
-const COLOR_TEXT = "#1a1410";
-const COLOR_MUTED = "#6b6b6b";
-const COLOR_AMBER = "#f59e0b";
-const COLOR_BARK = "#1a1410";
+const COLOR_TEXT = "#121016";
+const COLOR_MUTED = "#67636f";
+const COLOR_AMBER = "#ffb21e";
+const COLOR_BARK = "#121016";
 
 export function renderEmail(input: EmailLayoutInput): string {
   const cta =

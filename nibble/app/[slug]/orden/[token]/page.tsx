@@ -7,6 +7,7 @@ import {
   MapPin,
   Package,
   ShieldX,
+  CalendarClock,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getStorefrontData } from "@/lib/tenant/resolve";
@@ -306,7 +307,7 @@ export default async function OrderTrackingPage({
           {order.scheduledFor && (
             <div className="rounded-3xl border border-[color:var(--color-bark-300)] bg-[color:var(--color-bark-50)] p-5">
               <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
-                📅 Pedido programado
+                <CalendarClock aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Pedido programado
               </p>
               <p className="mt-2 font-display text-xl">
                 {formatDateLong(order.scheduledFor)}
@@ -360,7 +361,7 @@ export default async function OrderTrackingPage({
               </p>
               {order.paymentStatus === "VERIFIED" && (
                 <p className="text-xs text-[color:var(--color-leaf-600)]">
-                  ✓ Comprobante verificado
+                  <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Comprobante verificado
                 </p>
               )}
               {order.paymentStatus === "AWAITING_VERIFICATION" && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useActionState, useState } from "react";
 import { uploadInvoiceProofAction } from "@/server/actions/invoices";
 import { ImageUploadField } from "@/components/dashboard/shared/ImageUploadField";
@@ -28,7 +29,7 @@ export function InvoiceProofForm({
         role="status"
         className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
       >
-        ✓ Comprobante enviado. Lo verificamos en máximo 24 hs.
+        <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Comprobante enviado. Lo verificamos en máximo 24 hs.
       </p>
     );
   }

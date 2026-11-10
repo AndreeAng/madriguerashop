@@ -1,5 +1,11 @@
 import Link from "next/link";
-import { ArrowUpRight, Phone, Search, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  Phone,
+  Search,
+  Users,
+  MapPin,
+} from "lucide-react";
 import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
 import { DashboardHeader } from "@/components/dashboard/DashboardHeader";
@@ -79,10 +85,7 @@ export default async function ClientesPage({
       <main className="p-6 lg:p-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Tu base
-              </p>
-              <h1 className="font-display mt-1 text-3xl">Clientes</h1>
+              <h1 className="font-display text-3xl">Clientes</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {totalCustomers} {totalCustomers === 1 ? "cliente" : "clientes"} ·{" "}
                 {recurrentCount} recurrente{recurrentCount === 1 ? "" : "s"}
@@ -143,7 +146,7 @@ export default async function ClientesPage({
                           )}
                           {c.lastAddressText && (
                             <p className="text-xs text-[color:var(--muted)]">
-                              📍 {c.lastAddressText}
+                              <MapPin aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />{c.lastAddressText}
                             </p>
                           )}
                         </td>

@@ -99,10 +99,7 @@ export default async function ProductsPage({
       <main className="p-6 lg:p-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Catálogo
-              </p>
-              <h1 className="font-display mt-1 text-3xl">{copy.productsLabel}</h1>
+              <h1 className="font-display text-3xl">{copy.productsLabel}</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {total} {total === 1 ? copy.productSingular : copy.productsLabel.toLowerCase()} ·{" "}
                 {activeCount} activos

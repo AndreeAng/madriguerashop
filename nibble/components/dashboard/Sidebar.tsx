@@ -23,6 +23,7 @@ import {
 import { SignOutButton } from "@/components/shared/SignOutButton";
 import { dashboardCopy } from "@/lib/dashboard/copy";
 import { nameToInitials } from "@/lib/utils";
+import { storeActionColors } from "@/lib/storefront/theme";
 
 // Items que CASHIER puede ver. Los demás (productos, categorías, facturación,
 // settings) son owner-only: el guard de cada page redirige, pero ocultarlos
@@ -96,8 +97,15 @@ export function DashboardSidebar({
             className="flex w-full items-center gap-3 rounded-xl bg-[color:var(--bg)] p-2.5 text-left transition hover:bg-[color:var(--line)]"
           >
             <div
-              className="flex size-9 items-center justify-center overflow-hidden rounded-lg text-sm font-bold text-white"
-              style={{ background: store?.primaryColor ?? "#1a1410" }}
+              className="flex size-9 items-center justify-center overflow-hidden rounded-lg text-sm font-bold"
+              style={
+                store?.primaryColor
+                  ? {
+                      background: storeActionColors(store.primaryColor).action,
+                      color: storeActionColors(store.primaryColor).onAction,
+                    }
+                  : { background: "var(--color-bark-900)", color: "white" }
+              }
             >
               {store?.logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element

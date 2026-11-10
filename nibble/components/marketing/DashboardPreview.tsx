@@ -91,7 +91,7 @@ export function DashboardPreview() {
             aria-label="Notificaciones"
           >
             <Bell className="size-3.5" />
-            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-[color:var(--color-amber-500)] text-[9px] font-bold text-white">
+            <span className="absolute -right-1 -top-1 grid size-4 place-items-center rounded-full bg-mk-magenta text-[9px] font-bold text-white">
               3
             </span>
           </button>

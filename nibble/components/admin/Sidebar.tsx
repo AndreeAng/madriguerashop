@@ -61,7 +61,7 @@ export function AdminSidebar({
       footer={
         <div className="space-y-2">
           <div className="flex items-center gap-2 rounded-lg bg-white/5 p-2">
-            <div className="flex size-8 items-center justify-center rounded-full bg-[color:var(--color-amber-500)] text-xs font-bold">
+            <div className="flex size-8 items-center justify-center rounded-full bg-mk-magenta text-xs font-bold text-white">
               {initials}
             </div>
             <div className="min-w-0 text-xs">

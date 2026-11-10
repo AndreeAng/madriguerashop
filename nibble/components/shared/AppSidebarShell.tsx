@@ -62,7 +62,7 @@ export function AppSidebarShell({
             it.href === root ? pathname === root : pathname.startsWith(it.href);
           const activeClasses =
             theme === "dark"
-              ? "bg-[color:var(--color-amber-500)] text-white"
+              ? "bg-mk-magenta text-white"
               : "bg-[color:var(--color-bark-900)] text-white";
           const idleClasses =
             theme === "dark"
@@ -97,7 +97,7 @@ export function AppSidebarShell({
                     isActive
                       ? theme === "dark"
                         ? "bg-white/15 text-white"
-                        : "bg-[color:var(--color-amber-500)] text-white"
+                        : "bg-mk-magenta text-white"
                       : theme === "dark"
                         ? "bg-white/10 text-white/80"
                         : "bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-600)]"

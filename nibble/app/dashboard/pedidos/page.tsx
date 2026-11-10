@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { Search, ShoppingBag } from "lucide-react";
+import {
+  Search,
+  ShoppingBag,
+  CalendarClock,
+} from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
@@ -135,10 +139,7 @@ export default async function OrdersPage({
       <main className="p-6 lg:p-8">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Operación
-              </p>
-              <h1 className="font-display mt-1 text-3xl">{copy.ordersLabel}</h1>
+              <h1 className="font-display text-3xl">{copy.ordersLabel}</h1>
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {activeCount} activos · {awaitingCount} con pago por verificar
               </p>
@@ -225,7 +226,7 @@ export default async function OrdersPage({
                               )}
                               {order.scheduledFor && (
                                 <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-bark-100)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-bark-800)]">
-                                  📅 {order.scheduledFor.toLocaleString("es-BO", {
+                                  <CalendarClock aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />{order.scheduledFor.toLocaleString("es-BO", {
                                     day: "2-digit",
                                     month: "short",
                                     hour: "2-digit",

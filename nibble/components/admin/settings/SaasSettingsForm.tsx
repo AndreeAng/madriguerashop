@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useActionState } from "react";
 import type { SaasSettings } from "@prisma/client";
 import { updateSaasSettingsAction } from "@/server/actions/saas-settings";
@@ -19,7 +20,7 @@ export function SaasSettingsForm({ settings }: { settings: SaasSettings }) {
           role="status"
           className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
         >
-          ✓ Configuración guardada. Los cambios se aplican en menos de 1 minuto.
+          <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Configuración guardada. Los cambios se aplican en menos de 1 minuto.
         </p>
       )}
       {state.error && (

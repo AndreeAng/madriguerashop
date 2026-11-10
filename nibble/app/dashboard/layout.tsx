@@ -70,7 +70,7 @@ export default async function DashboardLayout({
           // sólo refleja el invariante que la función ya validó.
           userRole={user.role as "STORE_OWNER" | "CASHIER" | "SUPER_ADMIN"}
         />
-        <div className="flex-1">
+        <div className="min-w-0 flex-1">
           {isImpersonating && (
             <ImpersonationBanner storeName={store.name} />
           )}

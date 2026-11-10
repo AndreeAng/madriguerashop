@@ -277,10 +277,7 @@ export default async function AdminHome({
           )}
 
           <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Vista global
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Madriguera Shop · {now.toLocaleDateString("es-BO", { month: "long", year: "numeric", timeZone: "America/La_Paz" })}</h1>
+            <h1 className="font-display text-3xl">Madriguera Shop · {now.toLocaleDateString("es-BO", { month: "long", year: "numeric", timeZone: "America/La_Paz" })}</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
               {storeCount} tiendas · {activeStoreCount} activas · {pastDueCount} con pago atrasado · {suspendedCount} suspendidas
             </p>

@@ -46,10 +46,7 @@ export default async function FacturacionPage() {
 
       <main className="p-6 lg:p-8">
           <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Tu cuenta con Madriguera Shop
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Facturación</h1>
+            <h1 className="font-display text-3xl">Facturación</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
               {open.length > 0
                 ? `${open.length} factura${open.length === 1 ? "" : "s"} pendiente${open.length === 1 ? "" : "s"} de pago.`

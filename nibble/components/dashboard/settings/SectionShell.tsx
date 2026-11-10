@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { ErrorAlert } from "@/components/ui/Alert";
 
@@ -69,7 +70,7 @@ export function StatusBadge({
         role="status"
         className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 transition-opacity"
       >
-        ✓ Cambios guardados
+        <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Cambios guardados
       </p>
     );
   }

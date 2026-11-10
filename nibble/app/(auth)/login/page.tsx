@@ -41,7 +41,7 @@ export default async function LoginPage() {
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(circle at 30% 30%, rgba(245,158,11,0.35), transparent 35%), radial-gradient(circle at 80% 70%, rgba(217,119,6,0.25), transparent 35%)",
+              "radial-gradient(circle at 75% 15%, rgba(212,20,90,0.38), transparent 45%)",
           }}
         />
         <div className="relative flex h-full flex-col items-start justify-end p-12 text-white">
@@ -52,7 +52,7 @@ export default async function LoginPage() {
             &ldquo;Migramos a Madriguera Shop en una tarde. Las ventas subieron 40% el primer mes solo por el mapa de calor.&rdquo;
           </h2>
           <div className="mt-6 flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-[color:var(--color-amber-500)] text-sm font-bold">
+            <div className="flex size-10 items-center justify-center rounded-full bg-mk-magenta text-sm font-bold text-white">
               DA
             </div>
             <div>

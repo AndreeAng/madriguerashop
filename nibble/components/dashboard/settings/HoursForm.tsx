@@ -34,7 +34,7 @@ export function HoursForm({ hours }: { hours: StoreHours[] }) {
         description="Cuándo estás disponible para recibir pedidos. Aparece en el storefront."
         status={<StatusBadge ok={state.ok} error={state.error} />}
       >
-        <div className="overflow-hidden rounded-xl border border-[color:var(--line)]">
+        <div className="overflow-x-auto rounded-xl border border-[color:var(--line)] [contain:inline-size]">
           <table className="w-full text-sm">
             <thead className="bg-[color:var(--bg)] text-xs uppercase text-[color:var(--muted)]">
               <tr>

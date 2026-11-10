@@ -149,10 +149,7 @@ export default async function AuditoriaPage({
 
         <main className="p-6 lg:p-8">
           <div>
-            <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-              Trazabilidad
-            </p>
-            <h1 className="font-display mt-1 text-3xl">Auditoría</h1>
+            <h1 className="font-display text-3xl">Auditoría</h1>
             <p className="mt-1 text-sm text-[color:var(--muted)]">
               {total} evento{total === 1 ? "" : "s"} en el filtro actual · página {page} de {totalPages}
             </p>

@@ -22,6 +22,7 @@ import {
   Ticket,
   Upload,
   X,
+  Check,
 } from "lucide-react";
 import type { StoreVertical } from "@prisma/client";
 import {
@@ -483,7 +484,7 @@ export function CheckoutForm({
                     <div className="mt-3">
                       {autoDetectedZone ? (
                         <p className="rounded-lg bg-[color:var(--color-leaf-50)] px-3 py-2 text-xs text-[color:var(--color-leaf-700)]">
-                          ✓ Estás dentro de <strong>{autoDetectedZone.name}</strong> ·{" "}
+                          <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Estás dentro de <strong>{autoDetectedZone.name}</strong> ·{" "}
                           {formatBob(autoDetectedZone.fee)}
                           {autoDetectedZone.estimatedTime
                             ? ` · ${autoDetectedZone.estimatedTime}`
@@ -506,7 +507,7 @@ export function CheckoutForm({
                     <span className="text-[color:var(--muted)] inline-flex items-center gap-1.5">
                       <MapPin className="size-4" />
                       {previewDeliveryFee === 0
-                        ? "Delivery gratis 🎉"
+                        ? "Delivery gratis"
                         : "Costo de envío estimado"}
                     </span>
                     <span className="font-semibold">{formatBob(previewDeliveryFee)}</span>

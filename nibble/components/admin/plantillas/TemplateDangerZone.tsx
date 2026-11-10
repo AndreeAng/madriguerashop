@@ -3,7 +3,12 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { useRouter } from "next/navigation";
-import { Loader2, Trash2, ArrowRightLeft } from "lucide-react";
+import {
+  Loader2,
+  Trash2,
+  ArrowRightLeft,
+  Check,
+} from "lucide-react";
 import {
   deleteTemplateAction,
   reassignStoresToTemplateAction,
@@ -107,7 +112,7 @@ function ReassignBlock({
         <ReassignButton />
       </div>
       {state.ok && (
-        <p className="text-xs text-emerald-700">✓ Tiendas reasignadas correctamente.</p>
+        <p className="text-xs text-emerald-700"><Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Tiendas reasignadas correctamente.</p>
       )}
       {state.error && (
         <p className="text-xs text-[color:var(--color-tomato-600)]">{state.error}</p>

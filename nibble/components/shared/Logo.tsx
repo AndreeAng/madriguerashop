@@ -36,7 +36,7 @@ export function NibbleLogo({ className, mono = false }: { className?: string; mo
           mono ? "text-current" : "text-[color:var(--fg)]"
         )}
       >
-        madriguera<span className="text-[color:var(--color-amber-500)]">·</span>shop
+        madriguera<span className="text-[color:var(--color-amber-600)]">·</span>shop
       </span>
     </span>
   );

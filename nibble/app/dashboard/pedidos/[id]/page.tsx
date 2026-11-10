@@ -8,6 +8,7 @@ import {
   Phone,
   ShoppingBag,
   User,
+  CalendarClock,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { requireStoreOwner } from "@/lib/auth/session";
@@ -64,11 +65,8 @@ export default async function OrderDetailPage({
 
           <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
-                Pedido
-              </p>
-              <h1 className="font-display mt-1 text-3xl">
-                #{order.orderNumber}
+              <h1 className="font-display text-3xl">
+                Pedido #{order.orderNumber}
                 <span className="ml-3 text-sm font-normal text-[color:var(--muted)]">
                   {order.createdAt.toLocaleString("es-BO", {
                     dateStyle: "medium",
@@ -218,7 +216,7 @@ export default async function OrderDetailPage({
                 {order.scheduledFor && (
                   <div className="mt-4 rounded-xl border border-[color:var(--color-bark-300)] bg-[color:var(--color-bark-50)] p-3 text-sm">
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
-                      📅 Pedido programado
+                      <CalendarClock aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Pedido programado
                     </p>
                     <p className="mt-1 font-medium">
                       {order.scheduledFor.toLocaleString("es-BO", {
