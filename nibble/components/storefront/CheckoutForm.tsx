@@ -1,6 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useRouter } from "next/navigation";
 import {
   Banknote,
@@ -32,8 +40,39 @@ import { SubmitButton } from "@/components/ui/SubmitButton";
 import { PhoneInputBO } from "@/components/shared/PhoneInputBO";
 import { findMatchingZone } from "@/lib/delivery/geometry";
 import type { CartSnapshot } from "@/server/actions/cart";
+import { CheckoutCartLine } from "./CheckoutCartLine";
 
-const initial: CreateOrderState = {};
+type CheckoutState = CreateOrderState & { values?: Record<string, string> };
+
+const initial: CheckoutState = {};
+
+// React 19 reinicia los inputs no controlados al terminar la action de un
+// <form>, también cuando el server devuelve errores de validación. Devolvemos
+// lo tipeado en el state y los `defaultValue` lo restauran en ese reinicio.
+const PRESERVED_FIELDS = [
+  "customerName",
+  "customerEmail",
+  "deliveryAddress",
+  "deliveryNote",
+  "customerNotes",
+] as const;
+
+async function submitCheckout(
+  _prev: CheckoutState,
+  formData: FormData,
+): Promise<CheckoutState> {
+  const values = Object.fromEntries(
+    PRESERVED_FIELDS.map((name) => [name, String(formData.get(name) ?? "")]),
+  );
+  try {
+    return { ...(await createOrderAction({}, formData)), values };
+  } catch {
+    return {
+      error: "No pudimos enviar tu pedido. Revisa tu conexión y prueba de nuevo.",
+      values,
+    };
+  }
+}
 
 type StoreInfo = {
   name: string;
@@ -84,8 +123,9 @@ export function CheckoutForm({
   hoursByDay: HoursDay[];
 }) {
   const router = useRouter();
-  const [state, action] = useActionState(createOrderAction, initial);
+  const [state, action] = useActionState(submitCheckout, initial);
   const fe = state.fieldErrors ?? {};
+  const saved = state.values ?? {};
   const copy = storefrontCopy(store.vertical);
 
   // Defaults razonables: si una sola opción está habilitada, fijala.
@@ -108,12 +148,22 @@ export function CheckoutForm({
   // devuelve error (estado terminal de éxito hace redirect, no rehidrata).
   const [submitting, setSubmitting] = useState(false);
   useEffect(() => {
-    // Si el server devolvió un error/fieldErrors, el form rehidrata —
-    // liberamos el guard para que el cliente pueda corregir y reenviar.
-    if (state.error || state.fieldErrors) {
-      setSubmitting(false);
-    }
-  }, [state.error, state.fieldErrors]);
+    if (!state.error && !state.fieldErrors) return;
+    // El form rehidrató con errores: liberamos el guard para que el cliente
+    // pueda corregir y reenviar. Depende de `state` entero porque el mismo
+    // mensaje dos veces seguidas dejaría el botón bloqueado.
+    setSubmitting(false);
+    // El primer error en orden de lectura recibe el foco; si es un mensaje
+    // general (sin input propio) lo hacemos enfocable.
+    const target = formRef.current?.querySelector<HTMLElement>(
+      '[aria-invalid="true"], [role="alert"]',
+    );
+    if (!target) return;
+    if (!target.matches("input, select, textarea")) target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+  }, [state]);
 
   // Cupón aplicado — validado por el server ANTES de pagar. El flujo QR es
   // "pagar → subir comprobante → confirmar": si el descuento recién se
@@ -126,6 +176,22 @@ export function CheckoutForm({
   const [couponError, setCouponError] = useState<string | null>(null);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const cartHeadingRef = useRef<HTMLHeadingElement>(null);
+  const [busyLines, setBusyLines] = useState(0);
+  const handleLineBusy = useCallback(
+    (delta: 1 | -1) => setBusyLines((n) => n + delta),
+    [],
+  );
+
+  // El comprobante QR se sube por un monto exacto: si el carrito cambia, ese
+  // comprobante ya no coincide con el total que se va a cobrar.
+  function handleCartChanged(removed: boolean) {
+    if (proofUrl) {
+      setProofUrl("");
+      setProofError("El total cambió. Sube el comprobante del nuevo monto.");
+    }
+    if (removed) cartHeadingRef.current?.focus();
+  }
 
   useEffect(() => {
     // Si la validación FINAL rechazó el cupón (ej. otro cliente lo agotó
@@ -281,10 +347,7 @@ export function CheckoutForm({
         value={autoDetectedZone?.id ?? zoneId}
       />
 
-      {/* `<div>` (no `<main>`) porque este componente vive DENTRO de un
-          `<form>` y el modelo de contenido de form no permite landmarks
-          como main. WCAG 1.3.1 + HTML spec. El `<main>` real está en el
-          layout del storefront. */}
+      {/* El `<main>` envuelve este form en la page del checkout. */}
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-6">
           <h1 className="font-display text-3xl">Finalizar {copy.orderSingular}</h1>
@@ -304,6 +367,7 @@ export function CheckoutForm({
               <Field
                 label="Nombre completo"
                 name="customerName"
+                defaultValue={saved.customerName}
                 placeholder="Carla Mendoza"
                 error={fe.customerName}
                 required
@@ -318,6 +382,7 @@ export function CheckoutForm({
             <Field
               label="Email (opcional)"
               name="customerEmail"
+              defaultValue={saved.customerEmail}
               type="email"
               placeholder="carla@email.com"
               error={fe.customerEmail}
@@ -360,7 +425,7 @@ export function CheckoutForm({
                       value={zoneId}
                       onChange={(e) => setZoneId(e.target.value)}
                       disabled={!!autoDetectedZone}
-                      className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)] disabled:opacity-60"
+                      className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)] disabled:opacity-60"
                     >
                       <option value="">— Elige tu zona —</option>
                       {deliveryZones.map((z) => (
@@ -383,6 +448,7 @@ export function CheckoutForm({
                   <Field
                     label="Dirección"
                     name="deliveryAddress"
+                    defaultValue={saved.deliveryAddress}
                     placeholder="Av. América Este 1234"
                     error={fe.deliveryAddress}
                     required
@@ -390,6 +456,7 @@ export function CheckoutForm({
                   <Field
                     label="Referencia (opcional)"
                     name="deliveryNote"
+                    defaultValue={saved.deliveryNote}
                     placeholder="Frente al kiosco azul, 2do piso"
                   />
                 </div>
@@ -496,7 +563,7 @@ export function CheckoutForm({
                     type="button"
                     onClick={handleClearCoupon}
                     aria-label="Quitar cupón"
-                    className="grid size-7 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
+                    className="-my-2 -mr-1 grid size-11 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -521,7 +588,7 @@ export function CheckoutForm({
                         placeholder="BIENVENIDO10"
                         maxLength={40}
                         autoComplete="off"
-                        className="w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+                        className="w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)]"
                       />
                       <button
                         type="button"
@@ -553,9 +620,10 @@ export function CheckoutForm({
                 </span>
                 <textarea
                   name="customerNotes"
+                  defaultValue={saved.customerNotes}
                   rows={2}
                   placeholder={`Ej. Tocar el timbre dos veces. ${copy.checkoutNotesPlaceholder}`}
-                  className="mt-1.5 w-full resize-y rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+                  className="mt-1.5 w-full resize-y rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)]"
                   maxLength={500}
                 />
               </label>
@@ -660,31 +728,21 @@ export function CheckoutForm({
             </div>
           )}
           <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-            <h3 className="font-semibold">{copy.cartLabel}</h3>
+            <h3 ref={cartHeadingRef} tabIndex={-1} className="font-semibold">
+              {copy.cartLabel}
+            </h3>
             <ul className="mt-4 divide-y divide-[color:var(--line)]">
               {cart.items.map((line) => (
-                <li key={line.id} className="flex gap-3 py-3">
-                  <div className="grid size-14 shrink-0 place-items-center overflow-hidden rounded-lg bg-[color:var(--bg)]">
-                    {/* La cart snapshot no tiene image; placeholder */}
-                    <span className="text-[10px] uppercase text-[color:var(--muted)]">
-                      ×{line.quantity}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="truncate text-sm font-medium">{line.product.name}</p>
-                    {line.variant && (
-                      <p className="text-xs text-[color:var(--muted)]">
-                        {line.variant.name}
-                      </p>
-                    )}
-                    <p className="mt-1 text-xs text-[color:var(--muted)]">
-                      {line.quantity} × {formatBob(Number(line.unitPrice))}
-                    </p>
-                  </div>
-                  <span className="text-sm font-medium num-tabular">
-                    {formatBob(line.lineTotal)}
-                  </span>
-                </li>
+                <CheckoutCartLine
+                  key={line.id}
+                  storeSlug={slug}
+                  line={line}
+                  isOnlyLine={cart.items.length === 1}
+                  emptyWarning={`Se vaciará ${copy.cartLabel.toLowerCase()} y volverás a la tienda.`}
+                  locked={submitting}
+                  onChanged={handleCartChanged}
+                  onBusy={handleLineBusy}
+                />
               ))}
             </ul>
 
@@ -713,7 +771,8 @@ export function CheckoutForm({
             <CheckoutSubmit
               paymentMethod={paymentMethod}
               proofUrl={proofUrl}
-              submitting={submitting}
+              submitting={submitting || busyLines > 0}
+              pendingLabel={`Creando ${copy.orderSingular}…`}
             />
 
             <p className="mt-3 text-center text-xs text-[color:var(--muted)]">
@@ -730,10 +789,12 @@ function CheckoutSubmit({
   paymentMethod,
   proofUrl,
   submitting,
+  pendingLabel,
 }: {
   paymentMethod: string;
   proofUrl: string;
   submitting: boolean;
+  pendingLabel: string;
 }) {
   const blocked = paymentMethod === "QR_STATIC" && !proofUrl;
   return (
@@ -742,7 +803,7 @@ function CheckoutSubmit({
       width="full"
       className="mt-5 py-3.5"
       disabled={blocked || submitting}
-      pendingLabel="Creando pedido…"
+      pendingLabel={pendingLabel}
     >
       <MessageCircle className="size-4" />
       Confirmar y avisar por WhatsApp
@@ -774,7 +835,7 @@ function ProofUploader({
           type="button"
           onClick={onClear}
           aria-label="Quitar comprobante"
-          className="grid size-7 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
+          className="-my-2 -mr-1 grid size-11 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
         >
           <X className="size-3.5" />
         </button>
@@ -851,6 +912,7 @@ const AUTOCOMPLETE_BY_NAME: Record<string, string> = {
 function Field({
   label,
   name,
+  defaultValue,
   placeholder,
   type = "text",
   inputMode,
@@ -859,6 +921,7 @@ function Field({
 }: {
   label: string;
   name: string;
+  defaultValue?: string;
   placeholder?: string;
   type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"];
@@ -880,6 +943,7 @@ function Field({
       </span>
       <input
         name={name}
+        defaultValue={defaultValue}
         type={type}
         inputMode={inputMode}
         autoComplete={AUTOCOMPLETE_BY_NAME[name] ?? "on"}
@@ -888,7 +952,7 @@ function Field({
         aria-required={required ? true : undefined}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
-        className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+        className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2.5 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)]"
       />
       {error && (
         <p
@@ -918,7 +982,8 @@ function MethodToggle({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
+      aria-pressed={active}
+      className={`inline-flex min-h-11 items-center gap-2 rounded-full border px-4 py-2 text-sm transition ${
         active
           ? "border-[color:var(--color-bark-900)] bg-[color:var(--color-bark-900)] text-white"
           : "border-[color:var(--line)] bg-[color:var(--card)] hover:border-[color:var(--color-bark-300)]"
@@ -947,6 +1012,7 @@ function PayCard({
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`rounded-2xl border p-4 text-left transition ${
         active
           ? "border-[color:var(--color-amber-500)] bg-[color:var(--color-amber-50)]"
@@ -1051,6 +1117,8 @@ function SchedulePicker({
   );
 
   const [picked, setPicked] = useState(defaultDateTime);
+  const dateTimeId = useId();
+  const dateTimeErrorId = useId();
 
   // El cliente envía `scheduledFor` como ISO si está en modo scheduled,
   // o vacío si es ASAP. El server interpreta el campo vacío como ASAP.
@@ -1103,17 +1171,23 @@ function SchedulePicker({
 
       {mode === "scheduled" && (
         <div>
-          <label className="block text-xs font-medium text-[color:var(--muted)]">
+          <label
+            htmlFor={dateTimeId}
+            className="block text-xs font-medium text-[color:var(--muted)]"
+          >
             Día y hora ({deliveryMethod === "delivery" ? "entrega" : "recojo"})
           </label>
           <input
+            id={dateTimeId}
             type="datetime-local"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? dateTimeErrorId : undefined}
             value={picked}
             onChange={(e) => setPicked(e.target.value)}
             min={minDateTime}
             max={maxDateTime}
             required
-            className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2.5 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+            className="mt-1.5 w-full rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2.5 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)]"
           />
           {pickedLabel && (
             <p className="mt-1.5 text-xs text-[color:var(--muted)]">
@@ -1123,6 +1197,7 @@ function SchedulePicker({
           )}
           {error && (
             <p
+              id={dateTimeErrorId}
               role="alert"
               className="mt-1.5 text-xs text-[color:var(--color-tomato-600)]"
             >
@@ -1149,7 +1224,7 @@ function ModeChip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+      className={`min-h-11 rounded-lg px-3 py-2 text-sm font-medium transition ${
         active
           ? "bg-[color:var(--color-bark-900)] text-white"
           : "text-[color:var(--fg-soft)] hover:bg-[color:var(--card)]"

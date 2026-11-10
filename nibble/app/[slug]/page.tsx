@@ -11,6 +11,7 @@ import {
   ChevronRight,
   MessageCircle,
   Phone,
+  Store as StoreIcon,
 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getStorefrontData, getStoreBySlug } from "@/lib/tenant/resolve";
@@ -25,6 +26,7 @@ import { StorefrontPopup } from "@/components/storefront/StorefrontPopup";
 import { ClosedStoreNotice } from "@/components/storefront/ClosedStoreNotice";
 import { formatBob } from "@/lib/utils";
 import { storefrontCopy } from "@/lib/storefront/copy";
+import { storeActionColors } from "@/lib/storefront/theme";
 
 export async function generateMetadata({
   params,
@@ -175,12 +177,20 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
 
   // Copy por vertical (cart label en el bottom bar mobile).
   const copy = storefrontCopy(store.vertical);
+  const { action, onAction } = storeActionColors(store.primaryColor);
+  const FulfilmentIcon = store.deliveryEnabled ? Truck : StoreIcon;
+  const fulfilmentLabel = store.deliveryEnabled ? "Delivery" : "Recojo en local";
 
   return (
-    <div style={{ ["--store-primary" as string]: store.primaryColor }}>
+    <div
+      style={{
+        ["--store-action" as string]: action,
+        ["--store-on-action" as string]: onAction,
+      }}
+    >
       <StorefrontHeader store={store} cartCount={cartCount} />
 
-      <main
+      <main id="main-content"
         className="md:pb-16"
         style={{ paddingBottom: "max(8rem, calc(env(safe-area-inset-bottom) + 6rem))" }}
       >
@@ -223,34 +233,36 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                       </span>
                     )}
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-white backdrop-blur-md">
-                      <Truck className="size-3.5" />
-                      Delivery
+                      <FulfilmentIcon className="size-3.5" />
+                      {fulfilmentLabel}
                     </span>
                   </div>
 
                   <h1 className="font-display mt-5 text-[42px] leading-[0.95] tracking-tight text-white md:text-7xl">
                     {store.tagline}
                   </h1>
-                  <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/85 md:text-base">
-                    {store.description}
-                  </p>
+                  {store.description !== store.tagline && (
+                    <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-white/85 md:text-base">
+                      {store.description}
+                    </p>
+                  )}
 
                   <div className="mt-7 flex flex-wrap items-center gap-3">
                     <a
                       href="#menu"
-                      className="group inline-flex h-12 items-center gap-2 rounded-full bg-[color:var(--color-amber-500)] px-6 text-sm font-semibold text-white shadow-float transition-all duration-200 hover:scale-[1.03] hover:bg-[color:var(--color-amber-600)] active:scale-95"
+                      className="group inline-flex h-12 items-center gap-2 rounded-full bg-[color:var(--store-action)] px-5 text-sm md:px-6 font-semibold text-[color:var(--store-on-action)] shadow-float transition-all duration-200 hover:scale-[1.03] hover:brightness-110 active:scale-95"
                     >
                       <Flame className="size-4" />
-                      Ver el menú
+                      Ver {copy.menuAriaLabel.toLowerCase()}
                       <ChevronRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                     </a>
                     {featured.length > 0 && (
                       <a
                         href="#destacados"
-                        className="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 bg-white/5 px-5 text-sm font-medium text-white backdrop-blur-md transition hover:bg-white/15"
+                        className="inline-flex h-12 items-center gap-2 rounded-full border border-white/25 bg-white/5 px-4 text-sm md:px-5 font-medium text-white backdrop-blur-md transition hover:bg-white/15"
                       >
                         <Sparkles className="size-4" />
-                        Lo más pedido
+                        {copy.featuredPill}
                       </a>
                     )}
                   </div>
@@ -262,10 +274,14 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
           {/* Trust strip */}
           <div className="relative z-10 mx-auto -mt-8 max-w-6xl px-4">
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl bg-[color:var(--line-strong)] shadow-soft md:grid-cols-4">
-              <TrustItem icon={<Truck className="size-4" />} label="Delivery" hint={store.city} />
+              <TrustItem
+                icon={<FulfilmentIcon className="size-4" />}
+                label={fulfilmentLabel}
+                hint={store.city}
+              />
               <TrustItem
                 icon={<ShieldCheck className="size-4" />}
-                label="Pago seguro"
+                label="Formas de pago"
                 hint={
                   store.acceptsQR && store.acceptsCashOnDelivery
                     ? "QR · efectivo"
@@ -355,14 +371,14 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                   className="absolute -right-8 -top-8 size-40 rounded-full bg-[color:var(--color-leaf-400)]/30 blur-2xl"
                 />
                 <div className="relative">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] backdrop-blur">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] backdrop-blur">
                     <MessageCircle className="size-3" /> Atención directa
                   </span>
                   <h3 className="font-display mt-3 text-2xl leading-tight">
-                    ¿Dudas? Te respondemos en menos de 5 min
+                    ¿Dudas? Escríbenos
                   </h3>
                   <p className="mt-1.5 text-sm text-white/85">
-                    Escríbenos al WhatsApp y resolvemos en el momento.
+                    Te atendemos directo por WhatsApp.
                   </p>
                   <a
                     href={`https://wa.me/${store.whatsapp.replace(/[^\d]/g, "")}`}
@@ -401,14 +417,17 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
             closeTime: h.closeTime,
             isClosed: h.isClosed,
           }))}
+          cartHasItems={cartCount > 0}
         />
       )}
 
       {/* Popup promocional (si hay uno activo en la ventana). Lo renderizamos
           al final del DOM para que el z-index sea predecible y no quede
           tapado por el sidebar/header. El componente client decide el
-          momento de mostrarse (delaySeconds + once-per-session). */}
-      {activePopup && (
+          momento de mostrarse (delaySeconds + once-per-session). Con la
+          tienda cerrada manda el aviso de arriba: dos modales a la vez se
+          pelean el foco. */}
+      {activePopup && store.isOpenNow && (
         <StorefrontPopup
           popupId={activePopup.id}
           title={activePopup.title}
@@ -425,7 +444,10 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
       {cartCount > 0 && (
         <div
           className="fixed inset-x-0 bottom-0 z-40 px-4 md:hidden"
-          style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
+          style={{
+            bottom: "var(--cookie-banner-h, 0px)",
+            paddingBottom: "max(1rem, env(safe-area-inset-bottom))",
+          }}
         >
           <a
             href={`/${store.slug}/checkout`}
@@ -433,7 +455,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
             className="flex h-14 items-center justify-between rounded-full bg-[color:var(--color-bark-900)] px-5 text-white shadow-float"
           >
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <span className="grid size-7 place-items-center rounded-full bg-[color:var(--color-amber-500)] text-[12px] font-bold num-tabular text-[color:var(--color-bark-900)]">
+              <span className="grid size-7 place-items-center rounded-full bg-[color:var(--store-action)] text-xs font-bold num-tabular text-[color:var(--store-on-action)]">
                 {cartCount}
               </span>
               {copy.cartLabel}
@@ -463,7 +485,7 @@ function EmptyMenu({ storeName, whatsapp }: { storeName: string; whatsapp: strin
             href={`https://wa.me/${whatsapp.replace(/[^\d]/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-white"
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-[color:var(--color-bark-900)]"
           >
             <MessageCircle className="size-4" />
             Hablar por WhatsApp
@@ -490,7 +512,7 @@ function TrustItem({
       </div>
       <div className="min-w-0">
         <p className="text-[13px] font-semibold leading-tight">{label}</p>
-        <p className="mt-0.5 truncate text-[11px] text-[color:var(--muted)]">{hint}</p>
+        <p className="mt-0.5 truncate text-xs text-[color:var(--muted)]">{hint}</p>
       </div>
     </div>
   );
@@ -519,7 +541,7 @@ function Detail({
       <div className="grid size-10 place-items-center rounded-xl bg-[color:var(--card-soft)] text-[color:var(--fg-soft)]">
         {icon}
       </div>
-      <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
         {label}
       </p>
       <p className="mt-1.5 font-display text-lg leading-tight">{value}</p>
@@ -560,7 +582,7 @@ function HoursDetail({
       <div className="grid size-10 place-items-center rounded-xl bg-[color:var(--card-soft)] text-[color:var(--fg-soft)]">
         {icon}
       </div>
-      <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+      <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
         Horario
       </p>
 
@@ -583,7 +605,7 @@ function HoursDetail({
 
       {hasSchedule && (
         <p
-          className={`mt-3 inline-flex items-center gap-1.5 whitespace-nowrap text-[11px] font-medium ${
+          className={`mt-3 inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${
             isOpenNow
               ? "text-[color:var(--color-leaf-700)]"
               : "text-[color:var(--muted)]"

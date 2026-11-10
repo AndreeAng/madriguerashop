@@ -59,7 +59,7 @@ export function CustomerCancelOrder({ token }: { token: string }) {
           rows={2}
           placeholder="Cambié de idea / lo voy a pedir más tarde / etc."
           aria-invalid={Boolean(state.fieldErrors?.reason)}
-          className="mt-1 w-full rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-tomato-500)]"
+          className="mt-1 w-full rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-base outline-none sm:text-sm focus:border-[color:var(--color-tomato-500)]"
         />
         {state.fieldErrors?.reason && (
           <p role="alert" className="mt-1 text-xs text-[color:var(--color-tomato-600)]">

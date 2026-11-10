@@ -55,7 +55,7 @@ export default function StorefrontError({
         </div>
 
         {error.digest && (
-          <p className="mt-8 text-[11px] text-[color:var(--muted)]">
+          <p className="mt-8 text-xs text-[color:var(--muted)]">
             Código: {error.digest}
           </p>
         )}

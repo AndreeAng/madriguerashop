@@ -133,7 +133,7 @@ export default async function OrderTrackingPage({
     <div>
       <StorefrontHeader store={store} cartCount={0} />
 
-      <main className="mx-auto max-w-4xl px-4 py-10">
+      <main id="main-content" className="mx-auto max-w-4xl px-4 py-10">
         {/* Hero */}
         <div
           className={`rounded-3xl border p-6 md:p-8 ${
@@ -173,7 +173,7 @@ export default async function OrderTrackingPage({
               trackingToken={token}
               phoneOnly={phoneOnly}
               label={`Hablar con ${order.store.name}`}
-              className="hidden items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-2 text-xs font-medium text-white md:inline-flex"
+              className="hidden items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-2 text-xs font-medium text-[color:var(--color-bark-900)] md:inline-flex"
             />
           </div>
 
@@ -209,7 +209,7 @@ export default async function OrderTrackingPage({
                         done
                           ? "bg-[color:var(--color-leaf-500)] text-white"
                           : active
-                            ? "bg-[color:var(--color-amber-500)] text-white"
+                            ? "bg-[color:var(--color-amber-600)] text-white"
                             : "bg-[color:var(--line)] text-[color:var(--muted)]"
                       }`}
                     >
@@ -219,7 +219,7 @@ export default async function OrderTrackingPage({
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold">{step.label}</p>
                         {active && (
-                          <span className="rounded-full bg-[color:var(--color-amber-500)] px-2 py-0.5 text-[10px] font-semibold text-white">
+                          <span className="rounded-full bg-[color:var(--color-amber-600)] px-2 py-0.5 text-xs font-semibold text-white">
                             Ahora
                           </span>
                         )}
@@ -261,7 +261,7 @@ export default async function OrderTrackingPage({
                         className="size-full object-cover"
                       />
                     ) : (
-                      <span className="text-[10px] uppercase text-[color:var(--muted)]">
+                      <span className="text-xs uppercase text-[color:var(--muted)]">
                         ×{item.quantity}
                       </span>
                     )}
@@ -304,7 +304,7 @@ export default async function OrderTrackingPage({
 
           {order.scheduledFor && (
             <div className="rounded-3xl border border-[color:var(--color-bark-300)] bg-[color:var(--color-bark-50)] p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
                 📅 Pedido programado
               </p>
               <p className="mt-2 font-display text-xl">
@@ -379,7 +379,7 @@ export default async function OrderTrackingPage({
               trackingToken={token}
               phoneOnly={phoneOnly}
               label={`Hablar con ${order.store.name}`}
-              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-white"
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-[color:var(--color-bark-900)]"
             />
           </div>
         </div>

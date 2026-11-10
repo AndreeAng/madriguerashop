@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   acceptCookiesAction,
@@ -24,6 +24,7 @@ export function CookieConsent() {
   // browser), así que esperamos al primer effect en el cliente.
   const [visible, setVisible] = useState(false);
   const [pending, startTransition] = useTransition();
+  const bannerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Solo cookies "no httpOnly" son visibles desde document.cookie. La
@@ -34,6 +35,22 @@ export function CookieConsent() {
       .some((c) => c.startsWith("mv_consent="));
     if (!hasConsent) setVisible(true);
   }, []);
+
+  // La barra flotante del carrito se apoya encima del aviso con esta altura.
+  // Va por debajo de los modales (z-50) para no tapar sus acciones.
+  useEffect(() => {
+    const el = bannerRef.current;
+    if (!visible || !el) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => {
+      root.style.setProperty("--cookie-banner-h", `${el.offsetHeight}px`);
+    });
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty("--cookie-banner-h");
+    };
+  }, [visible]);
 
   function handle(action: () => Promise<void>) {
     startTransition(async () => {
@@ -46,9 +63,10 @@ export function CookieConsent() {
 
   return (
     <div
+      ref={bannerRef}
       role="region"
       aria-label="Aviso de cookies"
-      className="fixed inset-x-0 bottom-0 z-[100] border-t border-[color:var(--line)] bg-[color:var(--card)] px-4 py-3 shadow-float"
+      className="fixed inset-x-0 bottom-0 z-[45] border-t border-[color:var(--line)] bg-[color:var(--card)] px-4 py-3 shadow-float"
       style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
     >
       <div className="mx-auto flex max-w-3xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -68,7 +86,7 @@ export function CookieConsent() {
             type="button"
             disabled={pending}
             onClick={() => handle(rejectCookiesAction)}
-            className="rounded-full border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-4 py-2 text-sm font-medium text-[color:var(--fg)] hover:bg-[color:var(--card)] disabled:opacity-50"
+            className="rounded-full border border-[color:var(--line-strong)] bg-[color:var(--bg)] min-h-11 px-4 py-2 text-sm font-medium text-[color:var(--fg)] hover:bg-[color:var(--card)] disabled:opacity-50"
           >
             Rechazar
           </button>
@@ -76,7 +94,7 @@ export function CookieConsent() {
             type="button"
             disabled={pending}
             onClick={() => handle(acceptCookiesAction)}
-            className="rounded-full bg-[color:var(--color-bark-900)] px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)] disabled:opacity-50"
+            className="rounded-full bg-[color:var(--color-bark-900)] min-h-11 px-4 py-2 text-sm font-medium text-white hover:bg-[color:var(--color-bark-700)] disabled:opacity-50"
           >
             Aceptar
           </button>

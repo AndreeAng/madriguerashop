@@ -73,6 +73,7 @@ export default async function CheckoutPage({
         </Link>
       </nav>
 
+      <main id="main-content">
       <CheckoutForm
         slug={slug}
         store={{
@@ -119,6 +120,7 @@ export default async function CheckoutPage({
           };
         })}
       />
+      </main>
     </div>
   );
 }

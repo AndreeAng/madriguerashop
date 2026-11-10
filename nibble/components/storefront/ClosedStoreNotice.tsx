@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Clock, Moon, X, CalendarClock } from "lucide-react";
 import type { StoreView } from "@/lib/storefront/types";
+import { useDialogFocus } from "@/hooks/useDialogFocus";
 
 /**
  * Popup auto-mostrado cuando la tienda está cerrada (`store.isOpenNow=false`).
@@ -29,11 +30,14 @@ const DAY_NAMES_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Vie
 export function ClosedStoreNotice({
   store,
   hours,
+  cartHasItems,
 }: {
   store: Pick<StoreView, "name" | "isOpenNow" | "nextOpeningLabel" | "whatsapp" | "slug">;
   /** Array de StoreHours por día de semana (0=domingo … 6=sábado).
    *  El caller filtra/normaliza antes de pasar. */
   hours: Array<{ dayOfWeek: number; openTime: string; closeTime: string; isClosed: boolean }>;
+  /** Sin items, el checkout redirige a la home: no ofrecemos programar aún. */
+  cartHasItems: boolean;
 }) {
   const [visible, setVisible] = useState(false);
   // Lazy init: `new Date().getDay()` en el body del render produce
@@ -43,6 +47,7 @@ export function ClosedStoreNotice({
   const [today] = useState(() => new Date().getDay());
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (store.isOpenNow) return;
@@ -54,48 +59,19 @@ export function ClosedStoreNotice({
     return () => clearTimeout(t);
   }, [store.isOpenNow]);
 
-  // Focus trap mínimo: el dialog tiene un Link + dos botones. Sin trap,
-  // Tab escapa al contenido de fondo aunque el overlay esté visible.
-  // Además restauramos foco al elemento que tenía antes de abrir (WCAG 2.4.3).
-  useEffect(() => {
-    if (!visible) return;
-    const opener = document.activeElement as HTMLElement | null;
-    const dialog = dialogRef.current;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setVisible(false);
-        return;
-      }
-      if (e.key !== "Tab" || !dialog) return;
-      const focusables = dialog.querySelectorAll<HTMLElement>(
-        'a, button, input, [tabindex]:not([tabindex="-1"])',
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0]!;
-      const last = focusables[focusables.length - 1]!;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      if (opener && typeof opener.focus === "function") {
-        opener.focus();
-      }
-    };
-  }, [visible]);
-
-  if (!visible || store.isOpenNow) return null;
-
   const close = () => {
     sessionStorage.setItem(SESSION_KEY, "1");
     setVisible(false);
   };
+
+  useDialogFocus({
+    open: visible && !store.isOpenNow,
+    dialogRef,
+    initialFocusRef: closeRef,
+    onEscape: close,
+  });
+
+  if (!visible || store.isOpenNow) return null;
 
   // Ordenamos los días lunes a domingo (cultura BO). Domingo va último.
   const orderedHours = DAY_NAMES_SHORT_ORDER.map((dow) =>
@@ -116,10 +92,11 @@ export function ClosedStoreNotice({
         className="relative w-full max-w-md overflow-hidden rounded-2xl bg-[color:var(--card)] shadow-2xl"
       >
         <button
+          ref={closeRef}
           type="button"
           onClick={close}
           aria-label="Cerrar aviso"
-          className="absolute right-3 top-3 grid size-8 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)] hover:text-[color:var(--fg)]"
+          className="absolute right-3 top-3 grid size-11 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)] hover:text-[color:var(--fg)]"
         >
           <X className="size-4" />
         </button>
@@ -149,7 +126,7 @@ export function ClosedStoreNotice({
 
         <div className="px-6 pb-6 pt-4">
           <div className="rounded-xl border border-[color:var(--line)] bg-[color:var(--bg)] p-4">
-            <p className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
               <Clock className="size-3" />
               Horarios de atención
             </p>
@@ -170,7 +147,7 @@ export function ClosedStoreNotice({
                     >
                       {DAY_NAMES_ES[h.dayOfWeek]}
                       {isToday && (
-                        <span className="ml-1.5 rounded-full bg-[color:var(--color-amber-500)]/15 px-1.5 py-0.5 text-[10px] font-medium text-[color:var(--color-amber-700)]">
+                        <span className="ml-1.5 rounded-full bg-[color:var(--color-amber-500)]/15 px-1.5 py-0.5 text-xs font-medium text-[color:var(--color-amber-700)]">
                           hoy
                         </span>
                       )}
@@ -187,26 +164,39 @@ export function ClosedStoreNotice({
           </div>
 
           <div className="mt-4 flex flex-col gap-2">
-            <Link
-              href={`/${store.slug}/checkout`}
-              onClick={close}
-              className="press inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--color-bark-900)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[color:var(--color-bark-700)]"
-            >
-              <CalendarClock className="size-4" />
-              Programar pedido
-            </Link>
-            <button
-              type="button"
-              onClick={close}
-              className="rounded-xl px-5 py-2 text-sm text-[color:var(--muted)] hover:text-[color:var(--fg)]"
-            >
-              Ver el catálogo igual
-            </button>
+            {cartHasItems ? (
+              <>
+                <Link
+                  href={`/${store.slug}/checkout`}
+                  onClick={close}
+                  className="press inline-flex items-center justify-center gap-2 rounded-xl bg-[color:var(--color-bark-900)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[color:var(--color-bark-700)]"
+                >
+                  <CalendarClock className="size-4" />
+                  Programar pedido
+                </Link>
+                <button
+                  type="button"
+                  onClick={close}
+                  className="rounded-xl px-5 py-2 text-sm text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+                >
+                  Ver el catálogo igual
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={close}
+                className="press inline-flex items-center justify-center rounded-xl bg-[color:var(--color-bark-900)] px-5 py-3 text-sm font-medium text-white transition hover:bg-[color:var(--color-bark-700)]"
+              >
+                Ver el catálogo
+              </button>
+            )}
           </div>
 
-          <p className="mt-3 text-center text-[11px] text-[color:var(--muted)]">
-            Igual puedes revisar productos y agregarlos al carrito. Te
-            atendemos en horario.
+          <p className="mt-3 text-center text-xs text-[color:var(--muted)]">
+            {cartHasItems
+              ? "Igual puedes revisar productos y agregarlos al carrito. Te atendemos en horario."
+              : "Agrega productos al carrito y elige día y hora al finalizar."}
           </p>
         </div>
       </div>

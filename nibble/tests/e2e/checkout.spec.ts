@@ -96,4 +96,28 @@ test.describe("Checkout", () => {
     await page.getByRole("button", { name: /Contra entrega/i }).click();
     await confirmAndExpectSuccess(page);
   });
+
+  test("un error de validación conserva lo escrito y enfoca el primer error", async ({ page }) => {
+    await startCheckout(page, "7234");
+    await page.getByPlaceholder("carla@email.com").fill("no-es-email");
+    await page.getByRole("button", { name: /Contra entrega/i }).click();
+    await page.getByRole("button", { name: /Confirmar y avisar/i }).click();
+
+    await expect(page.getByText(/Teléfono inválido/i)).toBeVisible();
+    await expect(page).toHaveURL(/\/checkout/);
+    await expect(page.getByPlaceholder("Carla Mendoza")).toHaveValue("Test Cliente E2E");
+    await expect(page.getByPlaceholder("carla@email.com")).toHaveValue("no-es-email");
+    await expect(page.getByPlaceholder("72345678")).toBeFocused();
+  });
+
+  test("la cantidad se edita en el resumen y quitar lo último vuelve a la tienda", async ({ page }) => {
+    await startCheckout(page, "72345680");
+    await page.getByRole("button", { name: /^Aumentar cantidad/i }).click();
+    await expect(page.getByText(/70[.,]00/).first()).toBeVisible();
+    await expect(page.getByPlaceholder("Carla Mendoza")).toHaveValue("Test Cliente E2E");
+
+    await page.getByRole("button", { name: /^Quitar /i }).click();
+    await page.getByRole("button", { name: /^Quitar$/i }).click();
+    await expect(page).not.toHaveURL(/\/checkout/, { timeout: 15000 });
+  });
 });

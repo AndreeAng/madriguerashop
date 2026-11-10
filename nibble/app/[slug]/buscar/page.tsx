@@ -102,7 +102,7 @@ export default async function SearchPage({
     <div>
       <StorefrontHeader store={store} cartCount={cart?.itemCount ?? 0} />
 
-      <main className="mx-auto max-w-6xl px-4 py-10">
+      <main id="main-content" className="mx-auto max-w-6xl px-4 py-10">
         <Link
           href={`/${slug}`}
           className="inline-flex items-center gap-1 text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
@@ -127,7 +127,7 @@ export default async function SearchPage({
             defaultValue={q}
             autoFocus
             placeholder={`Buscar en ${store.name}…`}
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-[color:var(--muted)]"
+            className="flex-1 bg-transparent text-base outline-none sm:text-sm placeholder:text-[color:var(--muted)]"
           />
           <button
             type="submit"

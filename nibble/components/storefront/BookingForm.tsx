@@ -180,7 +180,7 @@ export function BookingForm({
                       : "border-[color:var(--line)] hover:border-[color:var(--color-bark-300)]"
                 }`}
               >
-                <span className="text-[10px] uppercase opacity-70">
+                <span className="text-xs uppercase opacity-70">
                   {WEEKDAY_ES_SHORT[d.getDay()]}
                 </span>
                 <span className="num-tabular text-sm font-semibold">
@@ -276,7 +276,7 @@ export function BookingForm({
             name="notes"
             rows={2}
             placeholder="Alergia a tinte, primera vez, etc."
-            className="mt-1 w-full resize-none rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+            className="mt-1 w-full resize-none rounded-xl border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)]"
           />
         </label>
       </div>
@@ -318,7 +318,7 @@ function Field({
           error
             ? "border-[color:var(--color-tomato-500)]"
             : "border-[color:var(--line-strong)]"
-        } bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]`}
+        } bg-[color:var(--bg)] px-3 py-2 text-base outline-none sm:text-sm focus:border-[color:var(--color-amber-600)]`}
       />
       {error && (
         <p className="mt-1 text-xs text-[color:var(--color-tomato-600)]">

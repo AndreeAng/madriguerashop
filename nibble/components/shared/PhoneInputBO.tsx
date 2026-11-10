@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 /**
  * Input de teléfono boliviano con prefijo `+591` sticky a la izquierda.
@@ -41,6 +41,7 @@ export function PhoneInputBO({
   }, [defaultValue]);
 
   const [digits, setDigits] = useState(initialDigits);
+  const errorId = useId();
   const full = digits ? `+591${digits}` : "";
 
   return (
@@ -58,7 +59,7 @@ export function PhoneInputBO({
           error
             ? "border-[color:var(--color-tomato-500)]"
             : "border-[color:var(--line-strong)]"
-        } bg-[color:var(--bg)] focus-within:border-[color:var(--color-amber-400)]`}
+        } bg-[color:var(--bg)] focus-within:border-[color:var(--color-amber-600)]`}
       >
         <span
           aria-hidden
@@ -76,13 +77,20 @@ export function PhoneInputBO({
             setDigits(e.target.value.replace(/\D/g, "").slice(0, 8))
           }
           placeholder={placeholder ?? "72345678"}
-          className="flex-1 bg-transparent px-3 py-2 text-sm outline-none num-tabular"
+          aria-required={required ? true : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className="flex-1 bg-transparent px-3 py-2 text-base outline-none sm:text-sm num-tabular"
         />
       </div>
       {/* Valor real que llega al form: +591XXXXXXXX (o vacío si no tipeó). */}
       <input type="hidden" name={name} value={full} />
       {error && (
-        <p className="mt-1 text-xs text-[color:var(--color-tomato-600)]">
+        <p
+          id={errorId}
+          role="alert"
+          className="mt-1 text-xs text-[color:var(--color-tomato-600)]"
+        >
           {error}
         </p>
       )}
