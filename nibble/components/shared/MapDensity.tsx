@@ -95,7 +95,7 @@ export function MapDensity({
                 fillOpacity: 0.35 + (c.count / maxCount) * 0.4,
               }}
             >
-              <title>{c.count} pedido{c.count === 1 ? "" : "s"} en este punto</title>
+              <title>{`${c.count} pedido${c.count === 1 ? "" : "s"} en este punto`}</title>
             </CircleMarker>
           );
         })}

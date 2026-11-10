@@ -117,6 +117,7 @@ export function ImageUploadField({
           ref={fileRef}
           id={id}
           type="file"
+          aria-label={url ? `Reemplazar ${label}` : `Subir ${label}`}
           accept="image/jpeg,image/png,image/webp"
           onChange={(e) => {
             const f = e.target.files?.[0];

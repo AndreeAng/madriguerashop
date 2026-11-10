@@ -117,7 +117,7 @@ export default async function FacturacionPage() {
             {/* Cómo pagar */}
             <aside className="space-y-3 lg:sticky lg:top-24 lg:self-start">
               <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
-                <h3 className="font-semibold">Cómo pagar</h3>
+                <h2 className="font-semibold">Cómo pagar</h2>
                 {saasQrUrl ? (
                   <div className="mt-4 aspect-square overflow-hidden rounded-xl border border-[color:var(--line-strong)] bg-white p-3">
                     {/* eslint-disable-next-line @next/next/no-img-element */}

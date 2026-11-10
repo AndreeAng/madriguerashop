@@ -53,10 +53,10 @@ export function AppSidebarShell({
       : "w-64 border-r border-[color:var(--line)] bg-[color:var(--card)]";
 
   return (
-    <aside className={`hidden shrink-0 md:flex md:flex-col ${themeClasses}`}>
+    <aside aria-label="Barra lateral" className={`hidden shrink-0 md:flex md:flex-col ${themeClasses}`}>
       {header}
 
-      <nav className="flex-1 space-y-0.5 p-3">
+      <nav aria-label="Secciones" className="flex-1 space-y-0.5 p-3">
         {items.map((it) => {
           const isActive =
             it.href === root ? pathname === root : pathname.startsWith(it.href);

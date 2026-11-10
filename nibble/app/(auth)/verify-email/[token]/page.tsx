@@ -66,7 +66,7 @@ export default async function VerifyEmailPage({
   }
 
   return (
-    <div className="grid min-h-screen place-items-center p-8">
+    <main id="main-content" className="grid min-h-screen place-items-center p-8">
       <div className="w-full max-w-sm space-y-6 text-center">
         <Link href="/" className="inline-block">
           <NibbleLogo />
@@ -121,6 +121,6 @@ export default async function VerifyEmailPage({
           Ir al panel
         </Link>
       </div>
-    </div>
+    </main>
   );
 }

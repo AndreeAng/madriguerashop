@@ -908,9 +908,9 @@ function HourlyChart({
               fill={isPeak ? "var(--color-tomato-500)" : "var(--color-amber-500)"}
               opacity={b.count > 0 ? 1 : 0.15}
             >
-              <title>
-                {String(b.key).padStart(2, "0")}:00 — {b.count} {copy.ordersLabel.toLowerCase()}
-              </title>
+              {/* Un solo string: React 19 trata <title> aparte y varios hijos
+                  de texto no hidratan igual en servidor y cliente. */}
+              <title>{`${String(b.key).padStart(2, "0")}:00 — ${b.count} ${copy.ordersLabel.toLowerCase()}`}</title>
             </rect>
           );
         })}
@@ -1001,7 +1001,7 @@ function WeekdayChart({
                 fill={isPeak ? "var(--color-leaf-500)" : "var(--color-amber-500)"}
                 opacity={b.count > 0 ? 1 : 0.15}
               >
-                <title>{labels[i]}: {b.count} {copy.ordersLabel.toLowerCase()}</title>
+                <title>{`${labels[i]}: ${b.count} ${copy.ordersLabel.toLowerCase()}`}</title>
               </rect>
               <text
                 x={x + (barW - 8) / 2}
@@ -1095,9 +1095,7 @@ function DailyOrdersChart({
                 fill="var(--color-amber-500)"
                 opacity={s.count > 0 ? 1 : 0.15}
               >
-                <title>
-                  {shortDateWithWeekday(s.day)}: {s.count} {copy.ordersLabel.toLowerCase()} · Bs {formatBobAmount(s.revenue)}
-                </title>
+                <title>{`${shortDateWithWeekday(s.day)}: ${s.count} ${copy.ordersLabel.toLowerCase()} · Bs ${formatBobAmount(s.revenue)}`}</title>
               </rect>
             </g>
           );

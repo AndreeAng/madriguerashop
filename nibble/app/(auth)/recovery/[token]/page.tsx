@@ -21,7 +21,7 @@ export default async function ResetPasswordPage({
   // ("Link inválido o ya usado") si el token no sirve.
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <main id="main-content" className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col justify-between p-8 md:p-12">
         <Link href="/">
           <NibbleLogo />
@@ -47,6 +47,6 @@ export default async function ResetPasswordPage({
           }}
         />
       </div>
-    </div>
+    </main>
   );
 }
