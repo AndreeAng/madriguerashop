@@ -98,7 +98,7 @@ export default async function CategoryPage({
       <main id="main-content" className="mx-auto max-w-6xl px-4 py-10">
         <Link
           href={`/${slug}`}
-          className="inline-flex items-center gap-1 text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+          className="inline-flex min-h-11 items-center gap-1 text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
         >
           <ChevronLeft className="size-3.5" />
           Volver al menú

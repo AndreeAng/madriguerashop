@@ -15,12 +15,15 @@ export function StorefrontMenu({
   featured,
   populatedCategories,
   productsByCategory,
+  categoryMeta,
   promoSlot,
 }: {
   store: StoreView;
   featured: ProductView[];
   populatedCategories: string[];
   productsByCategory: Record<string, ProductView[]>;
+  /** Total real por categoría y ruta a su listado completo (si es visible). */
+  categoryMeta: Record<string, { total: number; href: string | null }>;
   promoSlot?: ReactNode;
 }) {
   const copy = storefrontCopy(store.vertical);
@@ -54,15 +57,20 @@ export function StorefrontMenu({
     return () => observer.disconnect();
   }, [populatedCategories]);
 
-  // Auto-scroll the chip into view in the horizontal nav
+  // Centra el chip activo moviendo solo la tira horizontal. `scrollIntoView`
+  // acá mueve el punto de partida del Tab en Chromium: el primer Tab de la
+  // página se saltaba el skip link, la búsqueda y el carrito.
   useEffect(() => {
-    if (!navScrollRef.current) return;
-    const el = navScrollRef.current.querySelector<HTMLElement>(
-      `[data-cat="${activeCat}"]`
-    );
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-    }
+    const nav = navScrollRef.current;
+    const el = nav?.querySelector<HTMLElement>(`[data-cat="${activeCat}"]`);
+    if (!nav || !el) return;
+    const left =
+      el.getBoundingClientRect().left -
+      nav.getBoundingClientRect().left +
+      nav.scrollLeft -
+      (nav.clientWidth - el.offsetWidth) / 2;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    nav.scrollTo({ left, behavior: reduce ? "auto" : "smooth" });
   }, [activeCat]);
 
   const handleChipClick = (key: string) => {
@@ -92,7 +100,7 @@ export function StorefrontMenu({
             />
             {populatedCategories.map((c) => {
               const key = slugCat(c);
-              const count = productsByCategory[c]?.length ?? 0;
+              const count = categoryMeta[c]?.total ?? 0;
               return (
                 <CategoryChip
                   key={c}
@@ -177,6 +185,8 @@ export function StorefrontMenu({
         {populatedCategories.map((cat, idx) => {
           const list = productsByCategory[cat];
           if (!list?.length) return null;
+          const meta = categoryMeta[cat];
+          const total = meta?.total ?? list.length;
           return (
             <section
               key={cat}
@@ -191,7 +201,7 @@ export function StorefrontMenu({
                   <h2 className="font-display text-2xl leading-tight md:text-3xl">{cat}</h2>
                 </div>
                 <p className="num-tabular text-xs uppercase tracking-wider text-[color:var(--muted)]">
-                  {list.length} {list.length === 1 ? "producto" : "productos"}
+                  {total} {total === 1 ? copy.itemSingular : copy.itemPlural}
                 </p>
               </div>
 
@@ -200,6 +210,18 @@ export function StorefrontMenu({
                   <ProductCard key={p.slug} product={p} onOpen={setActive} />
                 ))}
               </div>
+
+              {meta?.href && total > list.length && (
+                <div className="mt-5 flex justify-center">
+                  <a
+                    href={meta.href}
+                    className="inline-flex min-h-11 items-center gap-1 rounded-full border border-[color:var(--line-strong)] bg-[color:var(--card)] px-5 text-sm font-medium text-[color:var(--fg-soft)] transition hover:border-[color:var(--color-bark-300)]"
+                  >
+                    Ver {total} {copy.itemPlural}
+                    <ChevronRight aria-hidden className="size-4" />
+                  </a>
+                </div>
+              )}
             </section>
           );
         })}
@@ -236,7 +258,7 @@ function CategoryChip({
     <button
       type="button"
       data-cat={dataKey}
-      aria-pressed={active}
+      aria-current={active ? "true" : undefined}
       onClick={onClick}
       className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-all duration-200 ${
         active

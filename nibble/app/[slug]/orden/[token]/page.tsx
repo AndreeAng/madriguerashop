@@ -22,7 +22,7 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 import {
-  TRACKING_STEPS,
+  trackingStepsFor,
   STATUS_LABELS,
   PAYMENT_LABELS,
   trackingStepIndex,
@@ -111,7 +111,8 @@ export default async function OrderTrackingPage({
   const store = toStoreView(storeData, { hours: storeData.storeHours });
 
   const isCancelled = order.status === "CANCELLED";
-  const currentStep = trackingStepIndex(order.status);
+  const trackingSteps = trackingStepsFor(order.paymentMethod);
+  const currentStep = trackingStepIndex(order.status, trackingSteps);
 
   const subtotal = Number(order.subtotal);
   const discount = Number(order.discountAmount);
@@ -148,7 +149,7 @@ export default async function OrderTrackingPage({
                 className={`text-xs uppercase tracking-widest ${
                   isCancelled
                     ? "text-[color:var(--color-tomato-600)]"
-                    : "text-[color:var(--color-amber-500)]"
+                    : "text-[color:var(--color-amber-600)]"
                 }`}
               >
                 Pedido #{order.orderNumber}
@@ -189,7 +190,7 @@ export default async function OrderTrackingPage({
           {/* Timeline */}
           {!isCancelled ? (
             <ol className="mt-8 space-y-3">
-              {TRACKING_STEPS.map((step, i) => {
+              {trackingSteps.map((step, i) => {
                 const Icon = STEP_ICONS[step.key as keyof typeof STEP_ICONS];
                 const done = i < currentStep;
                 const active = i === currentStep;

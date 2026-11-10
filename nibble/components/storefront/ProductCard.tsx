@@ -47,7 +47,7 @@ export function ProductCard({
         aria-label={cardLabel}
         className="group flex w-full items-stretch gap-3 overflow-hidden rounded-[var(--radius-card)] bg-[color:var(--card)] text-left ring-1 ring-[color:var(--line)] transition-all duration-300 shadow-card hover:shadow-card-hover hover:-translate-y-0.5 hover:ring-[color:var(--line-strong)] disabled:cursor-not-allowed sm:gap-4"
       >
-        <div className="relative aspect-square w-32 shrink-0 overflow-hidden bg-[color:var(--card-soft)] sm:w-40 md:w-44">
+        <span className="block relative aspect-square w-32 shrink-0 overflow-hidden bg-[color:var(--card-soft)] sm:w-40 md:w-44">
           <Image
             src={product.image}
             alt={product.name}
@@ -64,27 +64,27 @@ export function ProductCard({
             </span>
           )}
           {!product.available && (
-            <div className="absolute inset-0 grid place-items-center bg-[color:var(--bg)]/85">
+            <span className="absolute inset-0 grid place-items-center bg-[color:var(--bg)]/85">
               <span className="rounded-full bg-[color:var(--ink)] px-2 py-1 text-xs font-semibold text-[color:var(--bg)]">
                 Agotado
               </span>
-            </div>
+            </span>
           )}
-        </div>
+        </span>
 
-        <div className="flex min-w-0 flex-1 flex-col py-3 pr-3 sm:py-4 sm:pr-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)]">
+        <span className="flex min-w-0 flex-1 flex-col py-3 pr-3 sm:py-4 sm:pr-4">
+          <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)]">
             {product.category}
-          </p>
-          <h3 className="font-display mt-1 line-clamp-1 text-base leading-tight">
+          </span>
+          <span className="block font-display mt-1 line-clamp-1 text-base leading-tight">
             {product.name}
-          </h3>
-          <p className="mt-1 line-clamp-2 text-[13px] leading-snug text-[color:var(--muted)]">
+          </span>
+          <span className="block mt-1 line-clamp-2 text-[13px] leading-snug text-[color:var(--muted)]">
             {product.description}
-          </p>
+          </span>
 
-          <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-            <div className="flex items-baseline gap-1.5">
+          <span className="mt-auto flex items-end justify-between gap-2 pt-3">
+            <span className="flex items-baseline gap-1.5">
               <span className="font-display num-tabular text-lg leading-none text-[color:var(--ink)]">
                 {formatBob(product.price)}
               </span>
@@ -93,7 +93,7 @@ export function ProductCard({
                   {formatBob(product.comparePrice)}
                 </span>
               )}
-            </div>
+            </span>
 
             <span
               aria-hidden
@@ -105,8 +105,8 @@ export function ProductCard({
                 <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
               )}
             </span>
-          </div>
-        </div>
+          </span>
+        </span>
       </button>
     );
   }
@@ -121,8 +121,8 @@ export function ProductCard({
       aria-label={cardLabel}
       className={`group relative flex h-full w-full flex-col overflow-hidden rounded-[var(--radius-card)] bg-[color:var(--card)] text-left ring-1 ring-[color:var(--line)] transition-all duration-300 hover:-translate-y-1 hover:ring-[color:var(--line-strong)] shadow-card hover:shadow-card-hover disabled:cursor-not-allowed`}
     >
-      <div
-        className={`relative overflow-hidden bg-[color:var(--card-soft)] ${
+      <span
+        className={`block relative overflow-hidden bg-[color:var(--card-soft)] ${
           isHero ? "aspect-[4/5] md:aspect-auto md:flex-1" : "aspect-[5/4]"
         }`}
       >
@@ -135,9 +135,9 @@ export function ProductCard({
           className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.08]"
         />
 
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-        <div className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
+        <span className="absolute left-3 right-3 top-3 flex items-start justify-between gap-2">
           {product.badge && product.badgeLabel ? (
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold tracking-wide ${badgeStyles[product.badge]}`}
@@ -153,54 +153,54 @@ export function ProductCard({
               -{discount}%
             </span>
           )}
-        </div>
+        </span>
 
         {product.rating && (
-          <div className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur">
+          <span className="absolute bottom-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-xs font-semibold text-white backdrop-blur">
             <Star className="size-3 fill-[color:var(--color-amber-300)] text-[color:var(--color-amber-300)]" />
             <span className="num-tabular">{product.rating}</span>
-          </div>
+          </span>
         )}
 
         {/* "#1 más vendido" solo cuando el producto está realmente marcado
             como best seller; antes se mostraba en cualquier hero, mintiendo. */}
         {isHero && product.badge === "best" && (
-          <div className="absolute bottom-3 right-3 hidden rounded-full bg-white/95 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-bark-900)] shadow-pill backdrop-blur md:inline-flex">
+          <span className="absolute bottom-3 right-3 hidden rounded-full bg-white/95 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--color-bark-900)] shadow-pill backdrop-blur md:inline-flex">
             <Star className="mr-1 size-3 fill-[color:var(--color-amber-500)] text-[color:var(--color-amber-500)]" />
             #1 más vendido
-          </div>
+          </span>
         )}
 
         {!product.available && (
-          <div className="absolute inset-0 grid place-items-center bg-[color:var(--bg)]/85 backdrop-blur-[2px]">
+          <span className="absolute inset-0 grid place-items-center bg-[color:var(--bg)]/85 backdrop-blur-[2px]">
             <span className="rounded-full bg-[color:var(--ink)] px-3.5 py-1.5 text-xs font-semibold text-[color:var(--bg)]">
               Agotado
             </span>
-          </div>
+          </span>
         )}
-      </div>
+      </span>
 
-      <div className={`flex flex-1 flex-col ${isHero ? "p-5 md:p-6" : "p-4"}`}>
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)]">
+      <span className={`flex flex-1 flex-col ${isHero ? "p-5 md:p-6" : "p-4"}`}>
+        <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--muted)]">
           {product.category}
-        </p>
-        <h3
-          className={`font-display mt-1 leading-tight ${
+        </span>
+        <span
+          className={`block font-display mt-1 leading-tight ${
             isHero ? "text-xl md:text-2xl" : "line-clamp-1 text-base"
           }`}
         >
           {product.name}
-        </h3>
-        <p
-          className={`mt-1.5 leading-relaxed text-[color:var(--muted)] ${
+        </span>
+        <span
+          className={`block mt-1.5 leading-relaxed text-[color:var(--muted)] ${
             isHero ? "line-clamp-3 text-sm md:text-[15px]" : "line-clamp-2 text-[13px]"
           }`}
         >
           {product.description}
-        </p>
+        </span>
 
-        <div className="mt-4 flex items-end justify-between gap-2">
-          <div className="flex flex-col">
+        <span className="mt-4 flex items-end justify-between gap-2">
+          <span className="flex flex-col">
             {product.comparePrice && (
               <span className="text-xs text-[color:var(--muted)] line-through num-tabular">
                 {formatBob(product.comparePrice)}
@@ -213,7 +213,7 @@ export function ProductCard({
             >
               {formatBob(product.price)}
             </span>
-          </div>
+          </span>
 
           <span
             aria-hidden
@@ -224,8 +224,8 @@ export function ProductCard({
             <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
             <span className="hidden sm:inline">Agregar</span>
           </span>
-        </div>
-      </div>
+        </span>
+      </span>
     </button>
   );
 }

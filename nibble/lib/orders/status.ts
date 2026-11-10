@@ -66,7 +66,20 @@ export const TRACKING_STEPS: { key: OrderStatus; label: string; desc: string }[]
   { key: "DELIVERED", label: "Entregado", desc: "Disfruta. ¡Gracias por elegirnos!" },
 ];
 
+/** Los pasos que aplican a un pedido: en efectivo no hay comprobante que subir. */
+export function trackingStepsFor(paymentMethod: string): typeof TRACKING_STEPS {
+  if (paymentMethod !== "CASH_ON_DELIVERY") return TRACKING_STEPS;
+  return TRACKING_STEPS.filter((s) => s.key !== "PENDING_PAYMENT").map((s) =>
+    s.key === "CONFIRMED"
+      ? { ...s, desc: "La tienda aceptó tu pedido y empieza a prepararlo." }
+      : s,
+  );
+}
+
 /** Retorna el índice del step actual (-1 si está cancelado o desconocido). */
-export function trackingStepIndex(status: OrderStatus): number {
-  return TRACKING_STEPS.findIndex((s) => s.key === status);
+export function trackingStepIndex(
+  status: OrderStatus,
+  steps: typeof TRACKING_STEPS = TRACKING_STEPS,
+): number {
+  return steps.findIndex((s) => s.key === status);
 }

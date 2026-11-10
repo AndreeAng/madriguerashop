@@ -33,7 +33,7 @@ export function CustomerCancelOrder({ token }: { token: string }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-1.5 text-xs text-[color:var(--color-tomato-600)] hover:underline"
+        className="inline-flex min-h-11 items-center gap-1.5 text-xs text-[color:var(--color-tomato-600)] hover:underline"
       >
         <X className="size-3.5" />
         Cancelar mi pedido

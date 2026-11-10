@@ -77,7 +77,7 @@ export default async function ContactPage({
       <StorefrontHeader store={store} cartCount={cart?.itemCount ?? 0} />
 
       <main id="main-content" className="mx-auto max-w-3xl px-4 py-12">
-        <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
+        <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-600)]">
           Contacto
         </p>
         <h1 className="font-display mt-2 text-4xl">Hablemos</h1>

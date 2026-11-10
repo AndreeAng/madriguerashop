@@ -147,7 +147,7 @@ export function BookingForm({
               onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
               disabled={weekOffset === 0}
               aria-label="Semana anterior"
-              className="grid size-7 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)] disabled:opacity-30"
+              className="grid size-11 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)] disabled:opacity-30"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -155,7 +155,7 @@ export function BookingForm({
               type="button"
               onClick={() => setWeekOffset((w) => Math.min(8, w + 1))}
               aria-label="Semana siguiente"
-              className="grid size-7 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
+              className="grid size-11 place-items-center rounded-full text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
             >
               <ChevronRight className="size-4" />
             </button>

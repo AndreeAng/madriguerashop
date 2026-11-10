@@ -71,6 +71,7 @@
   --fg-soft: var(--color-bark-700);
   --muted: var(--color-bark-400);
   --muted-soft: var(--color-bark-300);
+  --placeholder: #7a6c52;
   --line: rgba(26, 21, 16, 0.08);
   --line-strong: rgba(26, 21, 16, 0.14);
   --card: #ffffff;
@@ -82,20 +83,35 @@
   --accent: var(--color-tomato-500);
 }
 
-html, body {
+html {
   background: var(--bg);
+}
+
+html, body {
   color: var(--fg);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-body {
+/* Capa fija propia: `background-attachment: fixed` repinta todo en cada scroll. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-image:
     radial-gradient(1200px 600px at 8% -10%, rgba(245, 158, 11, 0.10), transparent 60%),
     radial-gradient(900px 500px at 100% 0%, rgba(220, 38, 38, 0.05), transparent 55%),
     radial-gradient(700px 400px at 50% 110%, rgba(79, 125, 58, 0.04), transparent 55%);
-  background-attachment: fixed;
+}
+
+@layer base {
+  ::placeholder {
+    color: var(--placeholder);
+    opacity: 1;
+  }
 }
 
 ::selection { background: var(--color-amber-200); color: var(--color-bark-900); }
