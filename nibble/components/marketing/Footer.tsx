@@ -78,9 +78,9 @@ function FooterCol({
 }) {
   return (
     <div className={className}>
-      <h4 className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+      <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
         {title}
-      </h4>
+      </h2>
       <ul className="mt-4 space-y-2.5 text-sm">
         {links.map((l) => (
           <li key={l.label}>

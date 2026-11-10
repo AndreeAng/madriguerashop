@@ -40,10 +40,7 @@ export default function StoreNotFound() {
           <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]">
             <Compass className="size-6" />
           </div>
-          <p className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">
-            Tienda no encontrada
-          </p>
-          <h1 className="font-display mt-3 text-4xl leading-tight md:text-5xl">
+          <h1 className="font-display mt-6 text-4xl leading-tight md:text-5xl">
             Esta tienda no está disponible
           </h1>
           <p className="mt-4 text-[color:var(--muted)]">

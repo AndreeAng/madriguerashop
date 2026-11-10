@@ -77,10 +77,7 @@ export default async function ContactPage({
       <StorefrontHeader store={store} cartCount={cart?.itemCount ?? 0} />
 
       <main id="main-content" className="mx-auto max-w-3xl px-4 py-12">
-        <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-600)]">
-          Contacto
-        </p>
-        <h1 className="font-display mt-2 text-4xl">Hablemos</h1>
+        <h1 className="font-display text-4xl">Hablemos</h1>
         <p className="mt-2 text-[color:var(--muted)]">
           La forma más rápida es WhatsApp.
         </p>
@@ -90,7 +87,7 @@ export default async function ContactPage({
             href={waUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="press mt-6 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-3 text-sm font-medium text-[color:var(--color-bark-900)] transition hover:bg-[#20BD5A]"
+            className="press mt-6 inline-flex items-center gap-2 rounded-full bg-whatsapp px-5 py-3 text-sm font-medium text-[color:var(--color-bark-900)] transition hover:bg-whatsapp-hover"
           >
             <MessageCircle className="size-4" aria-hidden="true" />
             {formatWaPhone(store.whatsapp)}
@@ -106,7 +103,7 @@ export default async function ContactPage({
               </div>
               <a
                 href={`mailto:${store.email}`}
-                className="mt-2 block text-sm hover:underline"
+                className="mt-1 flex min-h-11 items-center break-all text-sm hover:underline"
               >
                 {store.email}
               </a>
@@ -150,7 +147,7 @@ export default async function ContactPage({
           {socials.length > 0 && (
             <section className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
               <div className="text-sm font-medium">Síguenos</div>
-              <ul className="mt-2 space-y-2 text-sm">
+              <ul className="mt-1 text-sm">
                 {socials.map((s) => {
                   const Icon = s.icon;
                   return (
@@ -159,7 +156,7 @@ export default async function ContactPage({
                         href={s.href}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 hover:underline"
+                        className="inline-flex min-h-11 items-center gap-2 hover:underline"
                       >
                         <Icon className="size-4 text-[color:var(--color-amber-600)]" />
                         {s.label}

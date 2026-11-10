@@ -1,5 +1,9 @@
 import type { StoreVertical } from "@prisma/client";
 
+/** Pedidos del mes desde los que se muestra el contador: bajo este volumen
+ *  resta confianza en vez de sumarla. */
+export const MIN_ORDERS_TO_SHOW = 10;
+
 /**
  * Copy del storefront por vertical. Antes estos strings vivían hardcodeados
  * en `StorefrontMenu`/`StorefrontHeader`/`ProductQuickView`/`CheckoutForm`
@@ -17,7 +21,7 @@ export type StorefrontCopy = {
   /** Título y subtítulo de la sección de destacados en la home. */
   featuredTitle: string;
   featuredSubtitle: string;
-  /** Pill sobre los destacados. Los elige el dueño: no decir "lo más vendido". */
+  /** Enlace del hero a los destacados. Los elige el dueño: no decir "lo más vendido". */
   featuredPill: string;
   /** Label del selector de variantes (Tamaño/Talla/Modelo/etc). */
   variantLabel: string;

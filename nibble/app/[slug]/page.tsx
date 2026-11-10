@@ -25,12 +25,10 @@ import { StorefrontBanner } from "@/components/storefront/StorefrontBanner";
 import { StorefrontPopup } from "@/components/storefront/StorefrontPopup";
 import { ClosedStoreNotice } from "@/components/storefront/ClosedStoreNotice";
 import { FloatingCartBar } from "@/components/storefront/FloatingCartBar";
-import { storefrontCopy } from "@/lib/storefront/copy";
+import { MIN_ORDERS_TO_SHOW, storefrontCopy } from "@/lib/storefront/copy";
 import { storeActionColors } from "@/lib/storefront/theme";
 
 const HOME_PRODUCTS_PER_CATEGORY = 8;
-/** Bajo este volumen el contador resta confianza en vez de sumarla. */
-const MIN_ORDERS_TO_SHOW = 10;
 
 export async function generateMetadata({
   params,
@@ -391,10 +389,7 @@ export default async function StorefrontHome({ params }: { params: Promise<{ slu
                   className="absolute -right-8 -top-8 size-40 rounded-full bg-[color:var(--color-leaf-400)]/30 blur-2xl"
                 />
                 <div className="relative">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] backdrop-blur">
-                    <MessageCircle className="size-3" /> Atención directa
-                  </span>
-                  <h3 className="font-display mt-3 text-2xl leading-tight">
+                  <h3 className="font-display text-2xl leading-tight">
                     ¿Dudas? Escríbenos
                   </h3>
                   <p className="mt-1.5 text-sm text-white/85">
@@ -484,7 +479,7 @@ function EmptyMenu({ storeName, whatsapp }: { storeName: string; whatsapp: strin
             href={`https://wa.me/${whatsapp.replace(/[^\d]/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-semibold text-[color:var(--color-bark-900)]"
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-full bg-whatsapp px-5 text-sm font-semibold text-[color:var(--color-bark-900)]"
           >
             <MessageCircle className="size-4" />
             Hablar por WhatsApp

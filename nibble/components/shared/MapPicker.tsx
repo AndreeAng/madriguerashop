@@ -130,7 +130,7 @@ export function MapPicker({
           type="button"
           onClick={useMyLocation}
           disabled={geoLoading}
-          className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3 py-1 text-xs font-medium hover:border-[color:var(--color-bark-300)] disabled:opacity-50"
+          className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border border-[color:var(--line)] bg-[color:var(--card)] px-3.5 text-xs font-medium hover:border-[color:var(--color-bark-300)] disabled:opacity-50"
         >
           <Navigation className="size-3.5" />
           {geoLoading ? "Buscando…" : "Usar mi ubicación"}
@@ -141,7 +141,7 @@ export function MapPicker({
       <input type="hidden" name="deliveryLat" value={point ? point[0] : ""} />
       <input type="hidden" name="deliveryLng" value={point ? point[1] : ""} />
 
-      <div className="overflow-hidden rounded-xl border border-[color:var(--line)]">
+      <div className="map-picker overflow-hidden rounded-xl border border-[color:var(--line)]">
         <MapContainer
           center={point ?? COCHABAMBA}
           zoom={point ? 16 : 13}

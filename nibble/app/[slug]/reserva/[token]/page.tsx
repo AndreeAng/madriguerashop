@@ -88,11 +88,11 @@ export default async function ReservaPage({
 
   const toneCls =
     status.tone === "leaf"
-      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+      ? "border-[color:var(--color-leaf-400)]/40 bg-[color:var(--color-leaf-50)] text-[color:var(--color-leaf-700)]"
       : status.tone === "amber"
-        ? "border-amber-300 bg-amber-50 text-amber-700"
+        ? "border-[color:var(--color-amber-300)] bg-[color:var(--color-amber-50)] text-[color:var(--color-amber-700)]"
         : status.tone === "tomato"
-          ? "border-rose-300 bg-rose-50 text-rose-700"
+          ? "border-[color:var(--color-tomato-400)]/40 bg-[color:var(--color-tomato-50)] text-[color:var(--color-tomato-700)]"
           : "border-[color:var(--line)] bg-[color:var(--bg)] text-[color:var(--muted)]";
 
   return (
@@ -151,7 +151,7 @@ export default async function ReservaPage({
             href={`https://wa.me/${phoneOnly}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#25D366] px-5 py-2.5 text-sm font-medium text-[color:var(--color-bark-900)]"
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-whatsapp px-5 py-2.5 text-sm font-medium text-[color:var(--color-bark-900)]"
           >
             <Phone className="size-4" />
             WhatsApp del local
