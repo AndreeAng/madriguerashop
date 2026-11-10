@@ -53,6 +53,22 @@
   --color-whatsapp: #25d366;
   --color-whatsapp-hover: #20bd5a;
 
+  /* Sitio de marketing (landing). Solo lo usan los componentes bajo `.mkt`;
+     la tienda y el panel siguen con cream/bark/amber. */
+  --color-mk-ink: #121016;
+  --color-mk-ink-2: #1d1a22;
+  --color-mk-ink-3: #2a2630;
+  --color-mk-paper-2: #f4f3f6;
+  --color-mk-soft: #46424e;
+  --color-mk-muted: #67636f;
+  --color-mk-on-ink: #f6f4f8;
+  --color-mk-on-ink-soft: #bdb8c6;
+  --color-mk-magenta: #d4145a;
+  --color-mk-magenta-deep: #a80e46;
+  --color-mk-saffron: #ffb21e;
+  --color-mk-leaf: #17a05a;
+  --color-mk-leaf-deep: #0d7a42;
+
   --color-gold-400: #d4a857;
   --color-gold-500: #b8862f;
 
@@ -420,4 +436,121 @@ body::before {
   height: 44px;
   line-height: 44px;
   font-size: 22px;
+}
+
+/* ─── Sitio de marketing ────────────────────────────────────────────────
+   `.mkt` activa la tipografía (Bricolage Grotesque + Instrument Sans) y
+   remapea los tokens semánticos para que los componentes compartidos
+   (logo, FAQ, preview del panel) adopten este mundo sin duplicarlos. */
+@layer base {
+  .mkt {
+    --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+    --bg: #ffffff;
+    --bg-elevated: #ffffff;
+    --fg: var(--color-mk-ink);
+    --ink: var(--color-mk-ink);
+    --fg-soft: var(--color-mk-soft);
+    --muted: var(--color-mk-muted);
+    --line: rgba(18, 16, 22, 0.1);
+    --line-strong: rgba(18, 16, 22, 0.16);
+    --card: #ffffff;
+    --card-soft: var(--color-mk-paper-2);
+    font-family: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+    color: var(--color-mk-ink);
+  }
+  .mkt ::selection {
+    background: var(--color-mk-saffron);
+    color: var(--color-mk-ink);
+  }
+}
+
+@layer components {
+  /* Titulares: ancho algo condensado y óptica de display. */
+  .mk-display {
+    font-family: var(--font-display);
+    font-variation-settings: "wdth" 86, "opsz" 96;
+    letter-spacing: -0.028em;
+  }
+  .mk-display-wide {
+    font-family: var(--font-display);
+    font-variation-settings: "wdth" 100, "opsz" 48;
+    letter-spacing: -0.02em;
+  }
+
+  /* Entrada del hero: cada línea sube una vez, escalonada. */
+  .mk-rise {
+    animation: mkRise 0.9s var(--ease-out-quart) both;
+  }
+  @keyframes mkRise {
+    from { opacity: 0; transform: translate3d(0, 0.35em, 0); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Revelado al hacer scroll, solo donde el navegador soporta
+     scroll-driven animations; sin soporte, todo se ve desde el inicio. */
+  @supports (animation-timeline: view()) {
+    .mk-reveal {
+      animation: mkReveal linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 35%;
+    }
+  }
+  @keyframes mkReveal {
+    from { opacity: 0; transform: translate3d(0, 28px, 0); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Escena del hero: un ciclo de 14s en el que llegan tres pedidos, se
+     confirma el pago y todo vuelve a empezar. Cada pieza tiene su propio
+     keyframe para que todas salgan juntas al final del ciclo. */
+  .mk-scene-1 { animation: mkIn1 14s var(--ease-out-quart) infinite; }
+  .mk-scene-2 { animation: mkIn2 14s var(--ease-out-quart) infinite; }
+  .mk-scene-3 { animation: mkIn3 14s var(--ease-out-quart) infinite; }
+  .mk-scene-pay { animation: mkInPay 14s var(--ease-out-quart) infinite; }
+  .mk-scene-ring { animation: mkRing 14s ease-out infinite; }
+  @keyframes mkIn1 {
+    0%, 6%   { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.96); }
+    11%, 90% { opacity: 1; transform: none; }
+    96%, 100% { opacity: 0; transform: translate3d(0, -8px, 0); }
+  }
+  @keyframes mkIn2 {
+    0%, 28%  { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.96); }
+    33%, 90% { opacity: 1; transform: none; }
+    96%, 100% { opacity: 0; transform: translate3d(0, -8px, 0); }
+  }
+  @keyframes mkIn3 {
+    0%, 50%  { opacity: 0; transform: translate3d(0, 16px, 0) scale(0.96); }
+    55%, 90% { opacity: 1; transform: none; }
+    96%, 100% { opacity: 0; transform: translate3d(0, -8px, 0); }
+  }
+  @keyframes mkInPay {
+    0%, 64%  { opacity: 0; transform: translate3d(24px, 0, 0) scale(0.92); }
+    70%, 90% { opacity: 1; transform: none; }
+    96%, 100% { opacity: 0; transform: translate3d(0, -8px, 0); }
+  }
+  /* Aro que se expande cuando "suena" un pedido nuevo. */
+  @keyframes mkRing {
+    0%, 6%, 28%, 50% { opacity: 0; transform: scale(0.6); }
+    8%, 30%, 52%     { opacity: 0.55; transform: scale(1); }
+    16%, 38%, 60%, 100% { opacity: 0; transform: scale(1.9); }
+  }
+
+  /* Cambio de tienda en la demo de rubros. */
+  .mk-swap {
+    animation: mkSwap 0.45s var(--ease-out-quart) both;
+  }
+  @keyframes mkSwap {
+    from { opacity: 0; transform: translate3d(0, 10px, 0); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .mk-rise, .mk-reveal, .mk-swap,
+    .mk-scene-1, .mk-scene-2, .mk-scene-3, .mk-scene-pay {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+    }
+    .mk-scene-ring { animation: none !important; opacity: 0 !important; }
+  }
 }
