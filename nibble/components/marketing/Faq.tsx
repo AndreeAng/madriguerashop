@@ -37,7 +37,7 @@ export function Faq() {
       {FAQ.map((item, i) => (
         <details
           key={item.q}
-          className="group p-6 transition-colors duration-200 ease-[var(--ease-out-quart)] open:bg-[color:var(--color-cream-50)]/50"
+          className="group p-6 transition-colors duration-200 ease-[var(--ease-out-quart)] open:bg-[color:var(--card-soft)]"
           {...(i === 0 ? { open: true } : {})}
         >
           <summary className="flex cursor-pointer items-start justify-between gap-4 list-none select-none active:scale-[0.997] transition-transform duration-150 ease-[var(--ease-out-quart)] [&::-webkit-details-marker]:hidden">

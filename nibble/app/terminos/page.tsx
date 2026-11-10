@@ -19,7 +19,7 @@ export default function TerminosPage() {
     <>
       <MarketingHeader />
 
-      <main className="mx-auto max-w-3xl px-5 py-16">
+      <main id="main-content" className="mx-auto max-w-3xl px-5 py-16">
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-[color:var(--muted)]">
           Documento legal
         </p>

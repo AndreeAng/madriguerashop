@@ -54,7 +54,7 @@ export default async function DirectorioPage() {
     <>
       <MarketingHeader />
 
-      <main>
+      <main id="main-content">
         <section className="mx-auto max-w-6xl px-5 pt-16 pb-10">
           <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-500)]">
             Directorio
