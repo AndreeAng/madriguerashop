@@ -37,6 +37,13 @@ test.describe("Storefront público", () => {
 
   test("agregar desde la vista rápida actualiza el carrito sin recargar", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    // Fuera del horario de la tienda demo (11:00–23:00 BOT) aparece el aviso
+    // de tienda cerrada y tapa la página. El CI corre a cualquier hora: si
+    // el aviso bloquea una acción, se cierra y la acción sigue (una tienda
+    // cerrada igual acepta pedidos programados).
+    await page.addLocatorHandler(page.getByRole("button", { name: "Cerrar aviso" }), async (btn) => {
+      await btn.click();
+    });
     await page.goto("/big-bite-wings");
     await page.getByRole("button", { name: /^Rechazar$/ }).click();
     await page.locator('main button[aria-label^="Ver "]:not([disabled])').first().click();
