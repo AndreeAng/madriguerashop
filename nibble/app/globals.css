@@ -550,3 +550,11 @@ body::before {
     .mk-scene-ring { animation: none !important; opacity: 0 !important; }
   }
 }
+
+/* Leaflet trae su propia tipografía (Helvetica, y Lucida Console en el
+   zoom): los mapas usan la del producto. Clase doble porque leaflet.css se
+   importa después de este archivo. */
+.leaflet-container.leaflet-container,
+.leaflet-container .leaflet-control-zoom.leaflet-bar a {
+  font-family: var(--font-sans);
+}

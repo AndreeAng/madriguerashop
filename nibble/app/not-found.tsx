@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { ArrowLeft } from "lucide-react";
 import { NibbleLogo } from "@/components/shared/Logo";
 import { marketingFontClass } from "@/lib/fonts/marketing";
@@ -12,7 +13,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function NotFound() {
+export default async function NotFound() {
+  // Render por request: la versión estática del build no lleva el nonce de
+  // la CSP y el navegador bloquea sus scripts (error en consola en cada 404).
+  await connection();
   return (
     <div className={`${marketingFontClass} relative flex min-h-dvh flex-col overflow-hidden bg-mk-ink text-mk-on-ink`}>
       <div
