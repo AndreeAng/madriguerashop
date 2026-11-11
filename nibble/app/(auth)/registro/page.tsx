@@ -21,7 +21,7 @@ export default async function RegisterPage() {
   await requireGuest();
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <main id="main-content" className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col justify-between p-8 md:p-12">
         <Link href="/">
           <NibbleLogo />
@@ -87,6 +87,6 @@ export default async function RegisterPage() {
           </p>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

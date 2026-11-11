@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import Link from "next/link";
 import { requireGuest } from "@/lib/auth/session";
 import { NibbleLogo } from "@/components/shared/Logo";
@@ -11,7 +12,7 @@ export default async function LoginPage() {
   await requireGuest();
 
   return (
-    <div className="grid min-h-screen lg:grid-cols-2">
+    <main id="main-content" className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col justify-between p-8 md:p-12">
         <Link href="/">
           <NibbleLogo />
@@ -45,23 +46,23 @@ export default async function LoginPage() {
           }}
         />
         <div className="relative flex h-full flex-col items-start justify-end p-12 text-white">
-          <p className="text-xs uppercase tracking-widest text-[color:var(--color-amber-300)]">
-            Tienda de muestra
-          </p>
-          <h2 className="font-display mt-3 text-4xl leading-tight">
-            &ldquo;Migramos a Madriguera Shop en una tarde. Las ventas subieron 40% el primer mes solo por el mapa de calor.&rdquo;
+          <h2 className="font-display text-5xl font-semibold leading-[0.95] tracking-tight">
+            Tus pedidos te esperan.
           </h2>
-          <div className="mt-6 flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-full bg-mk-magenta text-sm font-bold text-white">
-              DA
-            </div>
-            <div>
-              <p className="text-sm font-semibold">Diego Antezana</p>
-              <p className="text-xs text-white/70">Big Bite Wings · Cochabamba</p>
-            </div>
-          </div>
+          <ul className="mt-8 space-y-3 text-white/85">
+            {[
+              "Pedidos por WhatsApp, con dirección y total",
+              "Pagos por QR de tu banco, sin comisión por venta",
+              "Panel en tiempo real para no perder ninguno",
+            ].map((t) => (
+              <li key={t} className="flex items-center gap-3">
+                <Check aria-hidden="true" className="size-5 shrink-0 text-[color:var(--color-amber-300)]" />
+                {t}
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
-    </div>
+    </main>
   );
 }

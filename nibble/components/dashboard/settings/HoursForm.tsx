@@ -51,21 +51,27 @@ export function HoursForm({ hours }: { hours: StoreHours[] }) {
                 return (
                   <tr key={d.idx}>
                     <td className="px-4 py-2.5 font-medium">{d.label}</td>
-                    <td className="px-4 py-2.5">
-                      <input
-                        type="checkbox"
-                        name={`day_${d.idx}_closed`}
-                        defaultChecked={h?.isClosed ?? false}
-                        className="size-4 rounded border-[color:var(--line-strong)] accent-[color:var(--color-amber-500)]"
-                      />
+                    <td className="px-2 py-1">
+                      {/* La etiqueta agranda el área táctil a 44px y nombra el control. */}
+                      <label className="inline-flex size-11 cursor-pointer items-center justify-center">
+                        <input
+                          type="checkbox"
+                          name={`day_${d.idx}_closed`}
+                          defaultChecked={h?.isClosed ?? false}
+                          className="size-4 rounded border-[color:var(--line-strong)] accent-[color:var(--color-amber-600)]"
+                        />
+                        <span className="sr-only">{d.label} cerrado</span>
+                      </label>
                     </td>
                     <td className="px-4 py-2.5">
                       <input
                         type="time"
                         name={`day_${d.idx}_open`}
                         defaultValue={h?.openTime ?? "09:00"}
+                        aria-label={`${d.label}, apertura`}
                         aria-invalid={Boolean(error)}
-                        className="rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-2 py-1 font-mono text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+                        aria-describedby={error ? `day_${d.idx}_error` : undefined}
+                        className="min-h-11 rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-2 py-1 font-mono text-sm outline-none focus:border-[color:var(--color-amber-400)]"
                       />
                     </td>
                     <td className="px-4 py-2.5">
@@ -74,11 +80,14 @@ export function HoursForm({ hours }: { hours: StoreHours[] }) {
                           type="time"
                           name={`day_${d.idx}_close`}
                           defaultValue={h?.closeTime ?? "21:00"}
+                          aria-label={`${d.label}, cierre`}
                           aria-invalid={Boolean(error)}
-                          className="rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-2 py-1 font-mono text-sm outline-none focus:border-[color:var(--color-amber-400)]"
+                          aria-describedby={error ? `day_${d.idx}_error` : undefined}
+                          className="min-h-11 rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-2 py-1 font-mono text-sm outline-none focus:border-[color:var(--color-amber-400)]"
                         />
                         {error && (
                           <p
+                            id={`day_${d.idx}_error`}
                             role="alert"
                             className="mt-1 text-xs text-[color:var(--color-tomato-600)]"
                           >
