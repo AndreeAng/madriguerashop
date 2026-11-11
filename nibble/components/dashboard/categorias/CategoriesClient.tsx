@@ -62,7 +62,7 @@ export function CategoriesClient({ categories }: { categories: Cat[] }) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-[color:var(--muted)]">
           {categories.length} {categories.length === 1 ? "categoría" : "categorías"}
         </p>

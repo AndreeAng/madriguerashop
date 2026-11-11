@@ -198,9 +198,9 @@ function DeleteBlock({
 
   return (
     <details className="group">
-      <summary className="cursor-pointer select-none">
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-[color:var(--color-tomato-700)]">
-          <Trash2 className="size-4" />
+      <summary className="flex min-h-11 cursor-pointer select-none flex-wrap items-center">
+        <span className="text-sm font-medium text-[color:var(--color-tomato-700)]">
+          <Trash2 aria-hidden="true" className="mr-2 inline size-4 align-[-3px]" />
           Eliminar permanentemente
         </span>
         <span className="ml-2 text-xs text-[color:var(--fg-soft)] group-open:hidden">

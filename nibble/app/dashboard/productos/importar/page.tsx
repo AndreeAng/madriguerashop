@@ -34,7 +34,8 @@ export default async function ImportProductsPage() {
           <p className="mt-1 text-xs text-[color:var(--muted)]">
             La primera fila debe ser el header. Coma como separador. UTF-8.
           </p>
-          <table className="mt-3 w-full text-xs">
+          <div className="mt-3 overflow-x-auto [contain:inline-size]" tabIndex={0}>
+          <table className="w-full text-xs">
             <thead className="text-[color:var(--muted)]">
               <tr className="border-b border-[color:var(--line)]">
                 <th scope="col" className="py-2 text-left font-medium">Columna</th>
@@ -52,6 +53,7 @@ export default async function ImportProductsPage() {
               <Row col="descripción" ex="Texto corto, hasta 280 chars" />
             </tbody>
           </table>
+          </div>
           <details className="mt-4 text-xs">
             <summary className="cursor-pointer text-[color:var(--muted)] hover:text-[color:var(--fg)]">
               Ver ejemplo de CSV
