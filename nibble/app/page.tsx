@@ -16,6 +16,7 @@ import { MarketingFooter } from "@/components/marketing/Footer";
 import { DashboardPreview } from "@/components/marketing/DashboardPreview";
 import { Faq } from "@/components/marketing/Faq";
 import { OrderScene } from "@/components/marketing/landing/OrderScene";
+import { HeroShader } from "@/components/marketing/landing/HeroShader";
 import { StoreSwitcher } from "@/components/marketing/landing/StoreSwitcher";
 import { marketingFontClass } from "@/lib/fonts/marketing";
 
@@ -109,6 +110,7 @@ export default function HomePage() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(60rem_40rem_at_85%_10%,rgba(212,20,90,0.28),transparent_60%)]"
           />
+          <HeroShader />
           <div className="relative mx-auto grid max-w-7xl gap-16 px-5 pb-20 pt-14 md:pt-20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] lg:items-center lg:gap-10 lg:pb-28">
             <div>
               <h1 className="mk-display text-[clamp(3.4rem,10vw,8.5rem)] font-bold leading-[0.88]">
@@ -156,7 +158,9 @@ export default function HomePage() {
             </div>
 
             <div className="mk-rise [animation-delay:200ms] lg:justify-self-end">
-              <OrderScene />
+              <div className="mk-tilt">
+                <OrderScene />
+              </div>
             </div>
           </div>
 
@@ -176,7 +180,7 @@ export default function HomePage() {
         <section id="industrias" className="scroll-mt-20 py-24 md:py-36">
           <div className="mx-auto max-w-7xl px-5">
             <div className="mk-reveal max-w-3xl">
-              <h2 className="mk-display text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
+              <h2 className="mk-reveal-mask mk-display text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
                 Cinco rubros.
                 <br />
                 <span className="text-mk-magenta">Cinco tiendas</span> que no se parecen.
@@ -208,7 +212,7 @@ export default function HomePage() {
         <section id="como-funciona" className="scroll-mt-20 bg-mk-paper-2 py-24 md:py-36">
           <div className="mx-auto max-w-7xl px-5">
             <div className="mk-reveal grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end">
-              <h2 className="mk-display text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
+              <h2 className="mk-reveal-mask mk-display text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
                 Como ya vendes.
                 <br />
                 Pero con catálogo.
@@ -254,7 +258,7 @@ export default function HomePage() {
           />
           <div className="relative mx-auto max-w-7xl px-5">
             <div className="mk-reveal max-w-3xl">
-              <h2 className="mk-display text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
+              <h2 className="mk-reveal-mask mk-display text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
                 Cero relleno.
                 <br />
                 <span className="text-mk-saffron">Solo lo que vende.</span>
@@ -289,7 +293,7 @@ export default function HomePage() {
         {/* ── Frente a las globales ──────────────────────────────── */}
         <section className="py-24 md:py-36">
           <div className="mx-auto max-w-7xl px-5">
-            <h2 className="mk-reveal mk-display max-w-4xl text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
+            <h2 className="mk-reveal-mask mk-display max-w-4xl text-[clamp(2.6rem,6.5vw,5.5rem)] font-bold leading-[0.92]">
               Tres cosas que las globales{" "}
               <span className="text-mk-magenta">no van a decirte.</span>
             </h2>
@@ -321,7 +325,7 @@ export default function HomePage() {
         <section id="precio" className="scroll-mt-20 bg-mk-paper-2 py-24 md:py-36">
           <div className="mx-auto max-w-6xl px-5">
             <div className="mk-reveal text-center">
-              <h2 className="mk-display text-[clamp(2.6rem,7vw,6rem)] font-bold leading-[0.92]">
+              <h2 className="mk-reveal-mask mk-display text-[clamp(2.6rem,7vw,6rem)] font-bold leading-[0.92]">
                 Un plan. <span className="text-mk-magenta">Todo incluido.</span>
               </h2>
               <p className="mx-auto mt-6 max-w-xl text-lg text-mk-soft">
@@ -453,7 +457,7 @@ export default function HomePage() {
         {/* ── Cierre ─────────────────────────────────────────────── */}
         <section className="relative overflow-hidden bg-mk-magenta text-white">
           <div className="relative mx-auto max-w-7xl px-5 pb-4 pt-24 md:pt-36">
-            <h2 className="mk-reveal mk-display max-w-5xl text-[clamp(3.2rem,10vw,9rem)] font-bold leading-[0.86]">
+            <h2 className="mk-reveal-mask mk-display max-w-5xl text-[clamp(3.2rem,10vw,9rem)] font-bold leading-[0.86]">
               Hoy abres con tienda.
             </h2>
             <p className="mt-8 max-w-xl text-lg leading-relaxed text-white md:text-xl">
