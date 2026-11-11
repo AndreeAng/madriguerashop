@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { requireSuperAdmin } from "@/lib/auth/session";
 import { verticalLabel } from "@/lib/saas/verticals";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { TemplatePreviewImage } from "@/components/admin/plantillas/TemplatePreviewImage";
 
 export const metadata = { title: "Plantillas · Admin" };
 
@@ -50,12 +51,7 @@ export default async function AdminPlantillasPage() {
                   className="overflow-hidden rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] transition hover:-translate-y-0.5 hover:border-[color:var(--color-bark-300)] hover:shadow-lg hover:shadow-black/5"
                 >
                   <div className="relative aspect-video bg-[color:var(--bg)]">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={t.previewUrl}
-                      alt={`Preview de ${t.name}`}
-                      className="size-full object-cover"
-                    />
+                    <TemplatePreviewImage src={t.previewUrl} name={t.name} />
                     {!t.isActive && (
                       <div className="absolute inset-0 flex items-center justify-center bg-[color:var(--color-bark-900)]/60">
                         <span className="rounded-full bg-white/95 px-3 py-1 text-xs font-semibold text-[color:var(--color-bark-900)]">
@@ -67,7 +63,7 @@ export default async function AdminPlantillasPage() {
                   <div className="p-5">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <h3 className="truncate font-semibold">{t.name}</h3>
+                        <h2 className="truncate font-semibold">{t.name}</h2>
                         <p className="text-[11px] uppercase tracking-wide text-[color:var(--color-amber-600)]">
                           {verticalLabel(t.vertical)}
                         </p>

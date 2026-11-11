@@ -311,7 +311,7 @@ export default async function OrderDetailPage({
                   href={`https://wa.me/${phoneOnly}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-whatsapp px-4 py-2.5 text-xs font-medium text-white"
+                  className="mt-4 flex w-full items-center justify-center gap-2 min-h-11 rounded-full bg-whatsapp px-4 py-2.5 text-xs font-semibold text-[color:var(--color-bark-900)] transition hover:bg-whatsapp-hover"
                 >
                   <MessageCircle className="size-4" />
                   WhatsApp al cliente

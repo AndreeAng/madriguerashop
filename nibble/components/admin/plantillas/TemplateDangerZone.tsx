@@ -96,6 +96,7 @@ function ReassignBlock({
       <div className="flex flex-wrap items-center gap-2">
         <select
           name="toTemplateId"
+          aria-label="Plantilla destino"
           required
           defaultValue=""
           className="flex-1 rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]"

@@ -131,7 +131,7 @@ export function DashboardSidebar({
           <SignOutButton variant="light" />
           <Link
             href="/"
-            className="flex items-center justify-between rounded-lg p-2 text-xs text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
+            className="flex flex-col items-start gap-1.5 rounded-lg p-2 text-xs text-[color:var(--muted)] hover:bg-[color:var(--bg)]"
           >
             <span>Powered by</span>
             <NibbleLogo />
