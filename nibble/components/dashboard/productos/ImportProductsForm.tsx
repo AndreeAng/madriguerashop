@@ -20,11 +20,11 @@ export function ImportProductsForm() {
     <form action={action} className="space-y-4">
       <label className="flex flex-col gap-2">
         <span className="text-sm font-medium">Archivo CSV</span>
-        <div className="flex items-center gap-3 rounded-xl border border-dashed border-[color:var(--line-strong)] bg-[color:var(--card)] p-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-[color:var(--line-strong)] bg-[color:var(--card)] p-4">
           <button
             type="button"
             onClick={() => inputRef.current?.click()}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 py-2 text-sm font-medium hover:border-[color:var(--color-bark-300)]"
+            className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--bg)] px-3 text-sm font-medium hover:border-[color:var(--color-bark-300)]"
           >
             <Upload className="size-4" />
             Elegir archivo
@@ -39,7 +39,7 @@ export function ImportProductsForm() {
             className="sr-only"
           />
           {fileName ? (
-            <span className="inline-flex items-center gap-1.5 text-sm">
+            <span className="inline-flex min-w-0 items-center gap-1.5 text-sm [overflow-wrap:anywhere]">
               <FileText className="size-4 text-[color:var(--color-amber-600)]" />
               {fileName}
             </span>

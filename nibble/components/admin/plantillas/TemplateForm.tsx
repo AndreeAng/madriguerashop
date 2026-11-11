@@ -165,7 +165,7 @@ export function TemplateForm({
         </div>
       </Section>
 
-      <div className="sticky bottom-4 flex items-center justify-between gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 shadow-soft">
+      <div className="sticky bottom-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 shadow-soft">
         <button
           type="button"
           onClick={() => router.push("/admin/plantillas")}

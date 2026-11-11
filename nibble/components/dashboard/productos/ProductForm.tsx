@@ -357,7 +357,7 @@ export function ProductForm({
 
       <StatusBadge ok={state.ok} error={state.error} />
 
-      <div className="sticky bottom-4 flex items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 shadow-soft">
+      <div className="sticky bottom-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-3 shadow-soft">
         <SubmitButton
           disabled={imagesUploading}
           pendingLabel={imagesUploading ? "Subiendo imágenes…" : "Guardando…"}

@@ -25,7 +25,7 @@ export function EmailVerificationBanner({ email }: { email: string }) {
         <div className="text-sm">
           <p className="font-medium text-leaf-800">Email de verificación enviado</p>
           <p className="mt-0.5 text-leaf-700">
-            Revisa <span className="font-mono">{email}</span> y haz clic en el link para confirmar. El link es válido 24 hs.
+            Revisa <span className="font-mono [overflow-wrap:anywhere]">{email}</span> y haz clic en el link para confirmar. El link es válido 24 hs.
           </p>
         </div>
       </div>
@@ -39,7 +39,7 @@ export function EmailVerificationBanner({ email }: { email: string }) {
         <div className="text-sm">
           <p className="font-medium text-amber-800">Email sin verificar</p>
           <p className="mt-0.5 text-amber-700">
-            Confirma <span className="font-mono">{email}</span> para recibir notificaciones de pedidos y alertas de facturación.
+            Confirma <span className="font-mono [overflow-wrap:anywhere]">{email}</span> para recibir notificaciones de pedidos y alertas de facturación.
           </p>
           {"error" in state && state.error && (
             <p className="mt-1 text-xs text-tomato-700">{state.error}</p>

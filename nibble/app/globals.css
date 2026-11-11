@@ -166,7 +166,15 @@ body::before {
   outline-offset: 2px;
 }
 
-:where(h1, h2, h3) { text-wrap: balance; }
+:where(h1, h2, h3) { text-wrap: balance; overflow-wrap: anywhere; }
+
+/* Texto grande (WCAG 1.4.4): sin estas reglas, con el tamaño de texto del
+   sistema al 200% las grillas se ensanchaban con el min-content de sus
+   hijos y la página se desplazaba de costado. `:where` deja la
+   especificidad en 0, así que cualquier clase explícita las pisa. */
+:where(.grid) > * { min-width: 0; }
+:where(input, select, textarea) { min-width: 0; }
+:where(code) { overflow-wrap: anywhere; }
 :where(p) { text-wrap: pretty; }
 
 @layer utilities {

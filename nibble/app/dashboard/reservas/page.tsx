@@ -93,7 +93,7 @@ export default async function ReservasPage({
             </p>
           </div>
 
-          <div className="inline-flex rounded-full border border-[color:var(--line)] bg-[color:var(--card)] p-1">
+          <div className="inline-flex flex-wrap rounded-full border border-[color:var(--line)] bg-[color:var(--card)] p-1">
             <Link
               href={`/dashboard/reservas?week=${weekOffset - 1}`}
               className="rounded-full px-3 py-1 text-xs font-medium text-[color:var(--fg-soft)] hover:bg-[color:var(--bg)]"

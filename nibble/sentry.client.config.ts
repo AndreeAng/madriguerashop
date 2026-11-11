@@ -29,12 +29,6 @@ if (dsn) {
     replaysOnErrorSampleRate: process.env.NODE_ENV === "production" ? 1.0 : 0,
     replaysSessionSampleRate: 0,
 
-    integrations: [
-      Sentry.replayIntegration({
-        maskAllText: true,
-        blockAllMedia: true,
-      }),
-    ],
 
     // No reportar errores de extensions, ni de canceled fetches del usuario.
     ignoreErrors: [
@@ -73,6 +67,29 @@ if (dsn) {
       return event;
     },
   });
+
+  // La grabación de sesiones (≈120 KB comprimidos) se carga aparte, cuando el
+  // navegador queda libre: antes viajaba en el bundle de todas las páginas,
+  // incluida la tienda que el comprador abre desde el celular. Solo se usa
+  // al ocurrir un error (replaysOnErrorSampleRate), así que no hace falta
+  // desde el primer instante.
+  const loadReplay = () => {
+    void import("@sentry-internal/replay").then(({ replayIntegration }) => {
+      Sentry.addIntegration(
+        replayIntegration({
+          maskAllText: true,
+          blockAllMedia: true,
+        }),
+      );
+    });
+  };
+  if (typeof window !== "undefined") {
+    if ("requestIdleCallback" in window) {
+      window.requestIdleCallback(loadReplay, { timeout: 5000 });
+    } else {
+      setTimeout(loadReplay, 3000);
+    }
+  }
 }
 
 /**
