@@ -156,7 +156,7 @@ export default async function ClientesPage({
                         <td className="px-3 py-3 text-right num-tabular">
                           {c.ordersCount}
                           {c.ordersCount > 1 && (
-                            <span className="ml-1.5 inline-flex rounded-full bg-[color:var(--color-amber-100)] px-1.5 text-[10px] font-medium uppercase text-[color:var(--color-amber-700)]">
+                            <span className="ml-1.5 inline-flex rounded-full bg-[color:var(--color-amber-100)] px-1.5 text-xs font-medium uppercase text-[color:var(--color-amber-700)]">
                               VIP
                             </span>
                           )}
@@ -184,7 +184,7 @@ export default async function ClientesPage({
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label={`WhatsApp a ${c.fullName}`}
-                              className="grid size-8 place-items-center rounded-lg text-[color:var(--muted)] transition hover:bg-[color:var(--bg)] hover:text-[#25D366]"
+                              className="grid size-11 place-items-center rounded-lg text-[color:var(--muted)] transition hover:bg-[color:var(--bg)] hover:text-leaf-600"
                             >
                               <Phone className="size-4" />
                             </Link>

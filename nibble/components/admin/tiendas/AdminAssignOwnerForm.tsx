@@ -99,7 +99,7 @@ function FieldGroup({
 }) {
   return (
     <label className="block">
-      <span className="text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted)]">
+      <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted)]">
         {label}
       </span>
       <div className="mt-1">{children}</div>

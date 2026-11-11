@@ -57,7 +57,7 @@ export function TemplateForm({
       {state.ok && (
         <p
           role="status"
-          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+          className="rounded-lg border border-leaf-500/30 bg-leaf-500/10 px-3 py-2 text-sm text-leaf-700"
         >
           <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Plantilla guardada.
         </p>
@@ -113,7 +113,7 @@ export function TemplateForm({
 
         {previewUrl && (
           <div className="mt-2 overflow-hidden rounded-xl border border-[color:var(--line)] bg-[color:var(--bg)]">
-            <p className="border-b border-[color:var(--line)] bg-[color:var(--card)] px-3 py-1.5 text-[11px] uppercase tracking-wide text-[color:var(--muted)]">
+            <p className="border-b border-[color:var(--line)] bg-[color:var(--card)] px-3 py-1.5 text-xs uppercase tracking-wide text-[color:var(--muted)]">
               Vista previa
             </p>
             {/* eslint-disable-next-line @next/next/no-img-element */}

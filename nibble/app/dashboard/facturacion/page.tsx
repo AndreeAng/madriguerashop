@@ -15,13 +15,13 @@ const STATUS_CHIPS = {
   PENDING: { label: "Pendiente", bg: "bg-amber-100", fg: "text-amber-700", icon: Clock },
   OVERDUE: {
     label: "Vencida",
-    bg: "bg-red-100",
-    fg: "text-red-700",
+    bg: "bg-tomato-100",
+    fg: "text-tomato-700",
     icon: ShieldX,
   },
-  PAID: { label: "Pagada", bg: "bg-emerald-100", fg: "text-emerald-700", icon: CheckCircle2 },
-  DRAFT: { label: "Borrador", bg: "bg-gray-100", fg: "text-gray-700", icon: FileText },
-  CANCELLED: { label: "Cancelada", bg: "bg-gray-100", fg: "text-gray-500", icon: ShieldX },
+  PAID: { label: "Pagada", bg: "bg-leaf-100", fg: "text-leaf-700", icon: CheckCircle2 },
+  DRAFT: { label: "Borrador", bg: "bg-bark-100", fg: "text-bark-700", icon: FileText },
+  CANCELLED: { label: "Cancelada", bg: "bg-bark-100", fg: "text-bark-500", icon: ShieldX },
 } as const;
 
 export default async function FacturacionPage() {
@@ -172,7 +172,7 @@ function InvoiceCard({
           <div className="flex items-center gap-2">
             <span className="font-mono text-sm">{invoice.invoiceNumber}</span>
             <span
-              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${chip.bg} ${chip.fg}`}
+              className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${chip.bg} ${chip.fg}`}
             >
               <Icon className="size-3" />
               {chip.label}

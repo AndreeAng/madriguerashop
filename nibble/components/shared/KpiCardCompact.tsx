@@ -43,7 +43,7 @@ export function KpiCardCompact({
         <p className="text-xs text-[color:var(--muted)]">{label}</p>
         <p className="font-display mt-1 text-2xl num-tabular">{value}</p>
         {hint && (
-          <p className="mt-1 text-[11px] text-[color:var(--muted)]">{hint}</p>
+          <p className="mt-1 text-xs text-[color:var(--muted)]">{hint}</p>
         )}
       </div>
     </div>

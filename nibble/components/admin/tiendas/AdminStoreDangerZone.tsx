@@ -110,7 +110,7 @@ function SuspendBlock({
               ? "Vuelve a estado ACTIVE: el storefront público se hace visible de nuevo y el owner puede entrar al dashboard. Si la suspensión original fue por mora, el cron de billing puede volver a suspenderla si la factura sigue vencida."
               : "Marca la tienda como SUSPENDED: el storefront público devuelve 404, el owner no puede crear pedidos, las subidas de comprobante se bloquean. Reversible en cualquier momento desde acá mismo."}
           </p>
-          <p className="mt-1 text-[11px] text-[color:var(--muted)]">
+          <p className="mt-1 text-xs text-[color:var(--muted)]">
             Estado actual: <span className="font-mono">{status}</span>
           </p>
         </div>
@@ -118,7 +118,7 @@ function SuspendBlock({
 
       {!isSuspended && (
         <label className="block">
-          <span className="text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted)]">
+          <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted)]">
             Razón <span className="font-normal normal-case text-[color:var(--fg-soft)]">(queda en audit log)</span>
           </span>
           <textarea
@@ -218,7 +218,7 @@ function DeleteBlock({
         </p>
 
         <div className="rounded-lg border border-[color:var(--color-tomato-500)]/30 bg-[color:var(--color-tomato-500)]/5 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[color:var(--color-tomato-700)]">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--color-tomato-700)]">
             Se eliminarán:
           </p>
           <ul className="mt-2 grid gap-1 text-xs sm:grid-cols-2">
@@ -241,7 +241,7 @@ function DeleteBlock({
               Imágenes en almacenamiento (logo, banner, favicon, productos, QR, comprobantes).
             </li>
           </ul>
-          <p className="mt-2 text-[11px] text-[color:var(--fg-soft)]">
+          <p className="mt-2 text-xs text-[color:var(--fg-soft)]">
             El owner queda deshabilitado (cuenta no borrada, audit logs preservados).
           </p>
         </div>
@@ -258,7 +258,7 @@ function DeleteBlock({
         <form action={action} className="space-y-3">
           <input type="hidden" name="storeId" value={storeId} />
           <label className="block">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-[color:var(--muted)]">
+            <span className="text-xs font-medium uppercase tracking-wide text-[color:var(--muted)]">
               Para confirmar, escribe{" "}
               <code className="rounded bg-[color:var(--bg)] px-1 py-0.5 font-mono text-[color:var(--fg)]">
                 {slug}

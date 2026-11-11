@@ -33,7 +33,7 @@ export function DeltaBadge({
   if (value === null || value === undefined) {
     if (!showNoComparable) return null;
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[11px] text-[color:var(--muted)]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs text-[color:var(--muted)]">
         <Minus className="size-3" /> sin comparable
       </span>
     );
@@ -45,7 +45,7 @@ export function DeltaBadge({
   if (rounded === 0) {
     if (hideZero) return null;
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[11px] text-[color:var(--muted)]">
+      <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs text-[color:var(--muted)]">
         <Minus className="size-3" /> 0%
       </span>
     );
@@ -56,8 +56,8 @@ export function DeltaBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
-        positive ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+        positive ? "bg-leaf-100 text-leaf-700" : "bg-tomato-100 text-tomato-700"
       }`}
     >
       <ArrowIcon className="size-3" />

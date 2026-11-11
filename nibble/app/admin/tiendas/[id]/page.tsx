@@ -132,7 +132,7 @@ export default async function AdminStoreDetailPage({
                 Owner
               </h2>
               {!hasOwner && (
-                <span className="rounded-full bg-mk-magenta px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                <span className="rounded-full bg-mk-magenta px-2.5 py-0.5 text-xs font-semibold text-white">
                   Sin owner asignado
                 </span>
               )}
@@ -155,7 +155,7 @@ export default async function AdminStoreDetailPage({
                           {u.email ?? u.phone ?? "(sin contacto)"}
                         </p>
                       </div>
-                      <span className="text-[10px] text-[color:var(--muted)]">
+                      <span className="text-xs text-[color:var(--muted)]">
                         Desde {u.createdAt.toLocaleDateString("es-BO", { timeZone: "America/La_Paz" })}
                       </span>
                     </li>
@@ -205,7 +205,7 @@ export default async function AdminStoreDetailPage({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+      <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
         {label}
       </p>
       <p className="mt-1 num-tabular text-xl font-semibold">{value}</p>

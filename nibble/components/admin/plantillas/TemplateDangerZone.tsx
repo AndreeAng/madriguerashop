@@ -113,7 +113,7 @@ function ReassignBlock({
         <ReassignButton />
       </div>
       {state.ok && (
-        <p className="text-xs text-emerald-700"><Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Tiendas reasignadas correctamente.</p>
+        <p className="text-xs text-leaf-700"><Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Tiendas reasignadas correctamente.</p>
       )}
       {state.error && (
         <p className="text-xs text-[color:var(--color-tomato-600)]">{state.error}</p>

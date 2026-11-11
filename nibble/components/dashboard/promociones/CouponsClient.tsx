@@ -173,20 +173,20 @@ function CouponRow({
             <p className="font-mono text-sm font-bold tracking-wide">
               {coupon.code}
             </p>
-            <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--fg-soft)]">
+            <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--fg-soft)]">
               {valueText}
             </span>
             {live ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs font-semibold text-leaf-700">
+                <span className="size-1.5 rounded-full bg-leaf-500" />
                 ACTIVO
               </span>
             ) : !coupon.isActive ? (
-              <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--muted)]">
+              <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--muted)]">
                 Inactivo
               </span>
             ) : (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                 Fuera de fecha
               </span>
             )}
@@ -196,7 +196,7 @@ function CouponRow({
               {coupon.description}
             </p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[color:var(--muted)]">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
             <span>{TYPE_LABELS[coupon.type]}</span>
             <span>· {usageText}</span>
             {coupon.minOrderAmount && (

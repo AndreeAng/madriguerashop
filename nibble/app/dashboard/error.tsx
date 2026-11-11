@@ -51,7 +51,7 @@ export default function DashboardError({
         </p>
 
         {error.digest && (
-          <p className="mt-4 inline-block rounded-lg bg-[color:var(--card)] px-3 py-1.5 font-mono text-[11px] text-[color:var(--muted)]">
+          <p className="mt-4 inline-block rounded-lg bg-[color:var(--card)] px-3 py-1.5 font-mono text-xs text-[color:var(--muted)]">
             ID: {error.digest}
           </p>
         )}

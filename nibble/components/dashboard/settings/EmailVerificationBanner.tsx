@@ -20,11 +20,11 @@ export function EmailVerificationBanner({ email }: { email: string }) {
 
   if (sent) {
     return (
-      <div className="flex items-start gap-3 rounded-2xl border border-emerald-300 bg-emerald-50 p-4">
-        <MailCheck className="mt-0.5 size-5 shrink-0 text-emerald-600" />
+      <div className="flex items-start gap-3 rounded-2xl border border-leaf-300 bg-leaf-50 p-4">
+        <MailCheck className="mt-0.5 size-5 shrink-0 text-leaf-600" />
         <div className="text-sm">
-          <p className="font-medium text-emerald-800">Email de verificación enviado</p>
-          <p className="mt-0.5 text-emerald-700">
+          <p className="font-medium text-leaf-800">Email de verificación enviado</p>
+          <p className="mt-0.5 text-leaf-700">
             Revisa <span className="font-mono">{email}</span> y haz clic en el link para confirmar. El link es válido 24 hs.
           </p>
         </div>
@@ -42,7 +42,7 @@ export function EmailVerificationBanner({ email }: { email: string }) {
             Confirma <span className="font-mono">{email}</span> para recibir notificaciones de pedidos y alertas de facturación.
           </p>
           {"error" in state && state.error && (
-            <p className="mt-1 text-xs text-red-700">{state.error}</p>
+            <p className="mt-1 text-xs text-tomato-700">{state.error}</p>
           )}
         </div>
         <form action={formAction}>

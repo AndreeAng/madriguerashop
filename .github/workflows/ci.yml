@@ -263,13 +263,26 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
+      # Reintentos: los runners a veces no resuelven el mirror de apt de
+      # Azure ("Temporary failure resolving azure.archive.ubuntu.com") y el
+      # job de E2E caía sin que el código tuviera nada que ver.
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: |
+          for i in 1 2 3; do
+            npx playwright install --with-deps chromium && exit 0
+            echo "Intento $i falló; reintento en 30s"; sleep 30
+          done
+          exit 1
 
       - name: Install Playwright system deps (cache hit case)
         if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+        run: |
+          for i in 1 2 3; do
+            npx playwright install-deps chromium && exit 0
+            echo "Intento $i falló; reintento en 30s"; sleep 30
+          done
+          exit 1
 
       - name: Cache Next build
         uses: actions/cache@v4

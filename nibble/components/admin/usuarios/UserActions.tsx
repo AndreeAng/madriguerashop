@@ -61,7 +61,7 @@ export function UserActions({
           />
           <div className="absolute right-0 top-full z-40 mt-1 w-64 rounded-xl border border-[color:var(--line)] bg-[color:var(--card)] p-1 shadow-float">
             {feedback && (
-              <p className="mb-1 rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[11px] text-emerald-700">
+              <p className="mb-1 rounded-lg bg-leaf-500/10 px-3 py-1.5 text-xs text-leaf-700">
                 {feedback}
               </p>
             )}
@@ -94,7 +94,7 @@ function SuspendItem({ userId, onDone }: { userId: string; onDone: (msg: string)
       <input type="hidden" name="userId" value={userId} />
       <ItemButton tone="danger" icon={<ShieldOff className="size-4" />} label="Suspender (cierra sesión)" />
       {state.error && (
-        <p className="px-3 py-1 text-[11px] text-[color:var(--color-tomato-600)]">{state.error}</p>
+        <p className="px-3 py-1 text-xs text-[color:var(--color-tomato-600)]">{state.error}</p>
       )}
     </form>
   );
@@ -108,7 +108,7 @@ function ReactivateItem({ userId, onDone }: { userId: string; onDone: (msg: stri
       <input type="hidden" name="userId" value={userId} />
       <ItemButton tone="primary" icon={<ShieldCheck className="size-4" />} label="Reactivar" />
       {state.error && (
-        <p className="px-3 py-1 text-[11px] text-[color:var(--color-tomato-600)]">{state.error}</p>
+        <p className="px-3 py-1 text-xs text-[color:var(--color-tomato-600)]">{state.error}</p>
       )}
     </form>
   );
@@ -122,7 +122,7 @@ function ResetPasswordItem({ userId, onDone }: { userId: string; onDone: (msg: s
       <input type="hidden" name="userId" value={userId} />
       <ItemButton icon={<Mail className="size-4" />} label="Enviar reset de password" />
       {state.error && (
-        <p className="px-3 py-1 text-[11px] text-[color:var(--color-tomato-600)]">{state.error}</p>
+        <p className="px-3 py-1 text-xs text-[color:var(--color-tomato-600)]">{state.error}</p>
       )}
     </form>
   );
@@ -152,7 +152,7 @@ function ChangeRoleItem({
       <input type="hidden" name="toRole" value={toRole} />
       <ItemButton icon={<RefreshCcw className="size-4" />} label={label} />
       {state.error && (
-        <p className="px-3 py-1 text-[11px] text-[color:var(--color-tomato-600)]">{state.error}</p>
+        <p className="px-3 py-1 text-xs text-[color:var(--color-tomato-600)]">{state.error}</p>
       )}
     </form>
   );

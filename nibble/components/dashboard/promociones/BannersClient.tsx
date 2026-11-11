@@ -166,16 +166,16 @@ function BannerRow({
               )}
             </p>
             {liveNow ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs font-semibold text-leaf-700">
+                <span className="size-1.5 rounded-full bg-leaf-500" />
                 EN VIVO
               </span>
             ) : !banner.isActive ? (
-              <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--muted)]">
+              <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--muted)]">
                 Inactivo
               </span>
             ) : (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                 Programado
               </span>
             )}
@@ -185,7 +185,7 @@ function BannerRow({
               {banner.subtitle}
             </p>
           )}
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[color:var(--muted)]">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
             {(banner.validFrom || banner.validTo) && (
               <span className="inline-flex items-center gap-1">
                 <Calendar className="size-3" />

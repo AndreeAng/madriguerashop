@@ -481,7 +481,7 @@ function BookableField({
               defaultValue={bookingDurationMin}
               className="mt-1.5 w-full rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
             />
-            <p className="mt-1 text-[11px] text-[color:var(--muted)]">
+            <p className="mt-1 text-xs text-[color:var(--muted)]">
               Cuánto te lleva atender uno. Típico: 30–60 min.
             </p>
           </label>
@@ -498,7 +498,7 @@ function BookableField({
               defaultValue={bookingBufferMin}
               className="mt-1.5 w-full rounded-lg border border-[color:var(--line-strong)] bg-[color:var(--card)] px-3 py-2 text-sm outline-none focus:border-[color:var(--color-amber-400)]"
             />
-            <p className="mt-1 text-[11px] text-[color:var(--muted)]">
+            <p className="mt-1 text-xs text-[color:var(--muted)]">
               Tiempo libre entre reservas (limpieza, descanso). Default 0.
             </p>
           </label>

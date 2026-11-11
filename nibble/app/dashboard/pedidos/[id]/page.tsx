@@ -215,7 +215,7 @@ export default async function OrderDetailPage({
 
                 {order.scheduledFor && (
                   <div className="mt-4 rounded-xl border border-[color:var(--color-bark-300)] bg-[color:var(--color-bark-50)] p-3 text-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--color-bark-700)]">
                       <CalendarClock aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Pedido programado
                     </p>
                     <p className="mt-1 font-medium">
@@ -237,7 +237,7 @@ export default async function OrderDetailPage({
 
                 {order.customerNotes && (
                   <div className="mt-4 rounded-xl bg-[color:var(--bg)] p-3 text-sm">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-[color:var(--muted)]">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted)]">
                       Notas del cliente
                     </p>
                     <p className="mt-1">{order.customerNotes}</p>

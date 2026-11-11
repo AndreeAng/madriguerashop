@@ -89,7 +89,7 @@ export function InvoiceAdminActions({
       </div>
 
       {!hasProof && (
-        <p className="text-[11px] text-[color:var(--muted)]">
+        <p className="text-xs text-[color:var(--muted)]">
           <TriangleAlert aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Aún no subió comprobante. Verifica igual sólo si confirmaste el pago por otro medio.
         </p>
       )}
@@ -112,7 +112,7 @@ export function InvoiceAdminActions({
           {cancelState.fieldErrors?.reason && (
             <p
               role="alert"
-              className="text-[11px] text-[color:var(--color-tomato-600)]"
+              className="text-xs text-[color:var(--color-tomato-600)]"
             >
               {cancelState.fieldErrors.reason}
             </p>
@@ -125,7 +125,7 @@ export function InvoiceAdminActions({
             <button
               type="button"
               onClick={() => setShowCancel(false)}
-              className="text-[11px] text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+              className="text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
             >
               Volver
             </button>

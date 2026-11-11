@@ -42,8 +42,8 @@ export function invoiceReminderEmail(opts: {
           La factura <strong>${escapeHtml(opts.invoiceNumber)}</strong> por
           <strong>${formatBob(opts.amount)}</strong> venció el ${escapeHtml(due)}.
         </p>
-        <p style="background: #fee2e2; border-left: 3px solid #dc2626; padding: 10px 12px; margin: 14px 0; font-size: 13px; color: #7f1d1d;">
-          ⚠ ${escapeHtml(alert)}
+        <p style="background: #fef2f2; border: 1px solid #fecaca; border-radius: 12px; color: #7f1d1d; padding: 10px 12px; margin: 14px 0; font-size: 13px; color: #7f1d1d;">
+          <strong>Atención:</strong> ${escapeHtml(alert)}
         </p>
         <p>Paga lo antes posible desde tu panel de facturación para evitar la suspensión.</p>
       `;
@@ -98,7 +98,7 @@ export function storeSuspendedEmail(opts: {
       Tu storefront público
       <code>${appUrl()}/${escapeHtml(opts.storeSlug)}</code> ya no es accesible.
     </p>
-    <p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
+    <p style="background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; color: #5e3400; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
       Buenas noticias: <strong>tus datos siguen intactos</strong>. Apenas verifiquemos
       el pago, tu tienda vuelve a estar online sin perder nada.
     </p>

@@ -65,7 +65,7 @@ export function RegisterForm() {
 
       {/* ============== TIENDA ============== */}
       <div className="space-y-3">
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
+        <p className="text-xs font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
           Tu tienda
         </p>
 
@@ -109,7 +109,7 @@ export function RegisterForm() {
           </div>
           <p id={`${slugId}-hint`} className="mt-1.5 text-xs text-[color:var(--muted)]">
             Tu tienda se va a ver en{" "}
-            <code className="rounded bg-[color:var(--bg)] px-1.5 py-0.5 font-mono text-[11px]">
+            <code className="rounded bg-[color:var(--bg)] px-1.5 py-0.5 font-mono text-xs">
               madrigueras.shop/{effectiveSlug || "tu-tienda"}
             </code>
           </p>
@@ -172,7 +172,7 @@ export function RegisterForm() {
 
       {/* ============== OWNER ============== */}
       <div className="space-y-3 border-t border-[color:var(--line)] pt-5">
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
+        <p className="text-xs font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
           Tu cuenta
         </p>
 
@@ -253,7 +253,7 @@ export function RegisterForm() {
         Crear mi tienda
       </SubmitButton>
 
-      <p className="text-[11px] text-[color:var(--muted)]">
+      <p className="text-xs text-[color:var(--muted)]">
         Sin tarjeta. Cancelas cuando quieras.
       </p>
     </form>

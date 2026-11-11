@@ -26,10 +26,10 @@ const TYPE_LABELS: Record<AlertType, string> = {
 };
 
 const SEVERITY_TONE: Record<AlertSeverity, string> = {
-  LOW: "bg-slate-100 text-slate-700",
+  LOW: "bg-bark-100 text-bark-700",
   MEDIUM: "bg-amber-100 text-amber-700",
-  HIGH: "bg-orange-100 text-orange-700",
-  CRITICAL: "bg-red-100 text-red-700",
+  HIGH: "bg-amber-100 text-amber-700",
+  CRITICAL: "bg-tomato-100 text-tomato-700",
 };
 
 const STATUS_FILTERS: { key: string; label: string; status: AlertStatus | "all" }[] = [
@@ -93,7 +93,7 @@ export default async function AdminAlertasPage({
               <p className="mt-1 text-sm text-[color:var(--muted)]">
                 {openCount} abierta{openCount === 1 ? "" : "s"}
                 {criticalCount > 0 && (
-                  <span className="ml-1.5 rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-700">
+                  <span className="ml-1.5 rounded-full bg-tomato-100 px-2 py-0.5 text-xs font-semibold text-tomato-700">
                     {criticalCount} crítica{criticalCount === 1 ? "" : "s"}
                   </span>
                 )}
@@ -142,9 +142,9 @@ export default async function AdminAlertasPage({
                   className={`rounded-2xl border bg-[color:var(--card)] p-5 ${
                     a.status === "OPEN"
                       ? a.severity === "CRITICAL"
-                        ? "border-red-300"
+                        ? "border-tomato-300"
                         : a.severity === "HIGH"
-                          ? "border-orange-300"
+                          ? "border-amber-300"
                           : "border-[color:var(--line-strong)]"
                       : "border-[color:var(--line)] opacity-70"
                   }`}
@@ -153,27 +153,27 @@ export default async function AdminAlertasPage({
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <span
-                          className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${SEVERITY_TONE[a.severity]}`}
+                          className={`inline-block rounded-full px-2 py-0.5 text-xs font-semibold uppercase tracking-wide ${SEVERITY_TONE[a.severity]}`}
                         >
                           {a.severity}
                         </span>
-                        <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--muted)]">
+                        <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--muted)]">
                           {TYPE_LABELS[a.type]}
                         </span>
                         {a.status === "ACKNOWLEDGED" && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-medium text-amber-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                             <Clock className="size-3" /> Reconocida
                           </span>
                         )}
                         {a.status === "RESOLVED" && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs font-medium text-leaf-700">
                             <CheckCircle2 className="size-3" /> Resuelta
                           </span>
                         )}
                       </div>
                       <h3 className="mt-2 font-semibold text-[color:var(--fg)]">{a.title}</h3>
                       <p className="mt-1 text-sm text-[color:var(--muted)]">{a.description}</p>
-                      <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[color:var(--muted)]">
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
                         <span>
                           Detectada{" "}
                           {a.createdAt.toLocaleString("es-BO", {
@@ -195,10 +195,10 @@ export default async function AdminAlertasPage({
                       </div>
                       {a.data && (
                         <details className="mt-3">
-                          <summary className="cursor-pointer text-[11px] uppercase tracking-wide text-[color:var(--muted)]">
+                          <summary className="cursor-pointer text-xs uppercase tracking-wide text-[color:var(--muted)]">
                             Detalles
                           </summary>
-                          <pre className="mt-2 overflow-x-auto rounded-lg bg-[color:var(--bg)] p-3 text-[11px]">
+                          <pre tabIndex={0} className="mt-2 overflow-x-auto rounded-lg bg-[color:var(--bg)] p-3 text-xs">
                             {JSON.stringify(a.data, null, 2)}
                           </pre>
                         </details>

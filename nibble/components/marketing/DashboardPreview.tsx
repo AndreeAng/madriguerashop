@@ -64,10 +64,10 @@ const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
   NEW:               { label: "Nuevo",        tone: "bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]" },
   PENDING_PAYMENT:   { label: "Esperando pago", tone: "bg-[color:var(--color-bark-100)] text-[color:var(--color-bark-700)]" },
   CONFIRMED:         { label: "Confirmado",   tone: "bg-[color:var(--color-leaf-500)]/14 text-[color:var(--color-leaf-600)]" },
-  PREPARING:         { label: "Preparando",   tone: "bg-[#fde68a]/60 text-[#92400e]" },
-  IN_DELIVERY:       { label: "En camino",    tone: "bg-[#dbeafe] text-[#1d4ed8]" },
+  PREPARING:         { label: "Preparando",   tone: "bg-amber-100 text-amber-700" },
+  IN_DELIVERY:       { label: "En camino",    tone: "bg-berry-50 text-berry-700" },
   DELIVERED:         { label: "Entregado",    tone: "bg-[color:var(--color-bark-50)] text-[color:var(--color-bark-500)]" },
-  CANCELLED:         { label: "Cancelado",    tone: "bg-[#fee2e2] text-[#991b1b]" },
+  CANCELLED:         { label: "Cancelado",    tone: "bg-tomato-50 text-tomato-700" },
 };
 
 export function DashboardPreview() {

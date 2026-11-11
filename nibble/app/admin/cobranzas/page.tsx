@@ -169,7 +169,7 @@ export default async function CobranzasPage({
                   {t.label}
                   {badge !== null && badge > 0 && (
                     <span
-                      className={`rounded-full px-1.5 text-[10px] font-semibold ${
+                      className={`rounded-full px-1.5 text-xs font-semibold ${
                         isActive ? "bg-white/15 text-white/90" : "bg-[color:var(--bg)] text-[color:var(--muted)]"
                       }`}
                     >
@@ -200,17 +200,17 @@ export default async function CobranzasPage({
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-mono text-sm">{inv.invoiceNumber}</span>
-                          <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                             inv.status === "OVERDUE"
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-tomato-100 text-tomato-700"
                               : inv.status === "PAID"
-                                ? "bg-emerald-100 text-emerald-700"
+                                ? "bg-leaf-100 text-leaf-700"
                                 : "bg-amber-100 text-amber-700"
                           }`}>
                             {inv.status}
                           </span>
                           {inv.paidProofUrl && (
-                            <span className="rounded-full bg-[color:var(--color-amber-100)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-amber-700)]">
+                            <span className="rounded-full bg-[color:var(--color-amber-100)] px-2 py-0.5 text-xs font-semibold text-[color:var(--color-amber-700)]">
                               Comprobante listo
                             </span>
                           )}
@@ -241,7 +241,7 @@ export default async function CobranzasPage({
 
                       <div className="flex flex-col items-start justify-between gap-2">
                         <div>
-                          <p className="text-[10px] uppercase text-[color:var(--muted)]">
+                          <p className="text-xs uppercase text-[color:var(--muted)]">
                             Monto
                           </p>
                           <p className="font-display text-2xl num-tabular">

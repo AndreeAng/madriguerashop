@@ -170,18 +170,18 @@ function StatChip({
     tone === "amber"
       ? "bg-amber-100 text-amber-700"
       : tone === "leaf"
-        ? "bg-emerald-100 text-emerald-700"
+        ? "bg-leaf-100 text-leaf-700"
         : tone === "tomato"
-          ? "bg-rose-100 text-rose-700"
+          ? "bg-tomato-100 text-tomato-700"
           : "bg-[color:var(--bg)] text-[color:var(--muted)]";
   return (
     <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+      <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
         {label}
       </p>
       <div className="mt-1 flex items-baseline justify-between gap-2">
         <p className="num-tabular text-2xl font-semibold">{value}</p>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${cls}`}>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${cls}`}>
           {label.toLowerCase()}
         </span>
       </div>

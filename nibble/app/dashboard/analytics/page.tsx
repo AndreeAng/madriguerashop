@@ -672,7 +672,7 @@ export default async function AnalyticsPage({
                   </div>
                   <Link
                     href={`/dashboard/productos/${p.id}`}
-                    className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-[11px] hover:border-[color:var(--color-bark-300)]"
+                    className="rounded-full border border-[color:var(--line)] px-2.5 py-1 text-xs hover:border-[color:var(--color-bark-300)]"
                   >
                     Revisar
                   </Link>
@@ -793,7 +793,7 @@ function MiniCard({
     >
       <div className="flex items-center gap-2 text-[color:var(--fg-soft)]">
         {icon}
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
           {label}
         </p>
       </div>
@@ -828,16 +828,16 @@ function PulseCard({
 }) {
   const toneClasses =
     interpretation?.tone === "good"
-      ? "bg-emerald-50 text-emerald-700"
+      ? "bg-leaf-50 text-leaf-700"
       : interpretation?.tone === "warn"
-        ? "bg-rose-50 text-rose-700"
+        ? "bg-tomato-50 text-tomato-700"
         : "bg-[color:var(--bg)] text-[color:var(--fg-soft)]";
 
   return (
     <div className="rounded-3xl border border-[color:var(--line)] bg-[color:var(--card)] p-5">
       <div className="flex items-center gap-2 text-[color:var(--fg-soft)]">
         {icon}
-        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted)]">
           {label}
         </p>
       </div>

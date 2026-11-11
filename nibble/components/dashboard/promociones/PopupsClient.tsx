@@ -160,16 +160,16 @@ function PopupRow({
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-medium">{popup.title}</p>
             {live ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                <span className="size-1.5 rounded-full bg-emerald-500" />
+              <span className="inline-flex items-center gap-1 rounded-full bg-leaf-100 px-2 py-0.5 text-xs font-semibold text-leaf-700">
+                <span className="size-1.5 rounded-full bg-leaf-500" />
                 EN VIVO
               </span>
             ) : !popup.isActive ? (
-              <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--muted)]">
+              <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--muted)]">
                 Inactivo
               </span>
             ) : (
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700">
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700">
                 Programado
               </span>
             )}
@@ -177,7 +177,7 @@ function PopupRow({
           <p className="mt-0.5 line-clamp-2 text-xs text-[color:var(--muted)]">
             {popup.message}
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-[color:var(--muted)]">
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
             <span>{popup.delaySeconds}s de delay</span>
             {popup.showOncePerSession && <span>· una vez/sesión</span>}
             {popup.ctaText && popup.ctaUrl && (

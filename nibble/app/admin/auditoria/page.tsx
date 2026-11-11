@@ -67,15 +67,15 @@ const FILTER_TABS: { key: string; label: string; matches: (a: string) => boolean
 
 function actionToneClass(action: string): string {
   if (action.includes("failed") || action.includes("rejected") || action.includes("cancelled") || action.includes("suspended")) {
-    return "bg-red-100 text-red-700";
+    return "bg-tomato-100 text-tomato-700";
   }
   if (action.includes("verified") || action.includes("completed") || action.includes("registered") || action.includes("created")) {
-    return "bg-emerald-100 text-emerald-700";
+    return "bg-leaf-100 text-leaf-700";
   }
   if (action.includes("requested") || action.includes("uploaded") || action.includes("generated")) {
     return "bg-amber-100 text-amber-700";
   }
-  return "bg-blue-100 text-blue-700";
+  return "bg-berry-100 text-berry-700";
 }
 
 const PAGE_SIZE = 100;
@@ -216,13 +216,13 @@ export default async function AuditoriaPage({
                         </td>
                         <td className="px-3 py-3">
                           <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${actionToneClass(
+                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${actionToneClass(
                               e.action,
                             )}`}
                           >
                             {label}
                           </span>
-                          <p className="mt-0.5 font-mono text-[10px] text-[color:var(--muted)]">
+                          <p className="mt-0.5 font-mono text-xs text-[color:var(--muted)]">
                             {e.action}
                           </p>
                         </td>
@@ -232,7 +232,7 @@ export default async function AuditoriaPage({
                               <span className="block">
                                 {actor.fullName ?? actor.username}
                               </span>
-                              <span className="text-[10px] font-mono text-[color:var(--muted)]">
+                              <span className="text-xs font-mono text-[color:var(--muted)]">
                                 {e.actorRole ?? ""}
                               </span>
                             </span>

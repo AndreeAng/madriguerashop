@@ -542,12 +542,12 @@ function StepVisual({ step }: { step: number }) {
     );
   }
   return (
-    <div className="rounded-2xl bg-[#e7f6ec] p-4">
+    <div className="rounded-2xl bg-leaf-50 p-4">
       <div className="ml-auto max-w-[90%] rounded-2xl rounded-tr-sm bg-white p-3 text-sm shadow-sm">
         <p className="font-semibold">Pedido #1247 · Bs 145</p>
         <p className="mt-1 text-mk-soft">Combo Familiar · Cala Cala</p>
         <p className="mt-1.5 flex items-center justify-end gap-1 text-xs text-mk-muted">
-          12:41 <CheckCheck className="size-3.5 text-[#1d9bf0]" />
+          12:41 <CheckCheck className="size-3.5 text-leaf-600" />
         </p>
       </div>
       <div className="mt-2 w-fit rounded-full bg-mk-leaf-deep px-4 py-2 text-sm font-semibold text-white">

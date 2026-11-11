@@ -135,14 +135,14 @@ export function ProductVariantsField({
                   el toggle; sin esto la fila se vuelve muy alta y mete ruido
                   para variantes sin stock-tracking (ej. tallas de ropa). */}
               <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-[color:var(--muted)]">
-                <label className="inline-flex cursor-pointer items-center gap-1.5">
+                <label className="inline-flex min-h-11 cursor-pointer items-center gap-2">
                   <input
                     type="checkbox"
                     checked={!!v.manageStock}
                     onChange={(e) =>
                       update(i, { manageStock: e.target.checked })
                     }
-                    className="size-3.5 rounded border-[color:var(--line-strong)]"
+                    className="size-4 rounded border-[color:var(--line-strong)]"
                   />
                   Controlar stock de esta variante
                 </label>

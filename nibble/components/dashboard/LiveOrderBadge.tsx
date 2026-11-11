@@ -153,7 +153,7 @@ export function LiveOrderBadge({
     >
       <Bell className="size-4" />
       {hasNew && (
-        <span className="absolute -right-1 -top-1 grid min-w-[18px] place-items-center rounded-full bg-mk-magenta px-1 text-[10px] font-bold text-white">
+        <span className="absolute -right-1 -top-1 grid min-w-[18px] place-items-center rounded-full bg-mk-magenta px-1 text-xs font-bold text-white">
           {total > 9 ? "9+" : total}
         </span>
       )}

@@ -211,7 +211,7 @@ export default async function AdminHome({
                           <StoreIcon className="size-4 shrink-0 text-[color:var(--muted)]" />
                           <span className="flex-1 text-sm font-medium">{s.name}</span>
                           <span className="font-mono text-xs text-[color:var(--muted)]">{s.slug}</span>
-                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs text-[color:var(--muted)]">
                             {s.status}
                           </span>
                         </Link>
@@ -238,7 +238,7 @@ export default async function AdminHome({
                           <span className="text-xs text-[color:var(--muted)]">
                             {u.email ?? u.phone ?? "—"}
                           </span>
-                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs text-[color:var(--muted)]">
                             {u.role}
                           </span>
                         </Link>
@@ -264,7 +264,7 @@ export default async function AdminHome({
                           <span className="flex-1 text-sm font-medium">{inv.invoiceNumber}</span>
                           <span className="text-xs text-[color:var(--muted)]">{inv.store.name}</span>
                           <span className="text-xs font-medium">{formatBob(inv.amount)}</span>
-                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                          <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs text-[color:var(--muted)]">
                             {inv.status}
                           </span>
                         </Link>
@@ -373,7 +373,7 @@ export default async function AdminHome({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <span className="truncate text-sm font-medium">{s.name}</span>
-                            <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] text-[color:var(--muted)]">
+                            <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs text-[color:var(--muted)]">
                               {s.status}
                             </span>
                           </div>

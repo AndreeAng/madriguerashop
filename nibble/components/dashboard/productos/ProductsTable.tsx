@@ -112,7 +112,7 @@ export function ProductsTable({ rows }: { rows: Row[] }) {
                             className="size-full object-cover"
                           />
                         ) : (
-                          <span className="text-[10px] uppercase text-[color:var(--muted)]">
+                          <span className="text-xs uppercase text-[color:var(--muted)]">
                             sin foto
                           </span>
                         )}
