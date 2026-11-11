@@ -555,6 +555,39 @@ body::before {
     16%, 38%, 60%, 100% { opacity: 0; transform: scale(1.9); }
   }
 
+  /* Fondo WebGL del hero: aparece sobre el degradado CSS cuando dibuja
+     su primer cuadro; si no hay WebGL, nunca se ve. */
+  .mk-shader {
+    opacity: 0;
+    transition: opacity 1.4s var(--ease-out-quart);
+  }
+  .mk-shader[data-ready="true"] { opacity: 1; }
+
+  /* El teléfono del hero se inclina hacia el cursor (--mx/--my los
+     publica HeroShader). Sin cursor o con movimiento reducido queda recto. */
+  .mk-tilt {
+    transform: perspective(1400px)
+      rotateY(calc(var(--mx, 0) * 7deg))
+      rotateX(calc(var(--my, 0) * -5deg));
+    transition: transform 0.6s var(--ease-out-quart);
+    transform-style: preserve-3d;
+  }
+
+  /* Titulares de sección: una máscara los descubre de abajo hacia arriba
+     mientras entran en pantalla. Sin soporte de scroll-driven animations
+     se ven completos desde el inicio. */
+  @supports (animation-timeline: view()) {
+    .mk-reveal-mask {
+      animation: mkMask linear both;
+      animation-timeline: view();
+      animation-range: entry 5% entry 60%;
+    }
+  }
+  @keyframes mkMask {
+    from { clip-path: inset(0 0 100% 0); transform: translate3d(0, 0.25em, 0); }
+    to   { clip-path: inset(0 0 -0.2em 0); transform: none; }
+  }
+
   /* Cambio de tienda en la demo de rubros. */
   .mk-swap {
     animation: mkSwap 0.45s var(--ease-out-quart) both;
@@ -565,7 +598,7 @@ body::before {
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mk-rise, .mk-reveal, .mk-swap,
+    .mk-rise, .mk-reveal, .mk-reveal-mask, .mk-swap,
     .mk-scene-1, .mk-scene-2, .mk-scene-3, .mk-scene-pay {
       animation: none !important;
       opacity: 1 !important;
