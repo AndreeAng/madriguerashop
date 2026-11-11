@@ -68,7 +68,7 @@ export function ImportQuickForm({
               <summary className="cursor-pointer text-[color:var(--color-amber-700)] hover:underline">
                 {state.result.warnings.length} warnings — ver detalle
               </summary>
-              <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto rounded-lg bg-[color:var(--bg)] p-2 font-mono text-[11px]">
+              <ul className="mt-2 max-h-48 space-y-0.5 overflow-y-auto rounded-lg bg-[color:var(--bg)] p-2 font-mono text-xs">
                 {state.result.warnings.map((w, i) => (
                   <li key={i}>· {w}</li>
                 ))}
@@ -96,7 +96,7 @@ export function ImportQuickForm({
       )}
 
       <section className="space-y-3">
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
+        <p className="text-xs font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
           Origen (Quick.com.bo)
         </p>
         <Field
@@ -111,7 +111,7 @@ export function ImportQuickForm({
       </section>
 
       <section className="space-y-3 border-t border-[color:var(--line)] pt-6">
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
+        <p className="text-xs font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
           Tienda destino (Madriguera)
         </p>
         <Field
@@ -157,7 +157,7 @@ export function ImportQuickForm({
       </section>
 
       <section className="space-y-3 border-t border-[color:var(--line)] pt-6">
-        <p className="text-[11px] font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
+        <p className="text-xs font-mono uppercase tracking-[0.18em] text-[color:var(--muted)]">
           Owner (le creamos la cuenta)
         </p>
         <Field

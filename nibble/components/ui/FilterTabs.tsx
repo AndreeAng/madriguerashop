@@ -43,7 +43,7 @@ export function FilterTabs({
           >
             {item.label}
             {typeof item.count === "number" && (
-              <span className={cn("ml-1.5 text-[10px]", isActive ? "opacity-80" : "opacity-60")}>
+              <span className={cn("ml-1.5 text-xs", isActive ? "opacity-80" : "opacity-60")}>
                 ({item.count})
               </span>
             )}

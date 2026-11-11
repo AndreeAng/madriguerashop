@@ -21,8 +21,8 @@ type Tone = "amber" | "leaf" | "sky" | "violet" | "neutral";
 const TONE_CLASSES: Record<Tone, string> = {
   amber: "bg-[color:var(--color-amber-100)] text-[color:var(--color-amber-700)]",
   leaf: "bg-[color:var(--color-leaf-500)]/10 text-[color:var(--color-leaf-600)]",
-  sky: "bg-sky-100 text-sky-700",
-  violet: "bg-violet-100 text-violet-700",
+  sky: "bg-berry-100 text-berry-700",
+  violet: "bg-berry-100 text-berry-700",
   neutral: "bg-[color:var(--card-soft)] text-[color:var(--fg-soft)]",
 };
 

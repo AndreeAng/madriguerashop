@@ -82,7 +82,7 @@ export function AppSidebarShell({
               <span className="flex-1 truncate">{it.label}</span>
               {it.comingSoon && !isActive && (
                 <span
-                  className={`rounded-full px-1.5 text-[9px] font-medium uppercase tracking-wide ${
+                  className={`rounded-full px-1.5 text-xs font-medium uppercase tracking-wide ${
                     theme === "dark"
                       ? "bg-white/10 text-white/60"
                       : "bg-[color:var(--bg)] text-[color:var(--muted)]"
@@ -93,7 +93,7 @@ export function AppSidebarShell({
               )}
               {it.badge !== undefined && it.badge > 0 && (
                 <span
-                  className={`rounded-full px-1.5 text-[11px] font-semibold ${
+                  className={`rounded-full px-1.5 text-xs font-semibold ${
                     isActive
                       ? theme === "dark"
                         ? "bg-white/15 text-white"

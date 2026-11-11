@@ -227,7 +227,7 @@ function RowInner({
             {cat.name}
           </span>
           {!cat.isVisible && (
-            <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-[color:var(--muted)]">
+            <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium uppercase tracking-wide text-[color:var(--muted)]">
               Oculta
             </span>
           )}

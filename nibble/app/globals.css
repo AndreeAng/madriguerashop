@@ -35,25 +35,44 @@
   --color-bark-800: #1d1a22;
   --color-bark-900: #121016;
 
+  /* Estados del sistema. Error = tomato, éxito = leaf (afinado al verde de
+     la landing), activo/informativo = berry (escala del magenta de marca).
+     600/700 se usan como texto sobre blanco o sobre su 50/100 (≥4.5:1). */
   --color-tomato-50: #fef2f2;
+  --color-tomato-100: #fee2e2;
+  --color-tomato-200: #fecaca;
+  --color-tomato-300: #fca5a5;
   --color-tomato-400: #ef4444;
   --color-tomato-500: #dc2626;
   --color-tomato-600: #b91c1c;
   --color-tomato-700: #991b1b;
+  --color-tomato-800: #7f1d1d;
+  --color-tomato-900: #5f1414;
 
-  --color-leaf-50: #f0f5ea;
-  --color-leaf-400: #6b9a4f;
-  --color-leaf-500: #4f7d3a;
-  --color-leaf-600: #3d6429;
-  --color-leaf-700: #2f4e20;
+  --color-leaf-50: #e9f7ef;
+  --color-leaf-100: #cdeedb;
+  --color-leaf-200: #9fdcb9;
+  --color-leaf-300: #62c38e;
+  --color-leaf-400: #17a05a;
+  --color-leaf-500: #11804a;
+  --color-leaf-600: #0d6b3c;
+  --color-leaf-700: #0a5530;
+  --color-leaf-800: #084225;
+  --color-leaf-900: #06301b;
 
-  /* Verde de marca de WhatsApp para los botones que abren el chat: se
-     reconoce como "esto abre WhatsApp". Texto encima: bark-900 (contraste ~10:1). */
-  --color-whatsapp: #25d366;
-  --color-whatsapp-hover: #20bd5a;
+  --color-berry-50: #fdedf3;
+  --color-berry-100: #fbd3e2;
+  --color-berry-200: #f6a8c5;
+  --color-berry-300: #ef74a0;
+  --color-berry-400: #e5417c;
+  --color-berry-500: #d4145a;
+  --color-berry-600: #b81050;
+  --color-berry-700: #960d42;
+  --color-berry-800: #740a33;
+  --color-berry-900: #520724;
 
-  /* Sitio de marketing (landing). Solo lo usan los componentes bajo `.mkt`;
-     la tienda y el panel siguen con cream/bark/amber. */
+  /* Tokens con nombre propio del mundo visual (landing primero, hoy todo el
+     producto): tinta, superficies, magenta de marca y azafrán. */
   --color-mk-ink: #121016;
   --color-mk-ink-2: #1d1a22;
   --color-mk-ink-3: #2a2630;
@@ -66,7 +85,12 @@
   --color-mk-magenta-deep: #a80e46;
   --color-mk-saffron: #ffb21e;
   --color-mk-leaf: #17a05a;
-  --color-mk-leaf-deep: #0d7a42;
+  --color-mk-leaf-deep: #0d6b3c;
+
+  /* Verde de marca de WhatsApp para los botones que abren el chat: se
+     reconoce como "esto abre WhatsApp". Texto encima: bark-900 (contraste ~10:1). */
+  --color-whatsapp: #25d366;
+  --color-whatsapp-hover: #20bd5a;
 
   --color-gold-400: #d4a857;
   --color-gold-500: #b8862f;

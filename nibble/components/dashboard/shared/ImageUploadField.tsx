@@ -108,7 +108,7 @@ export function ImageUploadField({
             <span className="text-xs font-medium text-[color:var(--fg-soft)]">
               {uploading ? "Subiendo…" : "Click para subir"}
             </span>
-            <span className="text-[10px] text-[color:var(--muted)]">
+            <span className="text-xs text-[color:var(--muted)]">
               JPG · PNG · WebP · máx 5 MB
             </span>
           </label>

@@ -60,7 +60,7 @@ export default function GlobalError({
         <div className="mx-auto inline-flex size-14 items-center justify-center rounded-2xl bg-[color:var(--color-tomato-500)]/10 text-[color:var(--color-tomato-600)]">
           <AlertTriangle className="size-6" />
         </div>
-        <p className="mt-6 font-mono text-[11px] uppercase tracking-[0.2em] text-[color:var(--muted)]">
+        <p className="mt-6 font-mono text-xs uppercase tracking-[0.2em] text-[color:var(--muted)]">
           Algo se rompió
         </p>
         <h1 className="font-display mt-3 text-4xl leading-tight">
@@ -72,7 +72,7 @@ export default function GlobalError({
         </p>
 
         {error.digest && (
-          <p className="mt-4 inline-block rounded-lg bg-[color:var(--card)] px-3 py-1.5 font-mono text-[11px] text-[color:var(--muted)]">
+          <p className="mt-4 inline-block rounded-lg bg-[color:var(--card)] px-3 py-1.5 font-mono text-xs text-[color:var(--muted)]">
             ID: {error.digest}
           </p>
         )}

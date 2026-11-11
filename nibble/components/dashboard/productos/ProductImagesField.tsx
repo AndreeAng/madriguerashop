@@ -130,7 +130,7 @@ export function ProductImagesField({
         <span className="text-xs font-medium text-[color:var(--muted)]">
           Imágenes <span className="text-[color:var(--color-tomato-600)]">*</span>
         </span>
-        <span className="text-[11px] text-[color:var(--muted)]">
+        <span className="text-xs text-[color:var(--muted)]">
           {images.length} / {max}
         </span>
       </div>
@@ -157,7 +157,7 @@ export function ProductImagesField({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img.url} alt={img.alt ?? ""} className="size-full object-cover" />
             {i === 0 && (
-              <span className="absolute left-2 top-2 rounded-full bg-mk-magenta px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-pill">
+              <span className="absolute left-2 top-2 rounded-full bg-mk-magenta px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-white shadow-pill">
                 Principal
               </span>
             )}
@@ -188,7 +188,7 @@ export function ProductImagesField({
             <span className="px-2 text-xs font-medium text-[color:var(--fg-soft)]">
               {uploading ? "Subiendo…" : "Agregar"}
             </span>
-            <span className="text-[10px] text-[color:var(--muted)]">JPG · PNG · WebP</span>
+            <span className="text-xs text-[color:var(--muted)]">JPG · PNG · WebP</span>
           </label>
         )}
       </div>

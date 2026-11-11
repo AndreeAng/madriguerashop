@@ -174,7 +174,7 @@ export default async function OrdersPage({
                   {t.label}
                   {badge !== null && badge > 0 && (
                     <span
-                      className={`rounded-full px-1.5 text-[10px] font-semibold ${
+                      className={`rounded-full px-1.5 text-xs font-semibold ${
                         isActive
                           ? "bg-white/15 text-white/90"
                           : "bg-[color:var(--bg)] text-[color:var(--muted)]"
@@ -220,12 +220,12 @@ export default async function OrdersPage({
                               <span className="text-sm">{order.customerName}</span>
                               <OrderStatusPill status={order.status} />
                               {needsAttention && (
-                                <span className="rounded-full bg-[color:var(--color-amber-100)] px-2 py-0.5 text-[11px] font-semibold text-[color:var(--color-amber-700)]">
+                                <span className="rounded-full bg-[color:var(--color-amber-100)] px-2 py-0.5 text-xs font-semibold text-[color:var(--color-amber-700)]">
                                   Verificar pago
                                 </span>
                               )}
                               {order.scheduledFor && (
-                                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-bark-100)] px-2 py-0.5 text-[11px] font-medium text-[color:var(--color-bark-800)]">
+                                <span className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-bark-100)] px-2 py-0.5 text-xs font-medium text-[color:var(--color-bark-800)]">
                                   <CalendarClock aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />{order.scheduledFor.toLocaleString("es-BO", {
                                     day: "2-digit",
                                     month: "short",

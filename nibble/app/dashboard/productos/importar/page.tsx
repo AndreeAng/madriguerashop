@@ -56,7 +56,7 @@ export default async function ImportProductsPage() {
             <summary className="cursor-pointer text-[color:var(--muted)] hover:text-[color:var(--fg)]">
               Ver ejemplo de CSV
             </summary>
-            <pre className="mt-2 overflow-x-auto rounded-lg bg-[color:var(--bg)] p-3 text-[11px] leading-relaxed">{`nombre,precio,slug,sku,categoría,stock,descripción
+            <pre tabIndex={0} className="mt-2 overflow-x-auto rounded-lg bg-[color:var(--bg)] p-3 text-xs leading-relaxed">{`nombre,precio,slug,sku,categoría,stock,descripción
 Pizza Margherita,89.50,pizza-margherita,PZ-001,Pizzas,20,Mozzarella + albahaca
 Pizza Pepperoni,99.00,,PZ-002,Pizzas,15,
 Empanada de carne,12.00,,EM-001,Empanadas,,Frita al momento`}</pre>

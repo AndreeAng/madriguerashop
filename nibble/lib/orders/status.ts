@@ -32,13 +32,13 @@ export const STATUS_COLORS: Record<
   OrderStatus,
   { bg: string; fg: string }
 > = {
-  PENDING_PAYMENT: { bg: "bg-yellow-100", fg: "text-yellow-700" },
+  PENDING_PAYMENT: { bg: "bg-amber-100", fg: "text-amber-700" },
   NEW: { bg: "bg-amber-100", fg: "text-amber-700" },
-  CONFIRMED: { bg: "bg-blue-100", fg: "text-blue-700" },
-  PREPARING: { bg: "bg-purple-100", fg: "text-purple-700" },
-  IN_DELIVERY: { bg: "bg-indigo-100", fg: "text-indigo-700" },
-  DELIVERED: { bg: "bg-emerald-100", fg: "text-emerald-700" },
-  CANCELLED: { bg: "bg-red-100", fg: "text-red-700" },
+  CONFIRMED: { bg: "bg-berry-100", fg: "text-berry-700" },
+  PREPARING: { bg: "bg-berry-100", fg: "text-berry-700" },
+  IN_DELIVERY: { bg: "bg-berry-100", fg: "text-berry-700" },
+  DELIVERED: { bg: "bg-leaf-100", fg: "text-leaf-700" },
+  CANCELLED: { bg: "bg-tomato-100", fg: "text-tomato-700" },
 };
 
 export const PAYMENT_LABELS: Record<PaymentStatus, string> = {

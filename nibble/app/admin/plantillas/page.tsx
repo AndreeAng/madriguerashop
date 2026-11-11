@@ -64,18 +64,18 @@ export default async function AdminPlantillasPage() {
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <h2 className="truncate font-semibold">{t.name}</h2>
-                        <p className="text-[11px] uppercase tracking-wide text-[color:var(--color-amber-600)]">
+                        <p className="text-xs uppercase tracking-wide text-[color:var(--color-amber-600)]">
                           {verticalLabel(t.vertical)}
                         </p>
                       </div>
-                      <span className="rounded-full bg-[color:var(--bg)] px-2 py-1 text-[11px] font-medium text-[color:var(--muted)]">
+                      <span className="rounded-full bg-[color:var(--bg)] px-2 py-1 text-xs font-medium text-[color:var(--muted)]">
                         {t._count.stores} tienda{t._count.stores === 1 ? "" : "s"}
                       </span>
                     </div>
                     <p className="mt-2 line-clamp-2 text-sm text-[color:var(--muted)]">
                       {t.description}
                     </p>
-                    <p className="mt-2 font-mono text-[11px] text-[color:var(--muted)]">
+                    <p className="mt-2 font-mono text-xs text-[color:var(--muted)]">
                       {t.componentKey}
                     </p>
                     <div className="mt-4 flex items-center gap-2">

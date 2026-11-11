@@ -80,14 +80,14 @@ export function BookingsWeek({
                 : "border-[color:var(--line)] bg-[color:var(--card)]"
             } p-3`}
           >
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-[color:var(--muted)]">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[color:var(--muted)]">
               {WEEKDAY_ES[idx]}
             </p>
             <p className="num-tabular text-lg font-semibold leading-tight">
               {d.getDate()}
             </p>
             {dayBookings.length === 0 ? (
-              <p className="mt-4 text-[11px] text-[color:var(--muted)]">
+              <p className="mt-4 text-xs text-[color:var(--muted)]">
                 Sin reservas
               </p>
             ) : (
@@ -106,10 +106,10 @@ export function BookingsWeek({
 
 const STATUS_STYLES: Record<Booking["status"], string> = {
   PENDING: "border-amber-300 bg-amber-50",
-  CONFIRMED: "border-emerald-300 bg-emerald-50",
-  CANCELLED: "border-rose-200 bg-rose-50 opacity-60",
+  CONFIRMED: "border-leaf-300 bg-leaf-50",
+  CANCELLED: "border-tomato-200 bg-tomato-50 opacity-60",
   COMPLETED: "border-[color:var(--line)] bg-[color:var(--bg)] opacity-70",
-  NO_SHOW: "border-rose-200 bg-rose-50 opacity-60",
+  NO_SHOW: "border-tomato-200 bg-tomato-50 opacity-60",
 };
 
 const STATUS_LABEL: Record<Booking["status"], string> = {
@@ -163,33 +163,33 @@ function BookingCard({ booking }: { booking: Booking }) {
         onClick={() => setExpanded((x) => !x)}
         className="block w-full text-left"
       >
-        <p className="num-tabular text-[11px] font-semibold text-[color:var(--fg)]">
+        <p className="num-tabular text-xs font-semibold text-[color:var(--fg)]">
           {hh(startTime)} – {hh(endTime)}
         </p>
         <p className="mt-0.5 truncate font-medium">{booking.productName}</p>
-        <p className="truncate text-[10px] text-[color:var(--muted)]">
+        <p className="truncate text-xs text-[color:var(--muted)]">
           {booking.customerName}
         </p>
       </button>
 
       {expanded && (
         <div className="mt-2 space-y-2 border-t border-[color:var(--line)] pt-2">
-          <p className="text-[10px] uppercase tracking-widest text-[color:var(--muted)]">
+          <p className="text-xs uppercase tracking-widest text-[color:var(--muted)]">
             {STATUS_LABEL[booking.status]}
           </p>
-          <p className="flex items-center gap-1 text-[11px]">
+          <p className="flex items-center gap-1 text-xs">
             <Phone className="size-3" />
             <span className="num-tabular">{booking.customerPhone}</span>
           </p>
           {booking.notes && (
-            <p className="flex items-start gap-1 text-[11px] text-[color:var(--fg-soft)]">
+            <p className="flex items-start gap-1 text-xs text-[color:var(--fg-soft)]">
               <MessageSquare className="mt-0.5 size-3 shrink-0" />
               <span className="break-words">{booking.notes}</span>
             </p>
           )}
 
           {error && (
-            <p role="alert" className="text-[11px] text-rose-700">
+            <p role="alert" className="text-xs text-tomato-700">
               {error}
             </p>
           )}
@@ -197,7 +197,7 @@ function BookingCard({ booking }: { booking: Booking }) {
           {cancelMode ? (
             <div className="space-y-1.5">
               <label className="block">
-                <span className="text-[10px] font-medium text-[color:var(--muted)]">
+                <span className="text-xs font-medium text-[color:var(--muted)]">
                   Motivo (opcional)
                 </span>
                 <textarea
@@ -206,7 +206,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                   rows={2}
                   maxLength={200}
                   placeholder="Ej. cliente avisó, fuerza mayor…"
-                  className="mt-1 w-full resize-none rounded-lg border border-[color:var(--line-strong)] bg-white px-2 py-1.5 text-[11px] outline-none focus:border-[color:var(--color-amber-400)]"
+                  className="mt-1 w-full resize-none rounded-lg border border-[color:var(--line-strong)] bg-white px-2 py-1.5 text-xs outline-none focus:border-[color:var(--color-amber-400)]"
                 />
               </label>
               <div className="flex gap-1.5">
@@ -216,7 +216,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                     runAction(cancelBookingAction, { cancelReason })
                   }
                   disabled={pending}
-                  className="inline-flex items-center gap-1 rounded-full bg-rose-600 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-rose-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-full bg-tomato-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-tomato-700 disabled:opacity-50"
                 >
                   Confirmar cancelación
                 </button>
@@ -227,7 +227,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                     setCancelReason("");
                   }}
                   disabled={pending}
-                  className="rounded-full px-2.5 py-1 text-[10px] text-[color:var(--muted)] hover:text-[color:var(--fg)]"
+                  className="rounded-full px-2.5 py-1 text-xs text-[color:var(--muted)] hover:text-[color:var(--fg)]"
                 >
                   Volver
                 </button>
@@ -240,7 +240,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                   type="button"
                   onClick={() => runAction(confirmBookingAction)}
                   disabled={pending}
-                  className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2.5 py-1 text-[10px] font-medium text-white hover:bg-emerald-700 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-full bg-leaf-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-leaf-700 disabled:opacity-50"
                 >
                   <Check className="size-3" />
                   Confirmar
@@ -252,7 +252,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                     type="button"
                     onClick={() => runAction(markBookingCompletedAction)}
                     disabled={pending}
-                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-bark-900)] px-2.5 py-1 text-[10px] font-medium text-white hover:bg-[color:var(--color-bark-700)] disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-bark-900)] px-2.5 py-1 text-xs font-medium text-white hover:bg-[color:var(--color-bark-700)] disabled:opacity-50"
                   >
                     <CheckCircle2 className="size-3" />
                     Marcar atendida
@@ -261,7 +261,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                     type="button"
                     onClick={() => runAction(markBookingNoShowAction)}
                     disabled={pending}
-                    className="inline-flex items-center gap-1 rounded-full border border-rose-300 px-2.5 py-1 text-[10px] font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                    className="inline-flex items-center gap-1 rounded-full border border-tomato-300 px-2.5 py-1 text-xs font-medium text-tomato-700 hover:bg-tomato-100 disabled:opacity-50"
                   >
                     <UserX className="size-3" />
                     No vino
@@ -274,7 +274,7 @@ function BookingCard({ booking }: { booking: Booking }) {
                   type="button"
                   onClick={() => setCancelMode(true)}
                   disabled={pending}
-                  className="inline-flex items-center gap-1 rounded-full border border-rose-300 px-2.5 py-1 text-[10px] font-medium text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 rounded-full border border-tomato-300 px-2.5 py-1 text-xs font-medium text-tomato-700 hover:bg-tomato-100 disabled:opacity-50"
                 >
                   <X className="size-3" />
                   Cancelar

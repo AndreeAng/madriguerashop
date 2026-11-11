@@ -15,10 +15,10 @@ const STATUS_CHIPS: Record<
   { label: string; bg: string; fg: string }
 > = {
   TRIAL: { label: "Prueba", bg: "bg-amber-100", fg: "text-amber-700" },
-  ACTIVE: { label: "Activa", bg: "bg-emerald-100", fg: "text-emerald-700" },
-  PAST_DUE: { label: "Pago atrasado", bg: "bg-orange-100", fg: "text-orange-700" },
-  SUSPENDED: { label: "Suspendida", bg: "bg-red-100", fg: "text-red-700" },
-  CANCELLED: { label: "Cancelada", bg: "bg-gray-100", fg: "text-gray-700" },
+  ACTIVE: { label: "Activa", bg: "bg-leaf-100", fg: "text-leaf-700" },
+  PAST_DUE: { label: "Pago atrasado", bg: "bg-amber-100", fg: "text-amber-700" },
+  SUSPENDED: { label: "Suspendida", bg: "bg-tomato-100", fg: "text-tomato-700" },
+  CANCELLED: { label: "Cancelada", bg: "bg-bark-100", fg: "text-bark-700" },
 };
 
 const FILTER_TABS: { key: string; label: string }[] = [
@@ -192,7 +192,7 @@ export default async function AdminTiendasPage({
                         <td className="px-5 py-3">
                           <div className="flex items-center gap-3">
                             <div
-                              className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg text-[11px] font-bold"
+                              className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-lg text-xs font-bold"
                               style={{
                                 background: storeActionColors(s.primaryColor).action,
                                 color: storeActionColors(s.primaryColor).onAction,
@@ -229,13 +229,13 @@ export default async function AdminTiendasPage({
                         </td>
                         <td className="px-3 py-3">
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${chip!.bg} ${chip!.fg}`}
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${chip!.bg} ${chip!.fg}`}
                           >
                             {chip!.label}
                           </span>
                           {s._count.users === 0 && (
                             <span
-                              className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700"
+                              className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-700"
                               title="Esta tienda no tiene owner activo — asigna uno desde el detalle."
                             >
                               Sin owner

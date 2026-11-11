@@ -53,7 +53,7 @@ export function AdminSidebar({
       header={
         <div className="border-b border-white/10 p-5">
           <NibbleLogo className="text-white" mono />
-          <p className="mt-1 text-[11px] uppercase tracking-widest text-white/50">
+          <p className="mt-1 text-xs uppercase tracking-widest text-white/50">
             Super Admin
           </p>
         </div>

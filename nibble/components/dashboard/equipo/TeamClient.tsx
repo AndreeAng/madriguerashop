@@ -100,7 +100,7 @@ export function TeamClient({
                 <p className="flex items-center gap-2 text-sm font-medium">
                   {c.fullName ?? "(sin nombre)"}
                   {!c.isActive && (
-                    <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-[10px] font-medium text-[color:var(--muted)]">
+                    <span className="rounded-full bg-[color:var(--bg)] px-2 py-0.5 text-xs font-medium text-[color:var(--muted)]">
                       Suspendido
                     </span>
                   )}

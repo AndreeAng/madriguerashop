@@ -83,7 +83,7 @@ export function OrderScene() {
                   <span className="text-xs font-semibold text-mk-muted num-tabular">
                     Pedido #{o.number}
                   </span>
-                  <span className="rounded-full bg-mk-saffron/25 px-2 py-0.5 text-[11px] font-semibold text-[#7a4a00]">
+                  <span className="rounded-full bg-mk-saffron/25 px-2 py-0.5 text-xs font-semibold text-amber-700">
                     Nuevo
                   </span>
                 </div>

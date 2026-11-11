@@ -43,18 +43,18 @@ export function orderCreatedOwnerEmail(opts: {
 
   const body = `
     <p>${escapeHtml(opts.ownerName)}, llegó ${nounLower === "solicitud" ? "una" : "un"} ${nounLower} nuev${nounLower === "solicitud" ? "a" : "o"}.</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0; border: 1px solid #e7e3d8; border-radius: 12px;">
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b;">${noun}</td><td style="padding: 12px 16px; font-size: 14px; font-weight: 600; text-align: right;">#${opts.orderNumber}</td></tr>
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Cliente</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e3d8;">${escapeHtml(opts.customerName)}</td></tr>
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Teléfono</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e3d8;">${escapeHtml(opts.customerPhone)}</td></tr>
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Items</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e3d8;">${opts.itemsCount}</td></tr>
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Pago</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e3d8;">${escapeHtml(paymentLabel)}</td></tr>
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Total</td><td style="padding: 12px 16px; font-size: 18px; font-weight: 600; text-align: right; border-top: 1px solid #e7e3d8;">${formatBob(opts.total)}</td></tr>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0; border: 1px solid #e7e5eb; border-radius: 12px;">
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f;">${noun}</td><td style="padding: 12px 16px; font-size: 14px; font-weight: 600; text-align: right;">#${opts.orderNumber}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f; border-top: 1px solid #e7e5eb;">Cliente</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e5eb;">${escapeHtml(opts.customerName)}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f; border-top: 1px solid #e7e5eb;">Teléfono</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e5eb;">${escapeHtml(opts.customerPhone)}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f; border-top: 1px solid #e7e5eb;">Items</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e5eb;">${opts.itemsCount}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f; border-top: 1px solid #e7e5eb;">Pago</td><td style="padding: 12px 16px; font-size: 14px; text-align: right; border-top: 1px solid #e7e5eb;">${escapeHtml(paymentLabel)}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f; border-top: 1px solid #e7e5eb;">Total</td><td style="padding: 12px 16px; font-size: 18px; font-weight: 600; text-align: right; border-top: 1px solid #e7e5eb;">${formatBob(opts.total)}</td></tr>
     </table>
     ${
       opts.awaitingVerification
-        ? `<p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
-            ⚠ El cliente subió un comprobante. Verifica el pago antes de confirmar.
+        ? `<p style="background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; color: #5e3400; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
+            <strong>Atención:</strong> El cliente subió un comprobante. Verifica el pago antes de confirmar.
           </p>`
         : ""
     }
@@ -92,21 +92,21 @@ export function orderCreatedCustomerEmail(opts: {
   const isF = nounLower === "solicitud";
 
   const paymentNote = opts.awaitingVerification
-    ? `<p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
+    ? `<p style="background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; color: #5e3400; padding: 10px 12px; margin: 14px 0; font-size: 13px;">
         Estamos verificando tu comprobante de pago. Te avisamos cuando esté confirmado.
       </p>`
     : opts.paymentMethod === "CASH_ON_DELIVERY"
-      ? `<p style="font-size: 14px; color: #6b6b6b;">El pago se cobra al momento de la entrega.</p>`
+      ? `<p style="font-size: 14px; color: #67636f;">El pago se cobra al momento de la entrega.</p>`
       : "";
 
   const body = `
     <p>Recibimos ${isF ? "tu" : "tu"} ${nounLower} en <strong>${escapeHtml(opts.storeName)}</strong>.</p>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0; border: 1px solid #e7e3d8; border-radius: 12px;">
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b;">${noun}</td><td style="padding: 12px 16px; font-size: 14px; font-weight: 600; text-align: right;">#${opts.orderNumber}</td></tr>
-      <tr><td style="padding: 12px 16px; font-size: 13px; color: #6b6b6b; border-top: 1px solid #e7e3d8;">Total</td><td style="padding: 12px 16px; font-size: 18px; font-weight: 600; text-align: right; border-top: 1px solid #e7e3d8;">${formatBob(opts.total)}</td></tr>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0; border: 1px solid #e7e5eb; border-radius: 12px;">
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f;">${noun}</td><td style="padding: 12px 16px; font-size: 14px; font-weight: 600; text-align: right;">#${opts.orderNumber}</td></tr>
+      <tr><td style="padding: 12px 16px; font-size: 13px; color: #67636f; border-top: 1px solid #e7e5eb;">Total</td><td style="padding: 12px 16px; font-size: 18px; font-weight: 600; text-align: right; border-top: 1px solid #e7e5eb;">${formatBob(opts.total)}</td></tr>
     </table>
     ${paymentNote}
-    <p style="font-size: 13px; color: #6b6b6b;">Puedes seguir el estado de tu ${nounLower} con el botón de abajo.</p>
+    <p style="font-size: 13px; color: #67636f;">Puedes seguir el estado de tu ${nounLower} con el botón de abajo.</p>
   `;
 
   return {
@@ -160,8 +160,8 @@ export function orderStatusChangedCustomerEmail(opts: {
       subject: `Cancelad${isF ? "a" : "o"} · ${isF ? "Solicitud" : "Pedido"} #${opts.orderNumber}`,
       body: `
         <p>${isF ? "Tu solicitud" : "Tu pedido"} <strong>#${opts.orderNumber}</strong> en <strong>${escapeHtml(opts.storeName)}</strong> fue cancelad${isF ? "a" : "o"}.</p>
-        ${opts.cancelReason ? `<p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 14px;"><strong>Motivo:</strong> ${escapeHtml(opts.cancelReason)}</p>` : ""}
-        <p style="font-size: 13px; color: #6b6b6b;">Si tienes dudas, contacta directamente a la tienda.</p>
+        ${opts.cancelReason ? `<p style="background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; color: #5e3400; padding: 10px 12px; margin: 14px 0; font-size: 14px;"><strong>Motivo:</strong> ${escapeHtml(opts.cancelReason)}</p>` : ""}
+        <p style="font-size: 13px; color: #67636f;">Si tienes dudas, contacta directamente a la tienda.</p>
       `,
     },
   };
@@ -200,7 +200,7 @@ export function paymentRejectedCustomerEmail(opts: {
   const body = `
     <p>Tu pago ${nounLower === "solicitud" ? "de la" : "del"} ${nounLower} <strong>#${opts.orderNumber}</strong> en
     ${escapeHtml(opts.storeName)} no pudo ser verificado.</p>
-    <p style="background: #fef3c7; border-left: 3px solid #f59e0b; padding: 10px 12px; margin: 14px 0; font-size: 14px;">
+    <p style="background: #fff8e6; border: 1px solid #ffe08a; border-radius: 12px; color: #5e3400; padding: 10px 12px; margin: 14px 0; font-size: 14px;">
       <strong>Motivo:</strong> ${escapeHtml(opts.reason)}
     </p>
     <p>

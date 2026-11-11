@@ -27,7 +27,7 @@ export function InvoiceProofForm({
     return (
       <p
         role="status"
-        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+        className="rounded-lg border border-leaf-500/30 bg-leaf-500/10 px-3 py-2 text-sm text-leaf-700"
       >
         <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Comprobante enviado. Lo verificamos en máximo 24 hs.
       </p>

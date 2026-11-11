@@ -204,9 +204,11 @@ export function MapZoneEditor({
             step={100}
             value={radius}
             onChange={(e) => setRadius(Number(e.target.value))}
-            className="mt-2 w-full accent-[color:var(--color-tomato-600)]"
+            aria-label="Radio de cobertura"
+            aria-valuetext={radiusLabel}
+            className="mt-2 min-h-11 w-full accent-[color:var(--color-tomato-600)]"
           />
-          <div className="mt-1 flex justify-between text-[10px] text-[color:var(--muted)]">
+          <div className="mt-1 flex justify-between text-xs text-[color:var(--muted)]">
             <span>200 m</span>
             <span>50 km</span>
           </div>

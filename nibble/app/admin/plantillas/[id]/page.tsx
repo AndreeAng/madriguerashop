@@ -75,7 +75,7 @@ export default async function EditarPlantillaPage({
                         href={`/${s.slug}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[11px] text-[color:var(--color-amber-600)] hover:underline"
+                        className="text-xs text-[color:var(--color-amber-600)] hover:underline"
                       >
                         Ver →
                       </Link>

@@ -54,7 +54,8 @@ const COLOR_BG = "#f7f7f9";
 const COLOR_CARD = "#ffffff";
 const COLOR_TEXT = "#121016";
 const COLOR_MUTED = "#67636f";
-const COLOR_AMBER = "#ffb21e";
+/** Marca: magenta, legible sobre blanco (5.2:1). */
+const COLOR_BRAND = "#d4145a";
 const COLOR_BARK = "#121016";
 
 export function renderEmail(input: EmailLayoutInput): string {
@@ -88,7 +89,7 @@ export function renderEmail(input: EmailLayoutInput): string {
           <!-- Header -->
           <tr>
             <td style="padding: 28px 32px 0 32px;">
-              <span style="display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: ${COLOR_AMBER};">
+              <span style="display: inline-block; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: ${COLOR_BRAND};">
                 madriguera·shop
               </span>
               <h1 style="margin: 12px 0 0 0; font-size: 28px; font-weight: 600; line-height: 1.2; color: ${COLOR_TEXT};">
@@ -105,7 +106,7 @@ export function renderEmail(input: EmailLayoutInput): string {
           </tr>
           <!-- Footer -->
           <tr>
-            <td style="padding: 20px 32px 32px 32px; border-top: 1px solid #e7e3d8; font-size: 12px; line-height: 1.5; color: ${COLOR_MUTED};">
+            <td style="padding: 20px 32px 32px 32px; border-top: 1px solid #e7e5eb; font-size: 12px; line-height: 1.5; color: ${COLOR_MUTED};">
               ${escapeHtml(
                 input.footnote ?? "Madriguera Shop · Plataforma hecha por Nibble hecha en Bolivia.",
               )}

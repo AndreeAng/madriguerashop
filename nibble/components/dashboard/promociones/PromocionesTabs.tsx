@@ -84,7 +84,7 @@ function TabButton({
       {children}
       {count > 0 && (
         <span
-          className={`num-tabular rounded-full px-1.5 text-[11px] ${
+          className={`num-tabular rounded-full px-1.5 text-xs ${
             active
               ? "bg-[color:var(--color-bark-900)] text-white"
               : "bg-[color:var(--bg)] text-[color:var(--muted)]"

@@ -263,13 +263,19 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
+      # Las dependencias de sistema (apt) son best-effort: la imagen
+      # ubuntu-latest ya trae Chrome y sus librerías, y cuando el mirror de
+      # apt de Azure no resuelve ("Temporary failure resolving
+      # azure.archive.ubuntu.com") el paso colgaba el job hasta el timeout.
+      # Si al navegador le faltara algo de verdad, los tests lo muestran.
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
-      - name: Install Playwright system deps (cache hit case)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps chromium
+      - name: Install Playwright system deps (best-effort)
+        run: |
+          timeout 300 npx playwright install-deps chromium \
+            || echo "::warning::No se pudieron instalar las dependencias de sistema de Playwright; se usan las de la imagen del runner."
 
       - name: Cache Next build
         uses: actions/cache@v4

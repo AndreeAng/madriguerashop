@@ -17,10 +17,10 @@ const ROLE_LABELS: Record<Role, string> = {
 };
 
 const ROLE_TONE: Record<Role, string> = {
-  SUPER_ADMIN: "bg-violet-100 text-violet-700",
+  SUPER_ADMIN: "bg-berry-100 text-berry-700",
   STORE_OWNER: "bg-amber-100 text-amber-700",
-  CASHIER: "bg-blue-100 text-blue-700",
-  CUSTOMER: "bg-slate-100 text-slate-700",
+  CASHIER: "bg-berry-100 text-berry-700",
+  CUSTOMER: "bg-bark-100 text-bark-700",
 };
 
 const PAGE_SIZE = 50;
@@ -212,7 +212,7 @@ export default async function AdminUsersPage({
                         </td>
                         <td className="px-3 py-3">
                           <span
-                            className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${ROLE_TONE[u.role]}`}
+                            className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${ROLE_TONE[u.role]}`}
                           >
                             {ROLE_LABELS[u.role]}
                           </span>

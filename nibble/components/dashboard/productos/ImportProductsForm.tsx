@@ -71,7 +71,7 @@ export function ImportProductsForm() {
               <summary className="cursor-pointer text-[color:var(--color-amber-700)] hover:underline">
                 {state.errors.length} errores — ver detalle
               </summary>
-              <ul className="mt-2 max-h-60 space-y-0.5 overflow-y-auto rounded-lg bg-[color:var(--bg)] p-2 font-mono text-[11px]">
+              <ul className="mt-2 max-h-60 space-y-0.5 overflow-y-auto rounded-lg bg-[color:var(--bg)] p-2 font-mono text-xs">
                 {state.errors.map((e, i) => (
                   <li key={i}>
                     Línea {e.line}: {e.reason}

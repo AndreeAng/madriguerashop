@@ -193,7 +193,7 @@ export function LinkTargetPicker({
       ) : hint ? (
         <p className="mt-1 text-xs text-[color:var(--muted)]">{hint}</p>
       ) : resolvedUrl ? (
-        <p className="mt-1 truncate text-[11px] text-[color:var(--muted)]">
+        <p className="mt-1 truncate text-xs text-[color:var(--muted)]">
           Destino: <span className="font-mono">{resolvedUrl}</span>
         </p>
       ) : null}

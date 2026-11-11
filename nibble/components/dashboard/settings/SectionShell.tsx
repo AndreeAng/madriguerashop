@@ -68,7 +68,7 @@ export function StatusBadge({
     return (
       <p
         role="status"
-        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700 transition-opacity"
+        className="rounded-lg border border-leaf-500/30 bg-leaf-500/10 px-3 py-2 text-sm text-leaf-700 transition-opacity"
       >
         <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Cambios guardados
       </p>

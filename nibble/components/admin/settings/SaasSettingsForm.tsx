@@ -18,7 +18,7 @@ export function SaasSettingsForm({ settings }: { settings: SaasSettings }) {
       {state.ok && (
         <p
           role="status"
-          className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-700"
+          className="rounded-lg border border-leaf-500/30 bg-leaf-500/10 px-3 py-2 text-sm text-leaf-700"
         >
           <Check aria-hidden="true" className="mr-1 inline size-3.5 align-[-2px]" />Configuración guardada. Los cambios se aplican en menos de 1 minuto.
         </p>

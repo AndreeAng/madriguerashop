@@ -192,7 +192,7 @@ function Stat({
     <div className="rounded-2xl border border-[color:var(--line)] bg-[color:var(--card)] p-4">
       <p className="text-xs text-[color:var(--muted)]">{label}</p>
       <p className="font-display mt-1 text-2xl num-tabular">{value}</p>
-      {hint && <p className="mt-0.5 text-[11px] text-[color:var(--muted)]">{hint}</p>}
+      {hint && <p className="mt-0.5 text-xs text-[color:var(--muted)]">{hint}</p>}
     </div>
   );
 }
